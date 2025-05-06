@@ -152,15 +152,14 @@ def create_product_image(product_id):
         return jsonify({'message': 'Product could not be found.'}), 404
     try:
         data = request.form.to_dict()
-        if 'is_primary' in data:
-            data['is_primary'] = data['is_primary'].lower() == 'true'
+        data['is_primary'] = data.get('is_primary', '').lower() == 'true'
         file = request.files.get('file')
         if file:
             data['file'] = file 
-
-        data = request.get_json()
         variant_id = data.get('variant_id')
         image = product_service.create_product_image(product_id, data, variant_id)
+        if not image:
+            return jsonify({'message': 'Image could not be created.'}), 400
         return jsonify({
             'message': 'Product image was added successfully.',
             'product': product_service.serialize_product(product),
@@ -171,12 +170,14 @@ def create_product_image(product_id):
    
 @product_blueprint.route('/<int:product_id>/images/<int:image_id>', methods=['DELETE'])
 @admin_required
-def delete_image(product_id, image_id):
+def delete_product_image(product_id, image_id):
     product = product_service.get_product_by_id(product_id)
     if not product:
         return jsonify({'message': 'Product could not be found.'}), 404
     try:
-        product_service.delete_product_image(image_id)
+        success = product_service.delete_product_image(image_id)
+        if not success:
+            return jsonify({'message': 'Image could not be found.'}), 404
         return jsonify({
             'id': image_id,
             'product': product_service.serialize_product(product),

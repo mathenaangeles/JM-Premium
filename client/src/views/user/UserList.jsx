@@ -178,9 +178,8 @@ const UserList = () => {
                     label={user.is_admin ? 'Admin' : 'Regular User'}
                     size="small"
                     sx={{
-                      bgcolor: user.is_admin ? 'rgba(151, 167, 99, 0.1)' : 'grey.100',
+                      bgcolor: user.is_admin ? 'rgba(151, 167, 99, 0.15)' : 'grey.100',
                       color: user.is_admin ? 'secondary.main' : 'text.secondary',
-                      fontWeight: 500,
                       p: 1,
                     }}
                   />

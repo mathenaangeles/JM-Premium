@@ -34,6 +34,13 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+        }
+      }
+    },
     MuiPaginationItem: {
       styleOverrides: {
         root: {

@@ -130,9 +130,9 @@ export const addProductImage = createAsyncThunk(
 
 export const deleteProductImage = createAsyncThunk(
   '/deleteProductImage',
-  async (imageId, { rejectWithValue }) => {
+  async ({ productId, imageId }, { rejectWithValue }) => {
     try {
-      const { data } = await Axios.delete(`/products/images/${imageId}`);
+      const { data } = await Axios.delete(`/products/${productId}/images/${imageId}`);
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);

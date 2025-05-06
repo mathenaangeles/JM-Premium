@@ -2,8 +2,8 @@ from sqlalchemy.orm import joinedload
 from typing import Dict, List, Optional, Any
 
 from app import db
-from utils import generate_slug
-from models.category import Category
+from models.category import Category, CategoryImage
+from utils import generate_slug, upload_image_to_gcs, delete_image_from_gcs
 
 class CategoryService:
     def get_category_by_id(self, category_id: int) -> Optional[Category]:
@@ -96,3 +96,42 @@ class CategoryService:
             else:
                 current = None
         return breadcrumbs
+
+    def get_category_image_by_id(self, image_id: int) -> Optional[CategoryImage]:
+        return db.session.get(CategoryImage, image_id)
+
+    def create_category_image(self, category_id: int, data: Dict[str, Any]) -> Optional[CategoryImage]:
+        category = self.get_category_by_id(category_id)
+        if not category:
+            return None
+        try:
+            if 'file' in data:
+                image_url = upload_image_to_gcs(data['file'], folder="categories")
+            else:
+                raise ValueError("No Image Provided")
+            image = CategoryImage(
+                category_id=category_id,
+                url=image_url,
+            )
+            db.session.add(image)
+            db.session.commit()
+            return image
+        except Exception as e:
+            db.session.rollback()
+            raise e
+    
+    def delete_category_image(self, image_id: int) -> bool:
+        image = self.get_category_image_by_id(image_id)
+        if not image:
+            return False
+        try:
+            delete_image_from_gcs(image.url)
+            db.session.delete(image)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+    def serialize_category_image(self, image: CategoryImage) -> Dict[str, Any]:
+        return image.to_dict()    

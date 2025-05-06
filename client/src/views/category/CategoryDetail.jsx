@@ -1,21 +1,23 @@
-import React, { useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { Inventory2Outlined as Inventory2OutlinedIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
+import { Chip, Box, Breadcrumbs, Button, Alert, CardMedia, Container, Collapse, FormControl, Grid, MenuItem, Select, Typography, useTheme, Paper, IconButton } from '@mui/material';
 
 import ProductCard from '../product/ProductCard';
 import { getProducts } from '../../slices/productSlice';
-import { getCategoryBySlug, getCategoryBreadcrumbs } from '../../slices/categorySlice';
+import { getCategoryBySlug, getCategoryBreadcrumbs, clearMessages } from '../../slices/categorySlice';
 
 const CategoryDetail = () => {
   const { slug } = useParams();
   const dispatch = useDispatch();
+  const theme = useTheme();
 
-  const { category, breadcrumbs, loading, error } = useSelector(state => state.category);
-  const { products, totalPages, currentPage, loading: productsLoading } = useSelector(state => state.product);
-
-  const [showSubcategories, setShowSubcategories] = useState(true);
+  const { category, breadcrumbs, error } = useSelector(state => state.category);
+  const { products, totalPages, currentPage, } = useSelector(state => state.product);
 
   const [perPage, setPerPage] = useState(12);
+  const [showSubcategories, setShowSubcategories] = useState(true);
 
   useEffect(() => {
     if (slug) {
@@ -42,169 +44,339 @@ const CategoryDetail = () => {
     dispatch(getProducts({ categoryIds, page, perPage }));
   };
 
+
   const handlePerPageChange = (e) => {
-    setPerPage(Number(e.target.value));
+    setPerPage(e.target.value);
   };
-
-  if (loading && !category) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 text-red-800 p-4 rounded-md">
-        <p>Error: {error}</p>
-      </div>
-    );
-  }
 
   if (!category) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-800">Category not found</h2>
-        <p className="text-gray-600 mt-4">The category you're looking for doesn't exist or has been removed.</p>
-        <Link to="/manage/categories" className="mt-6 inline-block bg-blue-600 text-white py-2 px-6 rounded-md">
+      <Box sx={{ bgcolor: 'common.white', minHeight: '100vh', py: 8, px: 2 }} textAlign="center">
+        <Typography variant="h3" gutterBottom>
+          Category Not Found
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          The category you're looking for doesn't exist or has been removed.
+        </Typography>
+        <Button
+          component={Link}
+          to="/shop"
+          variant="contained"
+          color="primary"
+          size="large"
+          sx={{
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontSize: '1rem',
+          }}
+        >
           Browse All Categories
-        </Link>
-      </div>
+        </Button>
+      </Box>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav className="text-sm mb-6">
-          <ol className="flex flex-wrap">
-            <li className="flex items-center">
-              <Link to="/" className="text-blue-600 hover:text-blue-800">Home</Link>
-              <span className="mx-2 text-gray-500">/</span>
-            </li>
-            <li className="flex items-center">
-              <Link to="/manage/categories" className="text-blue-600 hover:text-blue-800">Categories</Link>
-              <span className="mx-2 text-gray-500">/</span>
-            </li>
-            {breadcrumbs.map((item, index) => (
-              <li key={item.id} className="flex items-center">
-                {index < breadcrumbs.length - 1 ? (
-                  <>
-                    <Link to={`/categories/${item.slug}`} className="text-blue-600 hover:text-blue-800">
-                      {item.name}
-                    </Link>
-                    <span className="mx-2 text-gray-500">/</span>
-                  </>
-                ) : (
-                  <span className="text-gray-600">{item.name}</span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
-      )}
-
-      <div className="mb-8">
-        {/* {category.image_url && (
-          <div className="mb-4">
-            <img 
-              src={category.image_url} 
-              alt={category.name}
-              className="w-full h-64 object-cover rounded-lg"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = '/api/placeholder/800/320';
-              }}
-            />
-          </div>
-        )} */}
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">{category.name}</h1>
-        {category.description && (
-          <p className="text-gray-600">{category.description}</p>
+    <Box sx={{ minHeight: '100vh' }}>
+      <Box
+        sx={{
+          position: 'relative',
+          height: { xs: '40vh', md: '55vh' },
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'flex-end',
+          backgroundColor: 'primary.main',
+        }}
+      >
+        {category.image?.url && (
+          <CardMedia
+            component="img"
+            image={category.image.url}
+            alt={category.name}
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: 0.85,
+            }}
+          />
         )}
-      </div>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          }}
+        />
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2, pb: { xs: 4, md: 6 } }}>
+          <Typography
+            variant="h2"
+            component="h1"
+            sx={{
+              color: '#fff',
+              fontWeight: 600,
+              textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
+              fontSize: { xs: '2.25rem', sm: '3rem', md: '4rem' },
+              mb: 1,
+            }}
+          >
+            {category.name}
+          </Typography>
 
-      {category.subcategories && category.subcategories.length > 0 && (
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">Subcategories</h2>
-            <button 
-              onClick={() => setShowSubcategories(!showSubcategories)}
-              className="text-blue-600 hover:text-blue-800"
+          {category.description && (
+            <Typography
+              variant="body1"
+              sx={{
+                color: '#fff',
+                fontWeight: 300,
+                textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
+                fontSize: { xs: '1rem', md: '1.25rem' },
+                maxWidth: '800px',
+              }}
             >
-              {showSubcategories ? 'Hide' : 'Show'}
-            </button>
-          </div>
-          
-          {showSubcategories && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {category.subcategories.map(subcat => (
-                <Link 
-                  key={subcat.id}
-                  to={`/categories/${subcat.slug}`} 
-                  className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
-                >
-                  <h3 className="font-medium text-gray-800">{subcat.name}</h3>
-                  {subcat.product_count !== undefined && (
-                    <p className="text-sm text-gray-500 mt-1">{subcat.product_count} Products</p>
-                  )}
-                </Link>
-              ))}
-            </div>
+              {category.description}
+            </Typography>
           )}
-        </div>
-      )}
+        </Container>
+      </Box>
 
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">Products</h2>
-          <div className="flex items-center">
-            <label htmlFor="perPage" className="mr-2 text-sm text-gray-600">Per Page:</label>
-            <select 
-              id="perPage" 
-              value={perPage}
-              onChange={handlePerPageChange}
-              className="border rounded p-1"
+      <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, py: 3 }}>
+        {breadcrumbs && breadcrumbs.length > 0 && (
+          <Breadcrumbs
+            separator={<NavigateNextIcon fontSize="small" />}
+            aria-label="breadcrumb"
+            sx={{ mb: 4, color: 'text.secondary' }}
+          >
+            <Link
+              to="/shop"
+              style={{
+                textDecoration: 'none',
+                color: 'inherit',
+              }}
             >
-              <option value="12">12</option>
-              <option value="24">24</option>
-              <option value="48">48</option>
-            </select>
-          </div>
-        </div>
+              Shop
+            </Link>
+            {breadcrumbs.map((item, index) => (
+              <Box key={item.id}>
+                {index < breadcrumbs.length - 1 ? (
+                  <Link
+                    to={`/categories/${item.slug}`}
+                    style={{
+                      textDecoration: 'none',
+                      color: 'inherit',
+                    }}
+                  >
+                    {item.name}
+                  </Link>
+                ) : (
+                  <Typography color="primary.main" sx={{ fontWeight: '600' }}>
+                    {item.name}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+          </Breadcrumbs>
+        )}
+        {error && (
+          <Alert severity="error" onClose={() => dispatch(clearMessages())} sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        {category.subcategories && category.subcategories.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 3
+              }}
+            >
+              <Box sx={{ position: 'relative', display: 'inline-block', mb: 1 }}>
+                <Typography variant="h5" component="h2" sx={{ mb: 1 }}>
+                  Subcategories
+                </Typography>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: -6,
+                    left: 0,
+                    height: '3px',
+                    width: '60px',
+                    bgcolor: 'primary.main',
+                    borderRadius: 2,
+                  }}
+                />
+              </Box>
+              <IconButton
+                onClick={() => setShowSubcategories(!showSubcategories)}
+                color="primary"
+                size="small"
+              >
+                {showSubcategories ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+            <Collapse in={showSubcategories} timeout={300} unmountOnExit>
+              <Grid container spacing={3}>
+                {category.subcategories.map(subcategory => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={subcategory.id}>
+                    <Paper
+                      component={Link}
+                      to={`/categories/${subcategory.slug}`}
+                      elevation={2}
+                      sx={{
+                        p: 3,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        borderRadius: 2,
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: theme.shadows[1],
+                          '& .subcategory-name': {
+                            color: 'primary.main'
+                          }
+                        }
+                      }}
+                    >
+                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography
+                            variant="h6"
+                            className="subcategory-name"
+                            sx={{
+                              transition: 'color 0.3s ease',
+                              flexGrow: 1,
+                            }}
+                          >
+                            {subcategory.name}
+                          </Typography>
+                          <Chip
+                            icon={<Inventory2OutlinedIcon color="secondary" />}
+                            label={`${subcategory.product_count || 0} Products`}
+                            size="small"
+                            sx={{
+                              bgcolor: 'rgba(151, 167, 99, 0.15)',
+                              color: 'secondary.main',
+                              p: 2,
+                            }}
+                          />
+                        </Box>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </Collapse>
+          </Box>
+        )}
 
-        {productsLoading ? (
-          <div className="flex justify-center items-center min-h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
+        {/* Products Section */}
+        <Box sx={{ mt: 6 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 4
+            }}
+          >
+            <Box sx={{ position: 'relative', display: 'inline-block', mb: 1 }}>
+              <Typography variant="h4" component="h2" sx={{ mb: 1 }}>
+                Products
+              </Typography>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: -6,
+                  left: 0,
+                  height: '3px',
+                  width: '60px',
+                  bgcolor: 'primary.main',
+                  borderRadius: 2,
+                }}
+              />
+            </Box>
+
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
+              <Select
+                value={perPage}
+                onChange={handlePerPageChange}
+                displayEmpty
+                sx={{
+                  borderRadius: 2,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: theme.palette.divider
+                  }
+                }}
+              >
+                <MenuItem value={12}>12 per page</MenuItem>
+                <MenuItem value={24}>24 per page</MenuItem>
+                <MenuItem value={48}>48 per page</MenuItem>
+              </Select>
+            </FormControl>
+
+          </Box>
+
           <>
             {products && products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <Grid container spacing={4}>
                 {products.map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product.id}>
+                    <ProductCard product={product} />
+                  </Grid>
                 ))}
-              </div>
+              </Grid>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No products found in this category</p>
-              </div>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  py: { xs: 4, sm: 8 },
+                  px: { xs: 2, sm: 2 },
+                  backgroundColor: 'grey.100',
+                  borderRadius: 2,
+                  border: '1px dashed #CCCCCC',
+                }}
+              >
+                <Typography variant="h6" color="text.secondary">
+                  No Products Found
+                </Typography>
+                <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
+                  There are currently no products available in this category.
+                </Typography>
+              </Box>
             )}
 
+            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center mt-8">
-                <nav className="inline-flex rounded-md shadow">
-                  <button
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+                <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden' }}>
+                  <Button
                     onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 border border-gray-300 rounded-l-md ${
-                      currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: '4px 0 0 4px',
+                      borderRight: 'none',
+                      px: 2,
+                      py: 1,
+                      minWidth: { xs: '60px', sm: '80px' },
+                      color: currentPage === 1 ? theme.palette.text.disabled : theme.palette.text.primary
+                    }}
                   >
                     Previous
-                  </button>
-                  
+                  </Button>
+
                   {[...Array(totalPages)].map((_, index) => {
                     const page = index + 1;
                     if (
@@ -213,50 +385,67 @@ const CategoryDetail = () => {
                       (page >= currentPage - 1 && page <= currentPage + 1)
                     ) {
                       return (
-                        <button
+                        <Button
                           key={page}
                           onClick={() => handlePageChange(page)}
-                          className={`px-4 py-2 border-t border-b border-r border-gray-300 ${
-                            currentPage === page
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white text-gray-700 hover:bg-gray-50'
-                          }`}
+                          variant={currentPage === page ? "contained" : "outlined"}
+                          sx={{
+                            borderRadius: 0,
+                            borderLeft: 'none',
+                            borderRight: 'none',
+                            px: { xs: 1.5, sm: 2 },
+                            py: 1,
+                            minWidth: { xs: '40px', sm: '50px' }
+                          }}
                         >
                           {page}
-                        </button>
+                        </Button>
                       );
-                    } else if (
-                      page === currentPage - 2 ||
-                      page === currentPage + 2
-                    ) {
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
                       return (
-                        <span
+                        <Button
                           key={page}
-                          className="px-4 py-2 border-t border-b border-r border-gray-300 bg-white text-gray-700"
+                          disabled
+                          variant="outlined"
+                          sx={{
+                            borderRadius: 0,
+                            borderLeft: 'none',
+                            borderRight: 'none',
+                            px: { xs: 1.5, sm: 2 },
+                            py: 1,
+                            minWidth: { xs: '40px', sm: '50px' }
+                          }}
                         >
                           ...
-                        </span>
+                        </Button>
                       );
                     }
                     return null;
                   })}
-                  
-                  <button
+
+                  <Button
                     onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 border-t border-b border-r border-gray-300 rounded-r-md ${
-                      currentPage === totalPages ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: '0 4px 4px 0',
+                      borderLeft: 'none',
+                      px: 2,
+                      py: 1,
+                      minWidth: { xs: '60px', sm: '80px' },
+                      color: currentPage === totalPages ? theme.palette.text.disabled : theme.palette.text.primary
+                    }}
                   >
                     Next
-                  </button>
-                </nav>
-              </div>
+                  </Button>
+                </Box>
+              </Box>
             )}
           </>
-        )}
-      </div>
-    </div>
+            
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

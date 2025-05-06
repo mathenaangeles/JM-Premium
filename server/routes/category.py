@@ -120,3 +120,44 @@ def manage_category(category_id):
         except Exception as e:
             return jsonify({'message': f'Category Deletion Failed: {str(e)}'}), 500
     return jsonify({'message': 'Invalid Request Method'}), 405
+
+
+@category_blueprint.route('/<int:category_id>/images', methods=['POST'])
+@admin_required
+def create_category_image(category_id):
+    category = category_service.get_category_by_id(category_id)
+    if not category:
+        return jsonify({'message': 'Category could not be found.'}), 404
+    try:
+        data = request.form.to_dict()
+        file = request.files.get('file')
+        if file:
+            data['file'] = file 
+        image = category_service.create_category_image(category_id, data)
+        if not image:
+            return jsonify({'message': 'Image could not be created.'}), 400
+        return jsonify({
+            'message': 'Category image was added successfully.',
+            'category': category_service.serialize_category(category),
+            'image': category_service.serialize_category_image(image)
+        }), 201
+    except Exception as e:
+        return jsonify({'message': f'Category Image Creation Failed: {str(e)}'}), 500
+   
+@category_blueprint.route('/<int:category_id>/images/<int:image_id>', methods=['DELETE'])
+@admin_required
+def delete_category_image(category_id, image_id):
+    category = category_service.get_category_by_id(category_id)
+    if not category:
+        return jsonify({'message': 'Category could not be found.'}), 404
+    try:
+        success = category_service.delete_category_image(image_id)
+        if not success:
+            return jsonify({'message': 'Image could not be found.'}), 404
+        return jsonify({
+            'id': image_id,
+            'category': category_service.serialize_category(category),
+            'message': 'Category image was deleted successfully.'
+        }), 200
+    except Exception as e:
+        return jsonify({'message': f'Category Image Deletion Failed: {str(e)}'}), 500

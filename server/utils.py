@@ -2,6 +2,7 @@ import re
 import os
 import uuid
 import unicodedata
+import urllib.parse
 from dotenv import load_dotenv
 from google.cloud import storage
 from werkzeug.datastructures import FileStorage
@@ -24,7 +25,8 @@ def delete_image_from_gcs(image_url: str):
     storage_client = storage.Client()
     bucket = storage_client.bucket(GCS_BUCKET_NAME)
     if "storage.googleapis.com" in image_url:
-        object_name = "/".join(image_url.split("/")[3:])
+        object_name = "/".join(image_url.split("/")[4:])
+        object_name = urllib.parse.unquote(object_name)
     else:
         object_name = image_url 
     blob = bucket.blob(object_name)

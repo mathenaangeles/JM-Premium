@@ -98,6 +98,31 @@ export const deleteCategory = createAsyncThunk(
   }
 );
 
+export const addCategoryImage = createAsyncThunk(
+  '/addCategoryImage',
+  async ({ categoryId, imageData }, { rejectWithValue }) => {
+    try {
+      const { data } = await Axios.post(`/categories/${categoryId}/images`, imageData);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const deleteCategoryImage = createAsyncThunk(
+  '/deleteCategoryImage',
+  async ({ categoryId, imageId }, { rejectWithValue }) => {
+    try {
+      const { data } = await Axios.delete(`/categories/${categoryId}/images/${imageId}`);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+
 const categorySlice = createSlice({
   name: 'category',
   initialState: {
@@ -211,9 +236,9 @@ const categorySlice = createSlice({
       state.loading = false;
       state.success = action.payload.message;
       state.category = action.payload.category;
-      const index = state.categories.findIndex((category) => category.id === action.payload.category.id);
-      if (index !== -1) {
-        state.categories[index] = action.payload.category;
+      const categoryIndex = state.categories.findIndex((category) => category.id === action.payload.category.id);
+      if (categoryIndex !== -1) {
+        state.categories[categoryIndex] = action.payload.category;
       }
     })
     .addCase(updateCategory.rejected, (state, action) => {
@@ -232,6 +257,44 @@ const categorySlice = createSlice({
       state.categories = state.categories.filter((category) => category.id !== action.payload.id);
     })
     .addCase(deleteCategory.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    })
+
+    .addCase(addCategoryImage.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+      state.success = null;
+    })
+    .addCase(addCategoryImage.fulfilled, (state, action) => {
+      state.loading = false;
+      state.success = action.payload.message;
+      state.category = action.payload.category;
+      const categoryIndex = state.categories.findIndex((category) => category.id === action.payload.category.id);
+      if (categoryIndex !== -1) {
+        state.categories[categoryIndex] = action.payload.category;
+      }
+    })
+    .addCase(addCategoryImage.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    })
+    
+    .addCase(deleteCategoryImage.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+      state.success = null;
+    })
+    .addCase(deleteCategoryImage.fulfilled, (state, action) => {
+      state.loading = false;
+      state.success = action.payload.message;
+      state.category = action.payload.category;
+      const categoryIndex = state.categories.findIndex((category) => category.id === action.payload.category.id);
+      if (categoryIndex !== -1) {
+        state.categories[categoryIndex] = action.payload.category;
+      }
+    })
+    .addCase(deleteCategoryImage.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload;
     })

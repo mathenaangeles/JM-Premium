@@ -81,23 +81,23 @@ const AddressList = () => {
       </Box>
       {!addresses || addresses.length === 0 ? (
         <Box
-        sx={{
-          textAlign: 'center',
-          py: { xs: 4, sm: 5 },
-          px: { xs: 2, sm: 3 },
-          backgroundColor: 'grey.100',
-          borderRadius: 3,
-          boxShadow: 1,
-          border: '1px dashed #CCCCCC',
-        }}
-      >
-        <Typography variant="h6" color="text.secondary">
-          You have no saved addresses
-        </Typography>
-        <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
-          Add a shipping or billing address to speed up checkout.
-        </Typography>
-      </Box>
+          sx={{
+            textAlign: 'center',
+            py: { xs: 4, sm: 5 },
+            px: { xs: 2, sm: 3 },
+            backgroundColor: 'grey.100',
+            borderRadius: 3,
+            boxShadow: 1,
+            border: '1px dashed #CCCCCC',
+          }}
+        >
+          <Typography variant="h6" color="text.secondary">
+            You have no saved addresses
+          </Typography>
+          <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
+            Add a shipping or billing address to speed up checkout.
+          </Typography>
+        </Box>
       ) : (
         <List disablePadding>
           {addresses.map((address) => (
@@ -128,7 +128,6 @@ const AddressList = () => {
                     sx={{
                       bgcolor: 'rgba(151, 167, 99, 0.1)',
                       color: 'secondary.main',
-                      fontWeight: 500,
                       px: 1,
                       py: 2,
                       '& .MuiChip-icon': {

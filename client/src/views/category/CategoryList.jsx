@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ViewList as ViewListIcon, AccountTree as AccountTreeIcon, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon }  from '@mui/icons-material';
-import { styled, Box, Button, Card, CardContent, CardMedia, CardActions, Container, Divider, Grid, Paper, Typography, Alert, ToggleButtonGroup, ToggleButton, Stack } from '@mui/material';
+import { Inventory2Outlined as Inventory2OutlinedIcon, ViewList as ViewListIcon, AccountTree as AccountTreeIcon, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon }  from '@mui/icons-material';
+import { Chip, Box, Button, Card, CardContent, CardMedia, CardActions, Divider, Grid, Paper, Typography, Alert, ToggleButtonGroup, ToggleButton, Stack } from '@mui/material';
 
 import DeleteConfirmationModal from '../../components/DeleteConfirmation';
 import { getCategories, deleteCategory, clearMessages } from '../../slices/categorySlice';
@@ -42,40 +42,17 @@ const CategoryList = () => {
     }
   };
 
-  const CategoryCard = styled(Card)(({ theme }) => ({
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-    '&:hover': {
-      transform: 'scale(1.01)',
-      boxShadow: theme.shadows[4],
-    },
-  }));
-  
-  const CategoryCardContent = styled(CardContent)({
-    flexGrow: 1,
-    display: 'flex',
-    flexDirection: 'column',
-  });
-  
-
   const renderCategoryItem = (category) => (
-    <Grid item xs={12} sm={6} md={4} lg={3} key={category.id}>
-      <CategoryCard>
-        {category.image_url && (
-          <CardMedia
-            component="img"
-            height="194"
-            image={category.image_url}
-            alt={category.name}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/api/placeholder/400/320';
-            }}
-          />
-        )}
-        <CategoryCardContent>
+    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={category.id} sx={{ display: 'flex' }}>
+      <Card sx={{ display: 'flex', flexDirection: 'column', width: 300 }}>
+        <CardMedia
+          component="img"
+          height="160"
+          image={category.image?.url || '#'}
+          alt={category.name}
+          sx={{ objectFit: 'cover', backgroundColor: '#F5F5F5' }}
+        />
+        <CardContent>
           <Link to={`/categories/${category.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
               {category.name}
@@ -85,18 +62,25 @@ const CategoryList = () => {
                 {category.description}
               </Typography>
             )}
-            <Box sx={{ mt: 'auto' }}>
-              <Typography variant="caption" color="text.secondary">
-                {category.product_count || 0} Products
-              </Typography>
+            <Box>
+              <Chip
+                icon={<Inventory2OutlinedIcon color='secondary'/>}
+                label={`${category.product_count || 0} Products`}
+                size="small"
+                sx={{
+                  bgcolor: 'rgba(151, 167, 99, 0.15)',
+                  color: 'secondary.main',
+                  p: 2,
+                }}
+              />
             </Box>
           </Link>
-        </CategoryCardContent>
-        <CardActions>
+        </CardContent>
+        <CardActions sx={{  mt: 'auto', justifyContent: 'flex-start',  px: 2, pb: 3 }}>
           <Button 
             component={Link} 
             to={`/manage/categories/form/${category.id}`}
-            variant="contained" 
+            variant="outlined"
             color="primary"
             startIcon={<EditIcon />}
             size="small"
@@ -104,51 +88,55 @@ const CategoryList = () => {
             Edit
           </Button>
           <Button
-            variant="contained"
+            variant="outlined"
             color="error"
             startIcon={<DeleteIcon />}
-            onClick={() => handleDelete(category.id)}
+            onClick={() => openDeleteConfirmation(category)}
             size="small"
           >
             Delete
           </Button>
         </CardActions>
-      </CategoryCard>
+      </Card>
     </Grid>
   );
 
   const renderCategoryTree = (category) => (
-    <Box key={category.id} sx={{ mb: 2 }}>
+    <Box key={category.id}>
       <Paper
         elevation={2}
         sx={{
           p: 2,
-          mb: 1,
-          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-          '&:hover': {
-            transform: 'scale(1.01)',
-            boxShadow: 4,
-          },
+          my: 1,
         }}
       >
         <Link to={`/categories/${category.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-            {category.name}
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
+              {category.name}
+            </Typography>
+            <Chip
+              icon={<Inventory2OutlinedIcon color="secondary" />}
+              label={`${category.product_count || 0} Products`}
+              size="small"
+              sx={{
+                bgcolor: 'rgba(151, 167, 99, 0.15)',
+                color: 'secondary.main',
+                p: 2,
+              }}
+            />
+          </Box>
           {category.description && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
               {category.description}
             </Typography>
           )}
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-            {category.product_count || 0} Products
-          </Typography>
         </Link>
-        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+        <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
           <Button 
             component={Link} 
             to={`/manage/categories/form/${category.id}`}
-            variant="outlined" 
+            variant="outlined"
             color="primary"
             startIcon={<EditIcon />}
             size="small"
@@ -167,13 +155,21 @@ const CategoryList = () => {
         </Stack>
       </Paper>
       {category.subcategories && category.subcategories.length > 0 && (
-        <Box sx={{ pl: 3, ml: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+        <Box 
+          sx={{ 
+            pl: { xs: 2, sm: 4 }, 
+            ml: { xs: 1, sm: 2 }, 
+            borderLeft: 2, 
+            borderColor: 'primary.main', 
+            mt: 2 
+          }}
+        >
           {category.subcategories.map(subcategory => renderCategoryTree(subcategory))}
         </Box>
       )}
     </Box>
   );
-
+  
   return (
     <Box sx={{ p: 4 }}>
       {error && (
@@ -213,31 +209,38 @@ const CategoryList = () => {
       </Box>
 
       {viewType === 'list' ? (
-        <Grid container spacing={3}>
+        <Grid container spacing={3} alignItems="stretch">
           {categories && categories.map(category => renderCategoryItem(category))}
           {categories && categories.length === 0 && (
-            <Grid item xs={12}>
-              <Box sx={{ textAlign: 'center', py: 6 }}>
-                <Typography variant="h6" color="text.secondary">
+            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', textAlign: 'center' }} >
+              <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                <Typography variant="h5" color="text.primary" fontWeight={500}>
                   No categories found
                 </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  If this is not the expected result, please try refreshing the page.
+                </Typography>
               </Box>
-            </Grid>
+            </Box>
           )}
         </Grid>
       ) : (
-        <Box>
+        <Grid container spacing={3}>
           {categories && categories.map(category => renderCategoryTree(category))}
           {categories && categories.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <Typography variant="h6" color="text.secondary">
-                No categories found
-              </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', textAlign: 'center' }} >
+              <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                <Typography variant="h5" color="text.primary" fontWeight={500}>
+                  No categories found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  If this is not the expected result, please try refreshing the page.
+                </Typography>
+              </Box>
             </Box>
           )}
-        </Box>
+        </Grid>
       )}
-
       <DeleteConfirmationModal
         open={showDeleteConfirmation}
         message={`Are you sure you want to delete ${categoryToDelete?.name || 'this'}?`}

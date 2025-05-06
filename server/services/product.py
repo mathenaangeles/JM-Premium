@@ -204,7 +204,7 @@ class ProductService:
             if 'file' in data:
                 image_url = upload_image_to_gcs(data['file'], folder="products")
             else:
-                image_url = data.get('url')
+                raise ValueError("No Image Provided")
             is_primary = data.get('is_primary', False)
             image = ProductImage(
                 product_id=product_id,
