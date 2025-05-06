@@ -3,6 +3,8 @@
 
 */.env
 
+*/gcp-key.json
+
 *.pyc
 __pycache__/
 
