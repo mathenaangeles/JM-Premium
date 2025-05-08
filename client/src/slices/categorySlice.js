@@ -134,7 +134,7 @@ const categorySlice = createSlice({
     error: null,
   },
   reducers: {
-    clearMessages: (state) => {
+    clearCategoryMessages: (state) => {
       state.success = null;
       state.error = null;
     },
@@ -301,5 +301,5 @@ const categorySlice = createSlice({
   },
 });
 
-export const { clearMessages } = categorySlice.actions;
+export const { clearCategoryMessages } = categorySlice.actions;
 export default categorySlice.reducer;

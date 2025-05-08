@@ -60,7 +60,7 @@ const addressSlice = createSlice({
     error: null,
   },
   reducers: {
-    clearMessages: (state) => {
+    clearAddressMessages: (state) => {
       state.success = null;
       state.error = null;
     },
@@ -137,5 +137,5 @@ const addressSlice = createSlice({
   },
 });
 
-export const { clearMessages } = addressSlice.actions;
+export const { clearAddressMessages } = addressSlice.actions;
 export default addressSlice.reducer;

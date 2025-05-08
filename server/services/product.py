@@ -48,11 +48,10 @@ class ProductService:
                 weight=data.get('weight'),
                 width=data.get('width'),
                 height=data.get('height'),
-                depth=data.get('depth'),
+                length=data.get('length'),
                 option1_name=data.get('option1_name'),
                 option2_name=data.get('option2_name'),
                 option3_name=data.get('option3_name'),
-                sku=data.get('sku'),
                 base_price=data.get('base_price'),
                 sale_price=data.get('sale_price'),
                 stock=data.get('stock'),
@@ -76,7 +75,7 @@ class ProductService:
         if not product:
             return None
         try:
-            for field in ['name', 'description', 'category_id', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'meta_keywords', 'weight', 'width', 'height', 'depth', 'option1_name', 'option2_name', 'option3_name', 'sku', 'base_price', 'sale_price', 'stock']:
+            for field in ['name', 'description', 'category_id', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'meta_keywords', 'weight', 'width', 'height', 'length', 'option1_name', 'option2_name', 'option3_name', 'base_price', 'sale_price', 'stock']:
                 if field in data:
                     setattr(product, field, data[field])
             if 'name' in data:
@@ -126,7 +125,6 @@ class ProductService:
             variant = ProductVariant(
                 product_id=product_id,
                 name=variant_name,
-                sku=data.get('sku'),
                 base_price=data.get('base_price'),
                 sale_price=data.get('sale_price'),
                 stock=data.get('stock', 0),
@@ -146,7 +144,7 @@ class ProductService:
         if not variant:
             return None
         try:
-            for field in ['base_price', 'sale_price', 'stock', 'sku']:
+            for field in ['base_price', 'sale_price', 'stock']:
                 if field in data:
                     setattr(variant, field, data[field])
             option_changed = False
@@ -205,25 +203,11 @@ class ProductService:
                 image_url = upload_image_to_gcs(data['file'], folder="products")
             else:
                 raise ValueError("No Image Provided")
-            is_primary = data.get('is_primary', False)
             image = ProductImage(
                 product_id=product_id,
                 variant_id=variant_id,
                 url=image_url,
-                is_primary=is_primary
             )
-            if is_primary:
-                if variant_id:
-                    db.session.query(ProductImage).filter(
-                        ProductImage.variant_id == variant_id,
-                        ProductImage.is_primary == True
-                    ).update({ProductImage.is_primary: False})
-                else:
-                    db.session.query(ProductImage).filter(
-                        ProductImage.product_id == product_id,
-                        ProductImage.variant_id == None,
-                        ProductImage.is_primary == True
-                    ).update({ProductImage.is_primary: False})
             db.session.add(image)
             db.session.commit()
             return image

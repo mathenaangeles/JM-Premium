@@ -1,34 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { getProducts, deleteProduct } from '../../slices/productSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Star as StarIcon,Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { Select, FormControl, Switch, IconButton, InputAdornment, Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, TextField, FormControlLabel, MenuItem, Pagination, Alert, Chip, Stack, Grid, LinearProgress } from '@mui/material';
+
 import DeleteConfirmationModal from '../../components/DeleteConfirmation';
+import { getProducts, deleteProduct, clearProductMessages } from '../../slices/productSlice';
 
 const ProductList = () => {
   const dispatch = useDispatch();
-  const { products, loading, error, totalPages } = useSelector((state) => state.product);
-  const [search, setSearch] = useState('');
-  const [selectedCategories, _] = useState([]);
-  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [productToDelete, setProductToDelete] = useState(null);
-  const [perPage, setPerPage] = useState(10);
+
+  const { products, loading, error, success, count, totalPages} = useSelector((state) => state.product);
+
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [search, setSearch] = useState('');
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  
+  const loadProducts = useCallback(() => {
+    dispatch(getProducts({
+      page: page,
+      per_page: perPage,
+      search: search.trim(),
+      isFeatured: showActiveOnly ? true : undefined,
+      isActive: showFeaturedOnly ? true : undefined,
+    }));
+  }, [dispatch, page, perPage, search, showActiveOnly, showFeaturedOnly]);
 
   useEffect(() => {
     loadProducts();
-  }, [dispatch, page, perPage, showFeaturedOnly, search, selectedCategories]); // Include search and categories in dependency array
-
-  const loadProducts = () => {
-    dispatch(getProducts({
-      page: page,
-      perPage,
-      search: search.trim(),
-      categoryIds: selectedCategories,
-      isFeatured: showFeaturedOnly ? true : undefined,
-      isActive: true
-    }));
-  };
+  }, [loadProducts]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -36,224 +40,269 @@ const ProductList = () => {
     loadProducts();
   };
 
-  const handleDeleteClick = (product) => {
-    setProductToDelete(product);
-    setShowDeleteModal(true);
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
   };
 
-  const confirmDelete = () => {
+  const handlePageChange = (_, value) => {
+    setPage(value);
+  };
+
+  const handlePerPageChange = (e) => {
+    setPerPage(e.target.value);
+    setPage(1); 
+  };
+
+  const handleActiveFilterChange = (e) => {
+    setShowActiveOnly(e.target.checked);
+    setPage(1);
+  };
+
+  const handleFeaturedFilterChange = (e) => {
+    setShowFeaturedOnly(e.target.checked);
+    setPage(1);
+  };
+
+  const openDeleteConfirmation = (product) => {
+    setProductToDelete(product); 
+    setShowDeleteConfirmation(true); 
+  };
+  
+  const handleDelete = () => {
     if (productToDelete) {
-      dispatch(deleteProduct(productToDelete.id)).then(() => {
-        setShowDeleteModal(false);
-        setProductToDelete(null);
-        loadProducts(); // Reload products after deletion
-      });
+      dispatch(deleteProduct({ productId: productToDelete.id }));
+      setShowDeleteConfirmation(false);
+      setProductToDelete(null); 
     }
-  };
-
-  const handlePageChange = (newPage) => {
-    setPage(newPage);
-  };
-
-  const renderPagination = () => {
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={`px-3 py-1 rounded ${
-            page === i ? 'bg-blue-600 text-white' : 'bg-gray-200'
-          }`}
-        >
-          {i}
-        </button>
-      );
-    }
-    return (
-      <div className="flex justify-center mt-4 space-x-2">
-        <button
-          onClick={() => handlePageChange(Math.max(1, page - 1))}
-          disabled={page === 1}
-          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
-        >
-          Previous
-        </button>
-        {pages}
-        <button
-          onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
-          disabled={page === totalPages}
-          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
-    );
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Products</h1>
-        <Link
+    <Box sx={{ p: 4 }}>
+      {error && (
+        <Alert severity="error" onClose={() => dispatch(clearProductMessages())} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" onClose={() => dispatch(clearProductMessages())} sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" fontWeight={600}>
+          Manage Products
+        </Typography>
+        <Button 
+          component={Link}
           to="/manage/products/form/"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
+          variant="contained" 
+          color="primary"
+          startIcon={<AddIcon />}>
           Add New Product
-        </Link>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="featuredOnly"
-              checked={showFeaturedOnly}
-              onChange={() => setShowFeaturedOnly(!showFeaturedOnly)}
-              className="mr-2"
-            />
-            <label htmlFor="featuredOnly">Featured Only</label>
-          </div>
-          <div>
-            <select
-              value={perPage}
-              onChange={(e) => setPerPage(Number(e.target.value))}
-              className="p-2 border rounded"
-            >
-              <option value={10}>10 per page</option>
-              <option value={20}>20 per page</option>
-              <option value={50}>50 per page</option>
-            </select>
-          </div>
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Search
-          </button>
-        </form>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-10">
-          <p className="text-gray-500">Loading products...</p>
-        </div>
-      ) : error ? (
-        <div className="bg-red-100 text-red-700 p-4 rounded">
-          <p>{error}</p>
-        </div>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white rounded-lg shadow">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="py-3 px-4 text-left">Image</th>
-                  <th className="py-3 px-4 text-left">Name</th>
-                  <th className="py-3 px-4 text-left">Price</th>
-                  <th className="py-3 px-4 text-left">Total Stock</th>
-                  <th className="py-3 px-4 text-left">Status</th>
-                  <th className="py-3 px-4 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.length > 0 ? (
-                  products.map((product) => (
-                    <tr key={product.id} className="border-t">
-                      <td className="py-3 px-4">
-                        <div className="w-16 h-16 relative">
-                          {product.primary_image ? (
-                            <img
-                              src={product.primary_image.url}
-                              alt={product.name}
-                              className="w-full h-full object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center">
-                              <span className="text-gray-500 text-xs">No image</span>
-                            </div>
-                          )}
-                          {product.is_featured && (
-                            <span className="absolute top-0 right-0 bg-yellow-500 text-white text-xs px-1 rounded">
-                              ⭐
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">{product.name}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-medium">${product.display_price?.toFixed(2)}</span>
-                          {product.sale_price !== null && product.sale_price < product.base_price && (
-                            <span className="text-sm text-gray-500 line-through">
-                              ${product.base_price?.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">{product.total_stock}</td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-block px-2 py-1 rounded text-xs ${
-                            product.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {product.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex space-x-2">
-                          <Link
-                            to={`/manage/products/form/${product.id}`}
-                            className="bg-blue-100 text-blue-600 px-3 py-1 rounded hover:bg-blue-200"
-                          >
-                            Edit
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteClick(product)}
-                            className="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="py-8 text-center text-gray-500">
-                      No products found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && renderPagination()}
-        </>
-      )}
-
-      {showDeleteModal && (
-        <DeleteConfirmationModal
-          onConfirm={confirmDelete}
-          onCancel={() => setShowDeleteModal(false)}
-          message={`Are you sure you want to delete ${productToDelete?.name}?`}
+        </Button>
+      </Box>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2, my: 3 }}>
+        <TextField
+          value={search}
+          onChange={handleSearchChange}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          }}
+          placeholder="Search products by name"
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleSearch} edge="end">
+                    <SearchIcon color="primary" />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
+          }}
+          variant="outlined"
+          size="small"
         />
-      )}
-    </div>
+        <FormControlLabel
+          control={
+            <Switch 
+              checked={showActiveOnly} 
+              onChange={handleActiveFilterChange}
+              color="primary"
+              size="small"
+            />
+          }
+          label="Show Active Only"
+          sx={{ m: 0 }}
+        />
+        <FormControlLabel
+          control={
+            <Switch 
+              checked={showFeaturedOnly} 
+              onChange={handleFeaturedFilterChange}
+              color="primary"
+              size="small"
+            />
+          }
+          label="Show Featured Only"
+          sx={{ m: 0, flexGrow: 1 }}
+        />
+        <Button
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={() => {
+            setSearch('');
+            setShowActiveOnly(false);
+            setShowFeaturedOnly(false);
+            setPage(1);
+            setPerPage(10);
+            setTimeout(() => loadProducts(), 0);
+          }}
+        >
+          Reset Filters
+        </Button>
+      </Box>
+      <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 3, mb: 3 }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Image</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Price</TableCell>
+              <TableCell>Stock</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          {loading ? (
+             <TableRow>
+              <TableCell colSpan={6} sx={{ p: 0 }}>
+                <LinearProgress />
+              </TableCell>
+            </TableRow>
+          ) : (
+          <TableBody>
+            {products?.length > 0 ? (
+              products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <Box sx={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}>
+                      {product.images.length > 0 ? (
+                        <img src={product.images[0].url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <Box sx={{
+                          width: '100%',
+                          height: '100%',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          backgroundColor: '#F5F5F5',
+                          color: 'grey',
+                        }}>
+                          <ImageNotSupportedOutlinedIcon fontSize="large" />
+                        </Box>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                  <Box>
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <Typography
+                        component={Link}
+                        to={`/products/${product.slug}`}
+                        variant="body2"
+                        fontWeight={600}
+                        color="inherit"
+                        sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                      >
+                        {product.name}
+                      </Typography>
+                      {product.is_featured && (
+                        <StarIcon fontSize="small" color="primary" />
+                      )}
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {product.variants?.length > 0
+                        && `${product.variants.length} Variant${product.variants.length > 1 ? 's' : ''}`}
+                    </Typography>
+                  </Box>
+                  </TableCell>
+                  <TableCell>${product.display_price?.toFixed(2)}</TableCell>
+                  <TableCell>{product.total_stock}</TableCell>
+                  <TableCell><Chip label={product.is_active ? 'Active' : 'Inactive'} size="small" sx={{ backgroundColor: product.is_active ? 'rgba(151, 167, 99, 0.15)' : 'grey.100', p: 1 }} /></TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1} useFlexGap>
+                      <Link to={`/manage/products/form/${product.id}`}>
+                        <Button variant="outlined" color="primary" startIcon={<EditIcon size="small"/>} sx={{ whiteSpace: 'nowrap' }} size="small">Edit</Button>
+                      </Link>
+                      <Button variant="outlined" color="error" startIcon={<DeleteIcon size="small"/>}  onClick={() => openDeleteConfirmation(product)} sx={{ whiteSpace: 'nowrap' }} size="small">Delete</Button>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 6, bgcolor: 'grey.50' }}>
+                  <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                    <Typography variant="h6" color="text.primary" fontWeight={500}>
+                      No products found
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {search ? 'Try adjusting your search or filters' : 'If this is not the expected result, please try refreshing the page.'}
+                    </Typography>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+          )}
+        </Table>
+      </TableContainer>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ mr: 1 }}>Rows per page:</Typography>
+          <FormControl size="small" sx={{ minWidth: 70 }}>
+            <Select
+              value={perPage}
+              onChange={handlePerPageChange}
+              displayEmpty
+            >
+              <MenuItem value={5}>5</MenuItem>
+              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={25}>25</MenuItem>
+              <MenuItem value={50}>50</MenuItem>
+            </Select>
+          </FormControl>
+          <Typography variant="body2" sx={{ ml: 4 }}>
+            {count > 0 ? `Showing ${(page - 1) * perPage + 1}-${Math.min(page * perPage, count)} of ${count}` : 'No results found'}
+          </Typography>
+        </Box>
+        <Pagination 
+          count={totalPages || 1} 
+          page={page} 
+          onChange={handlePageChange} 
+          shape="rounded"
+          showFirstButton
+          showLastButton
+        />
+      </Box>
+      <DeleteConfirmationModal
+        open={showDeleteConfirmation}
+        message={`Are you sure you want to delete ${productToDelete?.name || 'this product'}?`}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirmation(false)}
+      />
+    </Box>
   );
 };
 

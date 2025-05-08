@@ -34,6 +34,13 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiRating: {
+      styleOverrides: {
+        iconFilled: {
+          color: '#FFA41C',
+        },
+      },
+    },
     MuiToggleButton: {
       styleOverrides: {
         root: {

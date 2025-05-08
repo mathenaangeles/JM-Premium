@@ -1,1046 +1,906 @@
-import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  getProduct,
-  createProduct,
-  updateProduct,
-  createProductVariant,
-  updateProductVariant,
-  deleteProductVariant,
-  addProductImage,
-  deleteProductImage
-} from '../../slices/productSlice';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Save as SaveIcon, Delete as DeleteIcon, Add as AddIcon, Star as StarIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
+import {InputLabel, FormControl, Select, Box, Grid, Paper, Typography, TextField, Button, FormControlLabel, Switch, Divider, IconButton, Card, CardMedia, CardContent, CardActions, MenuItem, CircularProgress, Alert, Chip, InputAdornment } from '@mui/material';
+
+import { getCategories } from '../../slices/categorySlice';
+import ImageUploader from '../../components/ImageUploader';
 import DeleteConfirmationModal from '../../components/DeleteConfirmation';
+import { getProduct, createProduct, updateProduct, createProductVariant, updateProductVariant, deleteProductVariant, addProductImage, deleteProductImage, clearProductMessages } from '../../slices/productSlice';
 
 const ProductForm = () => {
   const { productId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const { categories } = useSelector((state) => state.category);
   const { product, loading, error, success } = useSelector((state) => state.product);
 
-  const [formData, setFormData] = useState({
+  const [images, setImages] = useState([]);
+  const [deleteDialogState, setDeleteDialogState] = useState({
+    open: false,
+    type: null,
+    item: null,
+    message: ''
+  });
+  const [productData, setProductData] = useState({
     name: '',
-    slug: '',
     description: '',
-    base_price: null,
-    sale_price: null,
-    stock: null,
     is_featured: false,
     is_active: true,
-    category_id: '', 
     meta_title: '',
     meta_description: '',
     meta_keywords: '',
-    weight: null,
-    width: null,
-    height: null,
-    depth: null,
+    weight: 0,
+    width: 0,
+    height: 0,
+    length: 0,
     option1_name: '',
     option2_name: '',
     option3_name: '',
-    sku: '',
+    base_price: 0,
+    sale_price: 0,
+    stock: 0,
+    category_id: '',
+    variants: []
   });
-
-  const [variants, setVariants] = useState([]);
-  const [newVariant, setNewVariant] = useState({
+  const [variantData, setVariantData] = useState({
     name: '',
-    base_price: '',
-    sale_price: '',
-    stock: '',
+    base_price: 0,
+    sale_price: 0,
+    stock: 0,
     option1_value: '',
     option2_value: '',
     option3_value: '',
-    sku: '',
+    temp_id: `temp-${Date.now()}`,
   });
-
-  const [images, setImages] = useState([]);
-  const [imageToUpload, setImageToUpload] = useState(null);
-  const [isPrimaryImage, setIsPrimaryImage] = useState(false);
-
-  const [variantToDelete, setVariantToDelete] = useState(null);
-  const [imageToDelete, setImageToDelete] = useState(null);
-  const [showVariantDeleteModal, setShowVariantDeleteModal] = useState(false);
-  const [showImageDeleteModal, setShowImageDeleteModal] = useState(false);
-
-  const isEditing = Boolean(productId);
-
-  useEffect(() => {
-    if (isEditing) {
-      dispatch(getProduct(productId));
-    } else {
-      resetForm();
-    }
-  }, [dispatch, productId, isEditing]);
-
-  useEffect(() => {
-    if (product && isEditing) {
-      setFormData({
-        name: product.name || '',
-          slug: product.slug || '',
-          description: product.description || '',
-          base_price: product.base_price !== null ? parseFloat(product.base_price) : null,
-          sale_price: product.sale_price !== null ? parseFloat(product.sale_price) : null,
-          stock: product.stock !== null ? parseInt(product.stock, 10) : null,
-          is_featured: product.is_featured || false,
-          is_active: product.is_active || true,
-          category_id: product.category_id || '',
-          meta_title: product.meta_title || '',
-          meta_description: product.meta_description || '',
-          meta_keywords: product.meta_keywords || '',
-          weight: product.weight !== null ? parseFloat(product.weight) : null,
-          width: product.width !== null ? parseFloat(product.width) : null,
-          height: product.height !== null ? parseFloat(product.height) : null,
-          depth: product.depth !== null ? parseFloat(product.depth) : null,
-          option1_name: product.option1_name || '',
-          option2_name: product.option2_name || '',
-          option3_name: product.option3_name || '',
-          sku: product.sku || '',
-      });
-      setVariants(product.variants || []);
-      setImages(product.images || []);
-    }
-  }, [product, isEditing]);
-
-  useEffect(() => {
-    if (success) {
-      if (!isEditing) {
-        navigate('/manage/products');
-      }
-    }
-  }, [success, navigate, isEditing]);
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      slug: '',
-      description: '',
-      base_price: '',
-      sale_price: '',
-      stock: '',
-      is_featured: false,
-      is_active: true,
-      category_id: '',
-      meta_title: '',
-      meta_description: '',
-      meta_keywords: '',
-      weight: '',
-      width: '',
-      height: '',
-      depth: '',
-      option1_name: '',
-      option2_name: '',
-      option3_name: '',
-      sku: '',
+  const [variants, setVariants] = useState([]);
+  const [currentVariant, setCurrentVariant] = useState(null);
+  const editVariant = (variant) => {
+    setCurrentVariant(variant);
+    setVariantData({
+      ...variant
     });
-    setVariants([]);
-    setImages([]);
-    setNewVariant({
-      name: '',
-      base_price: '',
-      sale_price: '',
-      stock: '',
-      option1_value: '',
-      option2_value: '',
-      option3_value: '',
-      sku: '',
-    });
-    setImageToUpload(null);
-    setIsPrimaryImage(false);
   };
+  
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    let processedValue = value;
+  useEffect(() => {
+    dispatch(getCategories({ tree: false }));
+  }, [dispatch]);
   
-    if (type === 'number') {
-      processedValue = value === '' ? null : parseFloat(value);
-      if (isNaN(processedValue)) {
-        processedValue = null;
-      }
-    } else if (type === 'checkbox') {
-      processedValue = checked;
-    } else if (type === 'text' && name === 'sku') {
-      processedValue = value === '' ? null : value;
-    } else {
-      processedValue = value;
+  useEffect(() => {
+    if (productId) {
+      dispatch(getProduct(productId));
     }
-  
-    setFormData(prevFormData => ({
-      ...prevFormData,
-      [name]: processedValue,
+  }, [dispatch, productId]);
+
+  useEffect(() => {
+    if (product && productId) {
+      setProductData({
+        name: product.name || '',
+        description: product.description || '',
+        is_featured: product.is_featured || false,
+        is_active: product.is_active || true,
+        meta_title: product.meta_title || '',
+        meta_description: product.meta_description || '',
+        meta_keywords: product.meta_keywords || '',
+        weight: product.weight || 0,
+        width: product.width || 0,
+        height: product.height || 0,
+        length: product.length || 0,
+        option1_name: product.option1_name || '',
+        option2_name: product.option2_name || '',
+        option3_name: product.option3_name || '',
+        base_price: product.base_price || 0,
+        sale_price: product.sale_price || 0,
+        stock: product.stock || 0,
+        category_id: product.category_id || '',
+      });
+      if (product.variants && product.variants.length > 0) {
+        setVariants(product.variants);
+      }
+      if (product.images) {
+        setImages(product.images);
+      }
+    }
+  }, [product, productId]);
+
+  const handleProductChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setProductData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : 
+        (['base_price', 'sale_price', 'weight', 'width', 'height', 'length', 'stock'].includes(name) 
+        ? parseFloat(value) || 0 
+        : value)
     }));
   };
 
-  const handleNewVariantChange = (e) => {
-    const { name, value, _ } = e.target;
-    let processedValue = value;
-
-    // Process numeric fields
-    if (name === 'base_price' || name === 'sale_price') {
-      processedValue = value === '' ? '' : value;
-    } else if (name === 'stock') {
-      processedValue = value === '' ? '' : value;
-    }
-
-    setNewVariant({
-      ...newVariant,
-      [name]: processedValue
+  const handleVariantChange = (e) => {
+    const { name, value } = e.target;
+    setVariantData({
+      ...variantData,
+      [name]: ['base_price', 'sale_price', 'stock'].includes(name) 
+              ? parseFloat(value) || 0
+              : value
     });
   };
 
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageToUpload(e.target.files[0]);
-    }
-  };
-
-  const handleIsPrimaryImageChange = (e) => {
-    setIsPrimaryImage(e.target.checked);
-  };
-
-  const handleAddImage = (e) => {
-    e.preventDefault();
-    if (imageToUpload && product) {
-      const formData = new FormData();
-      formData.append('image', imageToUpload);
-      formData.append('is_primary', isPrimaryImage); // Send is_primary flag
-
-      dispatch(addProductImage({
-        productId: product.id,
-        imageData: formData
-      })).then(() => {
-        setImageToUpload(null);
-        setIsPrimaryImage(false);
-      });
-    }
+  const resetVariantForm = () => {
+    setVariantData({
+      name: '',
+      base_price: 0,
+      sale_price: 0,
+      stock: 0,
+      option1_value: '',
+      option2_value: '',
+      option3_value: '',
+      temp_id: `temp-${Date.now()}`,
+    });
   };
 
   const handleAddVariant = (e) => {
     e.preventDefault();
-    const processedVariant = {
-      name: newVariant.name,
-      base_price: newVariant.base_price !== '' ? parseFloat(newVariant.base_price) : null,
-      sale_price: newVariant.sale_price !== '' ? parseFloat(newVariant.sale_price) : null,
-      stock: newVariant.stock !== '' ? parseInt(newVariant.stock, 10) : null,
-      option1_value: newVariant.option1_value || null,
-      option2_value: newVariant.option2_value || null,
-      option3_value: newVariant.option3_value || null,
-      sku: newVariant.sku || null,
-    };
-    if (isEditing && product) {
+    if (productId && product) {
       dispatch(createProductVariant({
         productId: product.id,
-        variantData: processedVariant
-      })).then(() => {
-        setNewVariant({
-          name: '',
-          base_price: '',
-          sale_price: '',
-          stock: '',
-          option1_value: '',
-          option2_value: '',
-          option3_value: '',
-          sku: '',
+        variantData: variantData
+      }))
+        .unwrap()
+        .then(() => {
+          resetVariantForm();
         });
-      });
     } else {
-      setVariants([...variants, { ...processedVariant, id: `temp-${Date.now()}` }]);
-      setNewVariant({
-        name: '',
-        base_price: '',
-        sale_price: '',
-        stock: '',
-        option1_value: '',
-        option2_value: '',
-        option3_value: '',
-        sku: '',
-      });
+      setVariants(prev => [...prev, variantData]);
+      resetVariantForm();
     }
   };
 
-  const handleUpdateVariant = (variant) => {
-    const processedVariant = {
-      ...variant,
-      base_price: variant.base_price !== '' ? parseFloat(variant.base_price) : null,
-      sale_price: variant.sale_price !== '' ? parseFloat(variant.sale_price) : null,
-      stock: variant.stock !== '' ? parseInt(variant.stock, 10) : null,
-      option1_value: variant.option1_value || null,
-      option2_value: variant.option2_value || null,
-      option3_value: variant.option3_value || null,
-      sku: variant.sku || null,
-    };
-
-    if (isEditing && product) {
+  const handleUpdateVariant = (e) => {
+    e.preventDefault();
+    if (!currentVariant) return;
+    if (productId && product && currentVariant.id) {
       dispatch(updateProductVariant({
         productId: product.id,
-        variantId: processedVariant.id,
-        variantData: processedVariant
+        variantId: currentVariant.id,
+        variantData: variantData
       }));
     } else {
-      setVariants(variants.map(v => (v.id === processedVariant.id ? processedVariant : v)));
+      setVariants(prev =>
+        prev.map(v => (v.temp_id === currentVariant.temp_id ? variantData : v))
+      );
     }
+    setCurrentVariant(null);
+    resetVariantForm();
   };
 
-  const handleDeleteVariantClick = (variant) => {
-    setVariantToDelete(variant);
-    setShowVariantDeleteModal(true);
+  const cancelEdit = () => {
+    setCurrentVariant(null);
+    resetVariantForm();
   };
 
-  const confirmDeleteVariant = () => {
-    if (variantToDelete) {
-      if (isEditing && product) {
+  const handleDeleteClick = (item, type) => {
+    const message = type === 'variant' 
+      ? 'Are you sure you want to delete this variant?' 
+      : 'Are you sure you want to delete this image?';
+    setDeleteDialogState({
+      open: true,
+      type,
+      item,
+      message
+    });
+  };
+
+  const handleConfirmDelete = useCallback(() => {
+    const { type, item } = deleteDialogState;
+    if (type === 'variant') {
+      if (productId && product) {
         dispatch(deleteProductVariant({
           productId: product.id,
-          variantId: variantToDelete.id
+          variantId: item.id
         }));
       } else {
-        setVariants(variants.filter(v => v.id !== variantToDelete.id));
+        setVariants(prev => prev.filter(variant => variant.temp_id !== item.temp_id));
       }
-      setShowVariantDeleteModal(false);
-      setVariantToDelete(null);
+    } else if (type === 'image') {
+      if (item.id) {
+        dispatch(deleteProductImage(item.id));
+      } else {
+        setImages(images.filter(img => img !== item));
+      }
     }
-  };
+    setDeleteDialogState({ open: false, type: null, item: null, message: '' });
+  }, [deleteDialogState, dispatch, product, productId, images]);
 
-  const handleDeleteImageClick = (image) => {
-    setImageToDelete(image);
-    setShowImageDeleteModal(true);
-  };
-
-  const confirmDeleteImage = () => {
-    if (imageToDelete) {
-      dispatch(deleteProductImage(imageToDelete.id));
-      setShowImageDeleteModal(false);
-      setImageToDelete(null);
-    }
+  const handleCancelDelete = () => {
+    setDeleteDialogState({ open: false, type: null, item: null, message: '' });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const productData = { ...formData };
-    for (const key in productData) {
-      if (productData[key] === null || productData[key] === '') {
-        delete productData[key];
+    const formattedData = {};
+    Object.entries(productData).forEach(([key, value]) => {
+      if (value !== '' && value !== null) {
+        formattedData[key] = value;
       }
+    });
+    if (!productId && variants.length > 0) {
+      // eslint-disable-next-line no-unused-vars
+      formattedData.variants = variants.map(({ temp_id, ...variant }) => variant);
     }
-    
-    if (isEditing) {
-      dispatch(updateProduct({ productId, productData }));
+    if (productId) {
+      dispatch(updateProduct({ productId, productData: formattedData }));
     } else {
-      productData.variants = variants.map(v => ({
-        name: v.name,
-        base_price: v.base_price !== null ? parseFloat(v.base_price) : null,
-        sale_price: v.sale_price !== null && v.sale_price !== '' ? parseFloat(v.sale_price) : null,
-        stock: v.stock !== null ? parseInt(v.stock, 10) : null,
-        option1_value: v.option1_value || null,
-        option2_value: v.option2_value || null,
-        option3_value: v.option3_value || null,
-        sku: v.sku || null,
-      }));
-      dispatch(createProduct(productData));
+      dispatch(createProduct(formattedData));
     }
   };
 
-  const generateSlug = () => {
-    if (formData.name) {
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/[^\w\s]/gi, '')
-        .replace(/\s+/g, '-');
-
-      setFormData({
-        ...formData,
-        slug
-      });
-    }
+  const handleImageUpload = async (file) => {
+    if (!file || !productId) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    dispatch(addProductImage({
+      productId: product.id,
+      imageData: formData
+    }));
   };
+  
+  const handleImageDelete = (image) => {
+    if (!product?.images || !productId || !image) return;
+    dispatch(deleteProductImage({ productId: product.id, imageId: image.id }));
+  };
+
+  const variantSectionEnabled = Boolean(
+    productData.option1_name || productData.option2_name || productData.option3_name
+  );
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{isEditing ? 'Edit Product' : 'Add Product'}</h1>
-      </div>
-
+    <Box sx={{ p: 4, backgroundColor: "common.white" }}>
+      <Box sx={{ position: 'relative', display: 'inline-block', mb: 4 }}>
+        <Typography variant="h4" component="h2" sx={{ mb: 0.5 }}>
+        {productId ? 'Edit Product' : 'Create Product'}
+        </Typography>
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: -6,
+            left: 0,
+            height: '3px',
+            width: '60px',
+            bgcolor: 'primary.main',
+            borderRadius: 2,
+          }}
+        />
+      </Box>
       {error && (
-        <div className="bg-red-100 text-red-700 p-4 rounded mb-6">
-          <p>{error}</p>
-        </div>
+        <Alert severity="error" onClose={() => dispatch(clearProductMessages())} sx={{ mb: 3 }}>
+          {error}
+        </Alert>
       )}
-
       {success && (
-        <div className="bg-green-100 text-green-700 p-4 rounded mb-6">
-          <p>{success}</p>
-        </div>
+        <Alert severity="success" onClose={() => dispatch(clearProductMessages())} sx={{ mb: 3 }}>
+          {success}
+        </Alert>
       )}
-
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
-
-            <div className="mb-4">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Product Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-                Slug *
-              </label>
-              <div className="flex">
-                <input
-                  type="text"
-                  id="slug"
-                  name="slug"
-                  value={formData.slug}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-2 border rounded-l"
-                />
-                <button
-                  type="button"
-                  onClick={generateSlug}
-                  className="bg-gray-200 text-gray-700 px-4 rounded-r hover:bg-gray-300"
-                >
-                  Generate
-                </button>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows="6"
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label htmlFor="base_price" className="block text-sm font-medium text-gray-700 mb-1">
-                  Base Price *
-                </label>
-                <input
-                  type="number"
-                  id="base_price"
-                  name="base_price"
-                  value={formData.base_price}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  required
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="sale_price" className="block text-sm font-medium text-gray-700 mb-1">
-                  Sale Price
-                </label>
-                <input
-                  type="number"
-                  id="sale_price"
-                  name="sale_price"
-                  value={formData.sale_price}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
-                Stock *
-              </label>
-              <input
-                type="number"
-                id="stock"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                min="0"
-                required
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">
-                Category ID *
-              </label>
-              <input
-                type="number"
+      <Paper component="form" onSubmit={handleSubmit} elevation={3} sx={{ mb: 4, p: 4 }}>
+        <Typography variant="h5" sx={{ mb: 3 }}>
+          General Information
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              name="name"
+              label="Product Name"
+              value={productData.name}
+              onChange={handleProductChange}
+              required
+              fullWidth
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <FormControl fullWidth>
+              <InputLabel id="product-category-label" shrink>Category</InputLabel>
+              <Select
+                labelId="product-category-label"
                 id="category_id"
                 name="category_id"
-                value={formData.category_id}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <div className="flex space-x-4 mb-4">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="is_featured"
-                  name="is_featured"
-                  checked={formData.is_featured}
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                <label htmlFor="is_featured" className="text-sm font-medium text-gray-700">
-                  Featured Product
-                </label>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-                  Active
-                </label>
-              </div>
-            </div>
-
-            <h2 className="text-lg font-semibold mb-4">Meta Information</h2>
-            <div className="mb-4">
-              <label htmlFor="meta_title" className="block text-sm font-medium text-gray-700 mb-1">
-                Meta Title
-              </label>
-              <input
-                type="text"
-                id="meta_title"
-                name="meta_title"
-                value={formData.meta_title}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="meta_description" className="block text-sm font-medium text-gray-700 mb-1">
-                Meta Description
-              </label>
-              <textarea
-                id="meta_description"
-                name="meta_description"
-                value={formData.meta_description}
-                onChange={handleChange}
-                rows="3"
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="meta_keywords" className="block text-sm font-medium text-gray-700 mb-1">
-                Meta Keywords
-              </label>
-              <input
-                type="text"
-                id="meta_keywords"
-                name="meta_keywords"
-                value={formData.meta_keywords}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <h2 className="text-lg font-semibold mb-4">Physical Attributes</h2>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
-                  Weight
-                </label>
-                <input
-                  type="number"
-                  id="weight"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div>
-                <label htmlFor="width" className="block text-sm font-medium text-gray-700 mb-1">
-                  Width
-                </label>
-                <input
-                  type="number"
-                  id="width"
-                  name="width"
-                  value={formData.width}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div>
-                <label htmlFor="height" className="block text-sm font-medium text-gray-700 mb-1">
-                  Height
-                </label>
-                <input
-                  type="number"
-                  id="height"
-                  name="height"
-                  value={formData.height}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div>
-                <label htmlFor="depth" className="block text-sm font-medium text-gray-700 mb-1">
-                  Depth
-                </label>
-                <input
-                  type="number"
-                  id="depth"
-                  name="depth"
-                  value={formData.depth}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-            </div>
-
-            <h2 className="text-lg font-semibold mb-4">Product Options</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label htmlFor="option1_name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Option 1 Name
-                </label>
-                <input
-                  type="text"
-                  id="option1_name"
-                  name="option1_name"
-                  value={formData.option1_name}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  placeholder="e.g., Color"
-                />
-              </div>
-              <div>
-                <label htmlFor="option2_name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Option 2 Name
-                </label>
-                <input
-                  type="text"
-                  id="option2_name"
-                  name="option2_name"
-                  value={formData.option2_name}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  placeholder="e.g., Size"
-                />
-              </div>
-              <div>
-                <label htmlFor="option3_name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Option 3 Name
-                </label>
-                <input
-                  type="text"
-                  id="option3_name"
-                  name="option3_name"
-                  value={formData.option3_name}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  placeholder="e.g., Material"
-                />
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="sku" className="block text-sm font-medium text-gray-700 mb-1">
-                SKU
-              </label>
-              <input
-                type="text"
-                id="sku"
-                name="sku"
-                value={formData.sku}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-          </div>
-
-          {/* Right Column */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Images</h2>
-            <div className="mb-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
-                {images.map((image) => (
-                  <div key={image.id} className="relative group">
-                    <img
-                      src={image.url}
-                      alt="Product"
-                      className="w-full h-24 object-cover rounded border"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteImageClick(image)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ×
-                    </button>
-                    {image.is_primary && (
-                      <div className="absolute bottom-0 left-0 bg-green-500 text-white text-xs px-2 py-1 rounded-tr">
-                        Primary
-                      </div>
-                    )}
-                  </div>
+                value={productData.category_id}
+                onChange={handleProductChange}
+                displayEmpty
+                notched
+                label="Category"
+              >
+                <MenuItem value="" disabled>
+                  Select a category
+                </MenuItem>
+                {categories?.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
                 ))}
-              </div>
-
-              {isEditing && product && (
-                <div className="border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Add Image
-                  </label>
-                  <div className="flex items-center space-x-4 mb-2">
-                    <input
-                      type="file"
-                      onChange={handleImageChange}
-                      className="flex-1 p-2 border rounded"
-                      accept="image/*"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddImage}
-                      disabled={!imageToUpload}
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-                    >
-                      Upload
-                    </button>
-                  </div>
-                  <div>
-                    <input
-                      type="checkbox"
-                      id="is_primary_image"
-                      checked={isPrimaryImage}
-                      onChange={handleIsPrimaryImageChange}
-                      className="mr-2"
-                    />
-                    <label htmlFor="is_primary_image" className="text-sm font-medium text-gray-700">
-                      Set as Primary Image
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <h2 className="text-lg font-semibold mb-4">Variants</h2>
-            <div className="border rounded-lg p-4 mb-6">
-              <div className="mb-4">
-                {variants.length > 0 ? (
-                  <div className="space-y-2">
-                    {variants.map((variant) => (
-                      <div key={variant.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <div className="flex flex-col">
-                          <input
-                            type="text"
-                            value={variant.name}
-                            onChange={(e) =>
-                              setVariants(variants.map(v => v.id === variant.id ? { ...v, name: e.target.value } : v))
-                            }
-                            className="text-sm font-medium mb-1 p-1 border rounded"
-                            placeholder="Variant Name"
-                          />
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              type="number"
-                              value={variant.base_price}
-                              onChange={(e) =>
-                                setVariants(variants.map(v => v.id === variant.id ? { ...v, base_price: parseFloat(e.target.value) } : v))
-                              }
-                              step="0.01"
-                              min="0"
-                              className="text-sm p-1 border rounded"
-                              placeholder="Base Price"
-                            />
-                            <input
-                              type="number"
-                              value={variant.sale_price || ''}
-                              onChange={(e) =>
-                                setVariants(variants.map(v => v.id === variant.id ? { ...v, sale_price: e.target.value ? parseFloat(e.target.value) : null } : v))
-                              }
-                              step="0.01"
-                              min="0"
-                              className="text-sm p-1 border rounded"
-                              placeholder="Sale Price"
-                            />
-                            <input
-                              type="number"
-                              value={variant.stock}
-                              onChange={(e) =>
-                                setVariants(variants.map(v => v.id === variant.id ? { ...v, stock: parseInt(e.target.value, 10) } : v))
-                              }
-                              min="0"
-                              className="text-sm p-1 border rounded"
-                              placeholder="Stock"
-                            />
-                            <input
-                              type="text"
-                              value={variant.sku || ''}
-                              onChange={(e) =>
-                                setVariants(variants.map(v => v.id === variant.id ? { ...v, sku: e.target.value } : v))
-                              }
-                              className="text-sm p-1 border rounded"
-                              placeholder="SKU"
-                            />
-                          </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            <input
-                              type="text"
-                              value={variant.option1_value || ''}
-                              onChange={(e) =>
-                                setVariants(variants.map(v => v.id === variant.id ? { ...v, option1_value: e.target.value } : v))
-                              }
-                              className="text-sm p-1 border rounded"
-                              placeholder={`Option 1: ${formData.option1_name || 'Value'}`}
-                            />
-                            <input
-                              type="text"
-                              value={variant.option2_value || ''}
-                              onChange={(e) =>
-                                setVariants(variants.map(v => v.id === variant.id ? { ...v, option2_value: e.target.value } : v))
-                              }
-                              className="text-sm p-1 border rounded"
-                              placeholder={`Option 2: ${formData.option2_name || 'Value'}`}
-                            />
-                            <input
-                              type="text"
-                              value={variant.option3_value || ''}
-                              onChange={(e) =>
-                                setVariants(variants.map(v => v.id === variant.id ? { ...v, option3_value: e.target.value } : v))
-                              }
-                              className="text-sm p-1 border rounded"
-                              placeholder={`Option 3: ${formData.option3_name || 'Value'}`}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateVariant(variant)}
-                            className="text-blue-500 hover:text-blue-700"
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteVariantClick(variant)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">No variants added yet.</p>
-                )}
-
-              </div>
-
-              <div className="border-t pt-4">
-                <h3 className="text-sm font-medium mb-2">Add Variant</h3>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <label htmlFor="variant_name" className="block text-xs text-gray-700 mb-1">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      id="variant_name"
-                      name="name"
-                      value={newVariant.name}
-                      onChange={handleNewVariantChange}
-                      className="w-full p-2 border rounded"
-                      placeholder="e.g. Small, Red, etc."
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="variant_base_price" className="block text-xs text-gray-700 mb-1">
-                      Base Price
-                    </label>
-                    <input
-                      type="number"
-                      id="variant_base_price"
-                      name="base_price"
-                      value={newVariant.base_price}
-                      onChange={handleNewVariantChange}
-                      step="0.01"
-                      min="0"
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <label htmlFor="variant_sale_price" className="block text-xs text-gray-700 mb-1">
-                      Sale Price
-                    </label>
-                    <input
-                      type="number"
-                      id="variant_sale_price"
-                      name="sale_price"
-                      value={newVariant.sale_price || ''}
-                      onChange={handleNewVariantChange}
-                      step="0.01"
-                      min="0"
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="variant_stock" className="block text-xs text-gray-700 mb-1">
-                      Stock
-                    </label>
-                    <input
-                      type="number"
-                      id="variant_stock"
-                      name="stock"
-                      value={newVariant.stock}
-                      onChange={handleNewVariantChange}
-                      min="0"
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                  <div>
-                    <label htmlFor="variant_option1_value" className="block text-xs text-gray-700 mb-1">
-                      {formData.option1_name || 'Option 1 Value'}
-                    </label>
-                    <input
-                      type="text"
-                      id="variant_option1_value"
-                      name="option1_value"
-                      value={newVariant.option1_value || ''}
-                      onChange={handleNewVariantChange}
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="variant_option2_value" className="block text-xs text-gray-700 mb-1">
-                      {formData.option2_name || 'Option 2 Value'}
-                    </label>
-                    <input
-                      type="text"
-                      id="variant_option2_value"
-                      name="option2_value"
-                      value={newVariant.option2_value || ''}
-                      onChange={handleNewVariantChange}
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="variant_option3_value" className="block text-xs text-gray-700 mb-1">
-                      {formData.option3_name || 'Option 3 Value'}
-                    </label>
-                    <input
-                      type="text"
-                      id="variant_option3_value"
-                      name="option3_value"
-                      value={newVariant.option3_value || ''}
-                      onChange={handleNewVariantChange}
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="variant_sku" className="block text-xs text-gray-700 mb-1">
-                    SKU
-                  </label>
-                  <input
-                    type="text"
-                    id="variant_sku"
-                    name="sku"
-                    value={newVariant.sku || ''}
-                    onChange={handleNewVariantChange}
-                    className="w-full p-2 border rounded"
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              name="description"
+              label="Description"
+              value={productData.description}
+              onChange={handleProductChange}
+              fullWidth
+              multiline
+              rows={4}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              name="base_price"
+              label="Base Price"
+              value={productData.base_price}
+              onChange={handleProductChange}
+              fullWidth
+              type="number"
+              slotProps={{
+                htmlInput: {
+                  step: "0.01", 
+                  min: "0"
+                },
+                input: {
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>
+                }
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              name="sale_price"
+              label="Sale Price"
+              value={productData.sale_price}
+              onChange={handleProductChange}
+              fullWidth
+              type="number"
+              slotProps={{
+                htmlInput: {
+                  step: "0.01", 
+                  min: "0"
+                },
+                input: {
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>
+                }
+              }}
+              helperText="Only add a sale price if this item is on sale."
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              name="stock"
+              label="Stock"
+              value={productData.stock}
+              onChange={handleProductChange}
+              fullWidth
+              type="number"
+              slotProps={{
+                htmlInput: {
+                  min: "0"
+                },
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              name="meta_title"
+              label="Meta Title"
+              value={productData.meta_title}
+              onChange={handleProductChange}
+              fullWidth
+              helperText={`${productData.meta_title.length}/60 characters recommended`}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              name="meta_description"
+              label="Meta Description"
+              value={productData.meta_description}
+              onChange={handleProductChange}
+              fullWidth
+              multiline
+              rows={3}
+              helperText={`${productData.meta_description.length}/160 characters recommended`}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              name="meta_keywords"
+              label="Meta Keywords"
+              value={productData.meta_keywords}
+              onChange={handleProductChange}
+              fullWidth
+              helperText="Comma separated keywords"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              name="weight"
+              label="Weight (kg)"
+              value={productData.weight}
+              onChange={handleProductChange}
+              fullWidth
+              type="number"
+              slotProps={{
+                htmlInput: {
+                  step: "0.01", 
+                  min: "0"
+                },
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+          <TextField
+            name="width"
+            label="Width (cm)"
+            value={productData.width}
+            onChange={handleProductChange}
+            fullWidth
+            type="number"
+            slotProps={{
+              htmlInput: {
+                step: "0.01", 
+                min: "0"
+              },
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <TextField
+            name="height"
+            label="Height (cm)"
+            value={productData.height}
+            onChange={handleProductChange}
+            fullWidth
+            type="number"
+            slotProps={{
+              htmlInput: {
+                step: "0.01", 
+                min: "0"
+              },
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <TextField
+            name="length"
+            label="Length (cm)"
+            value={productData.length}
+            onChange={handleProductChange}
+            fullWidth
+            type="number"
+            slotProps={{
+              htmlInput: {
+                step: "0.01", 
+                min: "0"
+              },
+            }}
+          />
+        </Grid>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    name="is_active"
+                    checked={productData.is_active}
+                    onChange={handleProductChange}
+                    color="primary"
                   />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddVariant}
-                  disabled={!newVariant.name || !newVariant.base_price || !newVariant.stock}
-                  className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 disabled:opacity-50"
-                >
-                  Add Variant
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t pt-6 flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={() => navigate('/admin/products')}
-            className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Saving...' : isEditing ? 'Update Product' : 'Create Product'}
-          </button>
-        </div>
-      </form>
-
-      {showVariantDeleteModal && (
-        <DeleteConfirmationModal
-          onConfirm={confirmDeleteVariant}
-          onCancel={() => setShowVariantDeleteModal(false)}
-          message={`Are you sure you want to delete the variant "${variantToDelete?.name}"?`}
-        />
-      )}
-
-      {showImageDeleteModal && (
-        <DeleteConfirmationModal
-          onConfirm={confirmDeleteImage}
-          onCancel={() => setShowImageDeleteModal(false)}
-          message="Are you sure you want to delete this image?"
-        />
-      )}
-    </div>
+                }
+                label="Active Product"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    name="is_featured"
+                    checked={productData.is_featured}
+                    onChange={handleProductChange}
+                    color="secondary"
+                  />
+                }
+                label="Featured Product"
+              />
+            </Box>
+          </Grid>
+        </Grid>
+        <Typography variant="h6" sx={{ my: 2 }}>
+          Product Options
+        </Typography>
+        <Typography variant="body2" color="textSecondary" paragraph>
+          Define options like size, color, material, flavor, and the like to create product variants.
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              name="option1_name"
+              label="Option 1 Name"
+              value={productData.option1_name}
+              onChange={handleProductChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              name="option2_name"
+              label="Option 2 Name"
+              value={productData.option2_name}
+              onChange={handleProductChange}
+              fullWidth
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              name="option3_name"
+              label="Option 3 Name"
+              value={productData.option3_name}
+              onChange={handleProductChange}
+              fullWidth
+            />
+          </Grid>
+        </Grid>
+        <Grid size={{ xs: 12 }} sx={{ my: 2 }}>
+          {productId ? (
+            <>
+              <ImageUploader
+                multiple={true}
+                maxImages={6}
+                existingImages={images}
+                validationRules={{
+                  maxSize: 5 * 1024 * 1024,
+                  allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+                }}
+                loading={loading}
+                disabled={loading}
+                onFileUpload={handleImageUpload} 
+                onFileDelete={(image) => {
+                  handleImageDelete(image)
+                }}
+              />
+            </>
+          ) : (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              You need to save the product first before uploading images
+            </Alert>
+          )}
+        </Grid>
+        <Typography variant="h5" sx={{ my: 3 }}>
+          Variants Information
+        </Typography>
+        <Grid item xs={12}>
+          <Divider sx={{ my: 3 }} />
+          <Typography variant="h6" gutterBottom>
+            Product Variants
+          </Typography>
+          {!variantSectionEnabled && (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Define at least one option name above to create variants
+            </Alert>
+          )}
+          {variants.length > 0 ? (
+            <Grid container spacing={2}>
+              {variants.map((variant) => (
+                <Grid size={{ xs: 12 }} key={variant.id}>
+                  <Paper elevation={2} sx={{ p: 2 }}>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, sm : 6 }}>
+                        <TextField
+                          label="Variant Name"
+                          value={variant.name}
+                          onChange={handleVariantChange}
+                          fullWidth
+                          size="small"
+                          required
+                        />
+                      </Grid>
+                      {productData.option1_name && (
+                        <Grid size={{ xs: 12, sm : 4 }}>
+                          <TextField
+                            label={productData.option1_name}
+                            value={variant.option1_value}
+                            onChange={handleVariantChange}
+                            fullWidth
+                            size="small"
+                          />
+                        </Grid>
+                      )}
+                      {productData.option2_name && (
+                        <Grid size={{ xs: 12, sm : 4 }}>
+                          <TextField
+                            label={productData.option2_name}
+                            value={variant.option2_value}
+                            onChange={handleVariantChange}
+                            fullWidth
+                            size="small"
+                          />
+                        </Grid>
+                      )}
+                      {productData.option3_name && (
+                        <Grid size={{ xs: 12, sm : 4 }}>
+                          <TextField
+                            label={productData.option3_name}
+                            value={variant.option3_value}
+                            onChange={handleVariantChange}
+                            fullWidth
+                            size="small"
+                          />
+                        </Grid>
+                      )}
+                      <Grid size={{ xs: 12, sm : 4 }}>
+                        <TextField
+                          label="Base Price"
+                          value={variant.base_price}
+                          onChange={handleVariantChange}
+                          fullWidth
+                          size="small"
+                          type="number"
+                          slotProps={{
+                            htmlInput: {
+                              step: "0.01", 
+                              min: "0"
+                            },
+                            input: {
+                              startAdornment: <InputAdornment position="start">$</InputAdornment>
+                            }
+                          }}
+                          required
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm : 4 }}>
+                        <TextField
+                          label="Sale Price"
+                          value={variant.sale_price}
+                          onChange={handleVariantChange}
+                          fullWidth
+                          size="small"
+                          type="number"
+                          slotProps={{
+                            htmlInput: {
+                              step: "0.01", 
+                              min: "0"
+                            },
+                            input: {
+                              startAdornment: <InputAdornment position="start">$</InputAdornment>
+                            }
+                          }}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm : 4 }}>
+                        <TextField
+                          label="Stock"
+                          value={variant.stock}
+                          onChange={handleVariantChange}
+                          fullWidth
+                          size="small"
+                          type="number"
+                          slotProps={{
+                            htmlInput: {
+                              min: "0"
+                            },
+                          }}
+                          required
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          startIcon={<SaveIcon />}
+                          onClick={() => editVariant(variant)}
+                          sx={{ mr: 1 }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          startIcon={<DeleteIcon />}
+                          onClick={() => handleDeleteClick(variant, 'variant')}
+                        >
+                          Remove
+                        </Button>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Grid item xs={12}>
+              <Typography color="textSecondary">
+                No variants added yet
+              </Typography>
+            </Grid>
+          )}
+          <Typography variant="h6" gutterBottom>
+            Add New Variant
+          </Typography>
+          <Paper sx={{ p: 2 }} elevation={1}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  name="name"
+                  label="Variant Name"
+                  value={variantData.name}
+                  onChange={handleVariantChange}
+                  fullWidth
+                  size="small"
+                  disabled={!variantSectionEnabled}
+                />
+              </Grid>
+              {productData.option1_name && (
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    name="option1_value"
+                    label={productData.option1_name}
+                    value={variantData.option1_value}
+                    onChange={handleVariantChange}
+                    fullWidth
+                    size="small"
+                  />
+                </Grid>
+              )}
+              {productData.option2_name && (
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    name="option2_value"
+                    label={productData.option2_name}
+                    value={variantData.option2_value}
+                    onChange={handleVariantChange}
+                    fullWidth
+                    size="small"
+                  />
+                </Grid>
+              )}
+              {productData.option3_name && (
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    name="option3_value"
+                    label={productData.option3_name}
+                    value={variantData.option3_value}
+                    onChange={handleVariantChange}
+                    fullWidth
+                    size="small"
+                  />
+                </Grid>
+              )}
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  name="base_price"
+                  label="Base Price"
+                  value={variantData.base_price}
+                  onChange={handleVariantChange}
+                  fullWidth
+                  size="small"
+                  type="number"
+                  required
+                  disabled={!variantSectionEnabled}
+                  slotProps={{
+                    htmlInput: {
+                      step: "0.01", 
+                      min: "0"
+                    },
+                    input: {
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  label="Sale Price"
+                  name="sale_price"
+                  value={variantData.sale_price}
+                  onChange={handleVariantChange}
+                  fullWidth
+                  size="small"
+                  type="number"
+                  disabled={!variantSectionEnabled}
+                  slotProps={{
+                    htmlInput: {
+                      step: "0.01", 
+                      min: "0"
+                    },
+                    input: {
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  name="stock"
+                  label="Stock"
+                  value={variantData.stock}
+                  onChange={handleVariantChange}
+                  fullWidth
+                  size="small"
+                  type="number"
+                  required
+                  disabled={!variantSectionEnabled}
+                  slotProps={{
+                    htmlInput: {
+                      min: "0"
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                  {currentVariant ? (
+                    <>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={cancelEdit}
+                        sx={{ mr: 1 }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="contained"
+                        color="primary"
+                        startIcon={<SaveIcon />}
+                        onClick={handleUpdateVariant}
+                      >
+                        Update Variant
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="contained"
+                      color="primary"
+                      startIcon={<AddIcon />}
+                      onClick={handleAddVariant}
+                      disabled={!variantSectionEnabled}
+                    >
+                      Add Variant
+                    </Button>
+                  )}
+                </Box>
+              </Grid>
+            </Grid>
+          </Paper>
+        </Grid>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 3 }}>
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => navigate('/manage/products')}
+          sx={{ mr: 2 }}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+        >
+          {productId ? 'Update Product' : 'Create Product'}
+        </Button>
+      </Box>
+      </Paper>
+      <DeleteConfirmationModal
+        open={deleteDialogState.open}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        message={deleteDialogState.message}
+      />
+    </Box>
   );
 };
 

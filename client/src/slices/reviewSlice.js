@@ -81,7 +81,7 @@ const reviewSlice = createSlice({
       .addCase(getReviews.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.sucess = null;
+        state.success = null;
       })
       .addCase(getReviews.fulfilled, (state, action) => {
         state.reviews = action.payload.reviews;

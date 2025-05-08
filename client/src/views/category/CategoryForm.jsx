@@ -6,7 +6,7 @@ import { Box, Button, FormControl, FormHelperText, InputLabel, MenuItem, Paper, 
 
 import ImageUploader from '../../components/ImageUploader';
 import DeleteConfirmationModal from '../../components/DeleteConfirmation';
-import { getCategories, createCategory, updateCategory, deleteCategory, getCategory, clearMessages, addCategoryImage, deleteCategoryImage } from '../../slices/categorySlice';
+import { getCategories, createCategory, updateCategory, deleteCategory, getCategory, clearCategoryMessages, addCategoryImage, deleteCategoryImage } from '../../slices/categorySlice';
 
 const CategoryForm = () => {
   const dispatch = useDispatch();
@@ -31,7 +31,7 @@ const CategoryForm = () => {
     if (categoryId) {
       dispatch(getCategory({ categoryId }));
     }
-  }, [categoryId, dispatch]);
+  }, [dispatch, categoryId]);
 
   useEffect(() => {
     if (category && categoryId) {
@@ -54,7 +54,7 @@ const CategoryForm = () => {
       parent_category_id: categoryData.parent_category_id === '' ? null : categoryData.parent_category_id,
     };
     if (categoryId) {
-      dispatch(updateCategory({ categoryId: category.id, categoryData: formattedData }))
+      dispatch(updateCategory({ categoryId: categoryId, categoryData: formattedData }))
     } else {
       dispatch(createCategory(formattedData))
       .unwrap()
@@ -111,12 +111,12 @@ const CategoryForm = () => {
           {categoryId ? 'Edit Category' : 'Create Category'}
         </Typography>
         {error && (
-          <Alert severity="error" onClose={() => dispatch(clearMessages())} sx={{ mb: 3 }}>
+          <Alert severity="error" onClose={() => dispatch(clearCategoryMessages())} sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
         {success && (
-          <Alert severity="success" onClose={() => dispatch(clearMessages())} sx={{ mb: 3 }}>
+          <Alert severity="success" onClose={() => dispatch(clearCategoryMessages())} sx={{ mb: 3 }}>
             {success}
           </Alert>
         )}
@@ -130,11 +130,6 @@ const CategoryForm = () => {
               onChange={handleChange}
               required
               fullWidth
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                },
-              }}
             />
             <TextField
               id="description"
@@ -145,11 +140,6 @@ const CategoryForm = () => {
               multiline
               rows={4}
               fullWidth
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                },
-              }}
             />
             <FormControl fullWidth>
               <InputLabel id="parent-category-label" shrink>Parent Category</InputLabel>

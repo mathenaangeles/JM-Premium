@@ -2,28 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Inventory2Outlined as Inventory2OutlinedIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
-import { Chip, Box, Breadcrumbs, Button, Alert, CardMedia, Container, Collapse, FormControl, Grid, MenuItem, Select, Typography, useTheme, Paper, IconButton } from '@mui/material';
+import { LinearProgress, Chip, Box, Breadcrumbs, Button, Alert, CardMedia, Container, Collapse, FormControl, Grid, MenuItem, Select, Typography, Paper, IconButton } from '@mui/material';
 
 import ProductCard from '../product/ProductCard';
 import { getProducts } from '../../slices/productSlice';
-import { getCategoryBySlug, getCategoryBreadcrumbs, clearMessages } from '../../slices/categorySlice';
+import { getCategoryBySlug, getCategoryBreadcrumbs, clearCategoryMessages } from '../../slices/categorySlice';
 
 const CategoryDetail = () => {
-  const { slug } = useParams();
+  const { categorySlug } = useParams();
   const dispatch = useDispatch();
-  const theme = useTheme();
 
-  const { category, breadcrumbs, error } = useSelector(state => state.category);
+  const { category, breadcrumbs, error, loading } = useSelector(state => state.category);
   const { products, totalPages, currentPage, } = useSelector(state => state.product);
 
   const [perPage, setPerPage] = useState(12);
   const [showSubcategories, setShowSubcategories] = useState(true);
 
   useEffect(() => {
-    if (slug) {
-      dispatch(getCategoryBySlug({ slug, includeSubcategories: true }));
+    if (categorySlug) {
+      dispatch(getCategoryBySlug({ slug: categorySlug, includeSubcategories: true }));
     }
-  }, [dispatch, slug]);
+  }, [dispatch, categorySlug]);
 
   useEffect(() => {
     if (category?.id) {
@@ -49,7 +48,11 @@ const CategoryDetail = () => {
     setPerPage(e.target.value);
   };
 
-  if (!category) {
+  if (loading) {
+    return (<LinearProgress />)
+  }
+
+  if (!loading && !category) {
     return (
       <Box sx={{ bgcolor: 'common.white', minHeight: '100vh', py: 8, px: 2 }} textAlign="center">
         <Typography variant="h3" gutterBottom>
@@ -78,7 +81,7 @@ const CategoryDetail = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'common.white' }}>
       <Box
         sx={{
           position: 'relative',
@@ -185,7 +188,7 @@ const CategoryDetail = () => {
           </Breadcrumbs>
         )}
         {error && (
-          <Alert severity="error" onClose={() => dispatch(clearMessages())} sx={{ mb: 3 }}>
+          <Alert severity="error" onClose={() => dispatch(clearCategoryMessages())} sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
@@ -200,7 +203,7 @@ const CategoryDetail = () => {
               }}
             >
               <Box sx={{ position: 'relative', display: 'inline-block', mb: 1 }}>
-                <Typography variant="h5" component="h2" sx={{ mb: 1 }}>
+                <Typography variant="h5" component="h2" sx={{ mb: 0.5 }}>
                   Subcategories
                 </Typography>
                 <Box
@@ -244,11 +247,11 @@ const CategoryDetail = () => {
                         cursor: 'pointer',
                         '&:hover': {
                           transform: 'translateY(-2px)',
-                          boxShadow: theme.shadows[1],
+                          boxShadow: 'shadows[1]',
                           '& .subcategory-name': {
                             color: 'primary.main'
                           }
-                        }
+                        },
                       }}
                     >
                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -292,7 +295,7 @@ const CategoryDetail = () => {
             }}
           >
             <Box sx={{ position: 'relative', display: 'inline-block', mb: 1 }}>
-              <Typography variant="h4" component="h2" sx={{ mb: 1 }}>
+              <Typography variant="h4" component="h2" sx={{ mb:  0.5 }}>
                 Products
               </Typography>
               <Box
@@ -316,7 +319,7 @@ const CategoryDetail = () => {
                 sx={{
                   borderRadius: 2,
                   '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: theme.palette.divider
+                    borderColor: 'divider'
                   }
                 }}
               >
@@ -371,7 +374,7 @@ const CategoryDetail = () => {
                       px: 2,
                       py: 1,
                       minWidth: { xs: '60px', sm: '80px' },
-                      color: currentPage === 1 ? theme.palette.text.disabled : theme.palette.text.primary
+                      color: currentPage === 1 ? 'disabled' : 'primary.main'
                     }}
                   >
                     Previous
@@ -433,7 +436,7 @@ const CategoryDetail = () => {
                       px: 2,
                       py: 1,
                       minWidth: { xs: '60px', sm: '80px' },
-                      color: currentPage === totalPages ? theme.palette.text.disabled : theme.palette.text.primary
+                      color: currentPage === totalPages ? 'disabled' : 'primary.main'
                     }}
                   >
                     Next

@@ -57,16 +57,6 @@ class CartItem(Base, TimestampMixin):
     @property
     def in_stock(self) -> bool:
         return self.product.total_stock >= self.quantity
-
-    @property
-    def primary_image_url(self) -> Optional[str]:
-        variant_images = [img for img in self.product.images if img.variant_id == self.variant_id]
-        variant_primary = next((img.url for img in variant_images if img.is_primary), None)
-        product_primary = next(
-            (img.url for img in self.product.images if img.is_primary and not img.variant_id),
-            next((img.url for img in self.product.images if not img.variant_id), None)
-        )
-        return variant_primary or product_primary
     
     def __repr__(self) -> str:
         return f'<CartItem {self.product.name} ({self.quantity})>'
@@ -81,7 +71,6 @@ class CartItem(Base, TimestampMixin):
             "price": self.price,
             "subtotal": self.subtotal,
             "in_stock": self.in_stock,
-            "primary_image_url": self.primary_image_url,
             "product": self.product.to_dict() if self.product else None,
             "variant": self.variant.to_dict() if self.variant else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,

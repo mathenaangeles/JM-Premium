@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Inventory2Outlined as Inventory2OutlinedIcon, ViewList as ViewListIcon, AccountTree as AccountTreeIcon, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon }  from '@mui/icons-material';
+import { ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, Inventory2Outlined as Inventory2OutlinedIcon, ViewList as ViewListIcon, AccountTree as AccountTreeIcon, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon }  from '@mui/icons-material';
 import { Chip, Box, Button, Card, CardContent, CardMedia, CardActions, Divider, Grid, Paper, Typography, Alert, ToggleButtonGroup, ToggleButton, Stack } from '@mui/material';
 
 import DeleteConfirmationModal from '../../components/DeleteConfirmation';
-import { getCategories, deleteCategory, clearMessages } from '../../slices/categorySlice';
+import { getCategories, deleteCategory, clearCategoryMessages } from '../../slices/categorySlice';
 
 const CategoryList = () => {
   const dispatch = useDispatch();
@@ -45,13 +45,26 @@ const CategoryList = () => {
   const renderCategoryItem = (category) => (
     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={category.id} sx={{ display: 'flex' }}>
       <Card sx={{ display: 'flex', flexDirection: 'column', width: 300 }}>
-        <CardMedia
-          component="img"
-          height="160"
-          image={category.image?.url || '#'}
-          alt={category.name}
-          sx={{ objectFit: 'cover', backgroundColor: '#F5F5F5' }}
-        />
+        {category.image?.url ? (
+          <CardMedia
+            component="img"
+            height="160"
+            image={category.image.url}
+            alt={category.name}
+            sx={{ objectFit: 'cover', backgroundColor: '#F5F5F5' }}
+          />
+        ) : (
+          <Box
+            height="160px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            backgroundColor="#F5F5F5"
+            color="grey"
+          >
+            <ImageNotSupportedOutlinedIcon fontSize="large" />
+          </Box>
+        )}
         <CardContent>
           <Link to={`/categories/${category.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
@@ -173,7 +186,7 @@ const CategoryList = () => {
   return (
     <Box sx={{ p: 4 }}>
       {error && (
-        <Alert severity="error" onClose={() => dispatch(clearMessages())} sx={{ mb: 3 }}>
+        <Alert severity="error" onClose={() => dispatch(clearCategoryMessages())} sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
@@ -243,7 +256,7 @@ const CategoryList = () => {
       )}
       <DeleteConfirmationModal
         open={showDeleteConfirmation}
-        message={`Are you sure you want to delete ${categoryToDelete?.name || 'this'}?`}
+        message={`Are you sure you want to delete ${categoryToDelete?.name || 'this category'}?`}
         onConfirm={handleDelete}
         onCancel={() => setShowDeleteConfirmation(false)}
       />

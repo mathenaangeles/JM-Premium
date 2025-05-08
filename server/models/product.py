@@ -23,13 +23,12 @@ class Product(Base, TimestampMixin):
     weight: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0)
     width: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0) 
     height: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0)
-    depth: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0) 
+    length: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0) 
 
     option1_name: Mapped[Optional[str]] = mapped_column(String(255))
     option2_name: Mapped[Optional[str]] = mapped_column(String(255))
     option3_name: Mapped[Optional[str]] = mapped_column(String(255))
 
-    sku: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
     base_price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0)
     sale_price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0)
     stock: Mapped[Optional[int]] = mapped_column(Integer, default=0)
@@ -79,11 +78,9 @@ class Product(Base, TimestampMixin):
     @hybrid_property
     def display_price(self) -> float:
         if self.variants:
-            prices = [variant.price for variant in self.variants if variant.price is not None]
-            if prices:
-                return min(prices)
+            return self.variants[0].price
         if self.sale_price > 0:
-            return self.sale_price
+            return self.sale_price 
         return self.base_price or 0
 
     @display_price.expression
@@ -96,7 +93,6 @@ class Product(Base, TimestampMixin):
             .correlate(cls)
             .scalar_subquery()
         )
-        
         return case(
             [
                 (
@@ -109,11 +105,6 @@ class Product(Base, TimestampMixin):
             ],
             else_=func.coalesce(cls.sale_price, cls.base_price, 0)
         )
-        
-    @property
-    def primary_image(self) -> Optional["ProductImage"]:
-        return next((img for img in self.images if img.is_primary), 
-                self.images[0] if self.images else None)
     
     def get_product_options(self) -> Dict[str, List[str]]:
         options = {}
@@ -166,8 +157,8 @@ class Product(Base, TimestampMixin):
             "dimensions": {
                 "width": float(self.width) if self.width else None,
                 "height": float(self.height) if self.height else None,
-                "depth": float(self.depth) if self.depth else None,
-            } if self.width or self.height or self.depth else None,
+                "length": float(self.length) if self.length else None,
+            } if self.width or self.height or self.length else None,
             "option1_name": self.option1_name,
             "option2_name": self.option2_name,
             "option3_name": self.option3_name,
@@ -175,8 +166,10 @@ class Product(Base, TimestampMixin):
             "average_rating": self.average_rating,
             "total_stock": float(self.total_stock),
             "display_price": float(self.display_price),
+            "base_price": float(self.base_price),
+            "sale_price": float(self.sale_price),
+            "stock": float(self.stock),
             "variants": [variant.to_dict() for variant in self.variants] if include_variants else None,
-            "primary_image": self.primary_image.to_dict() if self.primary_image else None,
             "images": [img.to_dict() for img in self.images] if include_images else None,
             "reviews": [review.to_dict() for review in self.reviews] if include_reviews else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
@@ -194,7 +187,6 @@ class ProductVariant(Base, TimestampMixin):
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    sku: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
     base_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     sale_price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2))
     stock: Mapped[int] = mapped_column(Integer, default=0, nullable=False)    
@@ -238,7 +230,6 @@ class ProductVariant(Base, TimestampMixin):
             "id": self.id,
             "product_id": self.product_id,
             "name": self.name,
-            "sku": self.sku,
             "base_price": float(self.base_price),
             "sale_price": float(self.sale_price) if self.sale_price else None,
             "stock": self.stock,
@@ -259,23 +250,9 @@ class ProductImage(Base, TimestampMixin):
     variant_id: Mapped[Optional[int]] = mapped_column(ForeignKey("product_variants.id"))
 
     url: Mapped[str] = mapped_column(String(255), nullable=False)
-    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
 
     product: Mapped["Product"] = relationship(back_populates="images")
     variant: Mapped[Optional["ProductVariant"]] = relationship(back_populates="images")
-
-    @validates('is_primary')
-    def validate_is_primary(self, key, is_primary):
-        if is_primary:
-            if self.product_id and not self.variant_id:
-                for img in self.product.images:
-                    if img != self and img.variant_id is None and img.is_primary:
-                        img.is_primary = False
-            elif self.variant_id:
-                for img in self.variant.images:
-                    if img != self and img.is_primary:
-                        img.is_primary = False
-        return is_primary
     
     def __repr__(self) -> str:
         return f'<ProductImage {self.url}>'
@@ -286,7 +263,6 @@ class ProductImage(Base, TimestampMixin):
             "product_id": self.product_id,
             "variant_id": self.variant_id,
             "url": self.url,
-            "is_primary": self.is_primary,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

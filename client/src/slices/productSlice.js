@@ -70,7 +70,7 @@ export const updateProduct = createAsyncThunk(
 
 export const deleteProduct = createAsyncThunk(
   '/deleteProduct',
-  async (productId, { rejectWithValue }) => {
+  async ( {productId} , { rejectWithValue }) => {
     try {
       const { data } = await Axios.delete(`/products/${productId}`);
       return data;
@@ -153,6 +153,12 @@ const productSlice = createSlice({
     error: null,
     variants: [],
     variant: null,
+  },
+  reducers: {
+    clearProductMessages: (state) => {
+      state.success = null;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -362,5 +368,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { clearProductState, setCurrentPage } = productSlice.actions;
+export const { clearProductMessages } = productSlice.actions;
 export default productSlice.reducer;

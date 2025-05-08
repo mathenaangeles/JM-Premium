@@ -1,11 +1,55 @@
+import { useParams, Link } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams, Link } from 'react-router-dom';
+import { Container, Grid, Typography, Box, Button, Divider, IconButton, Paper, Rating, Chip, TextField, Card, CardContent, Tabs, Tab, ButtonGroup, Skeleton, Alert } from '@mui/material';
+
+import { styled } from '@mui/material/styles';
+
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 import ReviewForm from '../review/ReviewForm';
 import { addToCart } from '../../slices/cartSlice';
 import { getReviews } from '../../slices/reviewSlice';
 import { getProductBySlug } from '../../slices/productSlice';
+
+const ProductImage = styled('img')({
+  width: '100%',
+  height: '100%',
+  objectFit: 'contain',
+});
+
+const ThumbnailImage = styled('img')({
+  width: '64px',
+  height: '64px',
+  objectFit: 'cover',
+  cursor: 'pointer',
+  border: '1px solid #e0e0e0',
+  borderRadius: '4px',
+});
+
+const SelectedThumbnail = styled(ThumbnailImage)({
+  border: '2px solid #1976d2',
+});
+
+const VariantButton = styled(Button)(({ theme, selected }) => ({
+  marginRight: theme.spacing(1),
+  marginBottom: theme.spacing(1),
+  ...(selected && {
+    backgroundColor: theme.palette.primary.light,
+    color: theme.palette.primary.contrastText,
+    '&:hover': {
+      backgroundColor: theme.palette.primary.main,
+    },
+  }),
+}));
+
+const StockChip = styled(Chip)(({ theme, instock }) => ({
+  backgroundColor: instock === 'true' ? theme.palette.success.light : theme.palette.error.light,
+  color: instock === 'true' ? theme.palette.success.dark : theme.palette.error.dark,
+  fontWeight: 500,
+}));
 
 const ProductDetail = () => {
   const dispatch = useDispatch();
@@ -15,6 +59,7 @@ const ProductDetail = () => {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     if (slug) {
@@ -28,7 +73,7 @@ const ProductDetail = () => {
         productId: product.id
       }));
     }
-  }, [dispatch, product]); 
+  }, [dispatch, product]);
 
   useEffect(() => {
     if (product && product.variants && product.variants.length > 0) {
@@ -40,27 +85,41 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-4 flex justify-center items-center min-h-screen">
-        <p className="text-gray-500">Loading product details...</p>
-      </div>
+      <Container sx={{ py: 4 }}>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={6}>
+            <Skeleton variant="rectangular" height={400} />
+            <Box sx={{ mt: 2, display: 'flex' }}>
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} variant="rectangular" width={60} height={60} sx={{ mr: 1 }} />
+              ))}
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Skeleton variant="text" height={60} />
+            <Skeleton variant="text" height={30} width="40%" />
+            <Skeleton variant="text" height={120} />
+            <Skeleton variant="rectangular" height={100} />
+            <Skeleton variant="rectangular" height={60} sx={{ mt: 2 }} />
+          </Grid>
+        </Grid>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-4">
-        <div className="bg-red-100 text-red-700 p-4 rounded">
-          <p>{error}</p>
-        </div>
-      </div>
+      <Container sx={{ py: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
     );
   }
 
   if (!product) {
     return (
-      <div className="container mx-auto p-4">
-        <p className="text-gray-500">Product not found.</p>
-      </div>
+      <Container sx={{ py: 4 }}>
+        <Alert severity="info">Product not found.</Alert>
+      </Container>
     );
   }
 
@@ -94,171 +153,249 @@ const ProductDetail = () => {
     }));
   };
 
-  return (
-    <div className="container mx-auto p-4">
-      <div className="mb-4">
-        <Link to="/shop" className="text-blue-600 hover:underline">
-          ← Back to Shop
-        </Link>
-      </div>
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="md:flex">
-          <div className="md:w-1/2">
-            <div className="relative pb-[100%]">
+  const productInStock = selectedVariant 
+    ? selectedVariant.stock > 0 
+    : (product.stock > 0 || product.total_stock > 0);
+
+  const currentPrice = selectedVariant 
+    ? (selectedVariant.sale_price || selectedVariant.price || selectedVariant.base_price)
+    : (product.sale_price || product.base_price);
+    
+  const compareAtPrice = selectedVariant && selectedVariant.sale_price
+    ? selectedVariant.base_price
+    : product.compare_at_price;
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Button 
+        component={Link} 
+        to="/shop" 
+        startIcon={<ArrowBackIcon />}
+        sx={{ mb: 3 }}
+        color="inherit"
+      >
+        Back to Shop
+      </Button>
+
+      <Paper elevation={3} sx={{ mb: 4, overflow: 'hidden' }}>
+        <Grid container>
+          <Grid item xs={12} md={6} sx={{ p: 3 }}>
+            <Box 
+              sx={{ 
+                height: 400, 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                backgroundColor: '#f9f9f9',
+                borderRadius: 1,
+                position: 'relative'
+              }}
+            >
               {product.images && product.images.length > 0 ? (
-                <img
+                <ProductImage
                   src={product.images[currentImageIndex].url}
                   alt={product.name}
-                  className="absolute inset-0 w-full h-full object-contain p-4"
                 />
               ) : (
-                <div className="absolute inset-0 w-full h-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-gray-500">No image available</span>
-                </div>
+                <Typography color="text.secondary">No image available</Typography>
               )}
               {product.is_featured && (
-                <span className="absolute top-4 right-4 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">
-                  Featured
-                </span>
+                <Chip
+                  label="Featured"
+                  color="secondary"
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                  }}
+                />
               )}
-            </div>
+            </Box>
 
             {product.images && product.images.length > 1 && (
-              <div className="flex overflow-x-auto p-2 space-x-2">
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
                 {product.images.map((image, index) => (
-                  <div
-                    key={image.id}
-                    onClick={() => handleImageClick(index)}
-                    className={`w-16 h-16 flex-shrink-0 cursor-pointer border-2 ${
-                      index === currentImageIndex ? 'border-blue-500' : 'border-transparent'
-                    }`}
-                  >
-                    <img
+                  index === currentImageIndex ? (
+                    <SelectedThumbnail
+                      key={image.id}
                       src={image.url}
                       alt={`${product.name} thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      onClick={() => handleImageClick(index)}
                     />
-                  </div>
+                  ) : (
+                    <ThumbnailImage
+                      key={image.id}
+                      src={image.url}
+                      alt={`${product.name} thumbnail ${index + 1}`}
+                      onClick={() => handleImageClick(index)}
+                    />
+                  )
                 ))}
-              </div>
+              </Box>
             )}
-          </div>
-          <div className="md:w-1/2 p-6">
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">{product.name}</h1>
-            
-            <div className="flex items-baseline mb-4">
-              <span className="text-2xl font-bold text-gray-900 mr-2">
-                ${selectedVariant ? selectedVariant.price : product.price}
-              </span>
-              {(selectedVariant ? selectedVariant.compare_at_price : product.compare_at_price) && (
-                <span className="text-lg text-gray-500 line-through">
-                  ${selectedVariant ? selectedVariant.compare_at_price : product.compare_at_price}
-                </span>
-              )}
-            </div>
+          </Grid>
 
-            <div className="mb-6">
-              <div
-                className="prose prose-sm text-gray-700"
-                dangerouslySetInnerHTML={{ __html: product.description }}
-              />
-            </div>
+          <Grid item xs={12} md={6} sx={{ p: 3 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              {product.name}
+            </Typography>
+            
+            {reviews && reviews.length > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Rating 
+                  value={product.average_rating || 0} 
+                  precision={0.5} 
+                  readOnly 
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                  ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                </Typography>
+              </Box>
+            )}
+            
+            <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 2 }}>
+              <Typography variant="h5" component="span" color="primary.main" sx={{ fontWeight: 600 }}>
+                ${parseFloat(currentPrice).toFixed(2)}
+              </Typography>
+              {compareAtPrice && (
+                <Typography 
+                  variant="body1" 
+                  component="span" 
+                  color="text.secondary" 
+                  sx={{ textDecoration: 'line-through', ml: 2 }}
+                >
+                  ${parseFloat(compareAtPrice).toFixed(2)}
+                </Typography>
+              )}
+            </Box>
+
+            <Box 
+              sx={{ mb: 3 }} 
+              dangerouslySetInnerHTML={{ __html: product.description }} 
+            />
 
             {product.variants && product.variants.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Options</h3>
-                <div className="flex flex-wrap gap-2">
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Options
+                </Typography>
+                <Box>
                   {product.variants.map((variant) => (
-                    <button
+                    <VariantButton
                       key={variant.id}
+                      variant="outlined"
+                      size="small"
+                      selected={selectedVariant && selectedVariant.id === variant.id}
                       onClick={() => handleVariantChange(variant.id)}
-                      className={`px-3 py-1 rounded border ${
-                        selectedVariant && selectedVariant.id === variant.id
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
                     >
                       {variant.name}
-                    </button>
+                    </VariantButton>
                   ))}
-                </div>
-              </div>
+                </Box>
+              </Box>
             )}
 
-            <div className="mb-6">
-              <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>
                 Quantity
-              </label>
-              <div className="flex items-center">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="border border-gray-300 rounded-l px-4 py-2 text-gray-500 hover:bg-gray-100"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  id="quantity"
-                  name="quantity"
-                  min="1"
-                  value={quantity}
-                  onChange={handleQuantityChange}
-                  className="border-t border-b border-gray-300 text-center w-16 py-2"
-                />
-                <button
-                  type="button"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="border border-gray-300 rounded-r px-4 py-2 text-gray-500 hover:bg-gray-100"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div className="mb-6">
-              <span
-                className={`inline-block px-2 py-1 rounded text-xs ${
-                  (selectedVariant ? selectedVariant.quantity > 0 : product.quantity > 0)
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {(selectedVariant ? selectedVariant.quantity > 0 : product.quantity > 0)
-                  ? 'In Stock'
-                  : 'Out of Stock'}
-              </span>
-            </div>
-            <button
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <ButtonGroup variant="outlined" size="small">
+                  <Button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    aria-label="decrease quantity"
+                  >
+                    <RemoveIcon fontSize="small" />
+                  </Button>
+                  <TextField
+                    size="small"
+                    type="number"
+                    inputProps={{ min: 1, style: { textAlign: 'center', width: '50px' } }}
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                  />
+                  <Button
+                    onClick={() => setQuantity(quantity + 1)}
+                    aria-label="increase quantity"
+                  >
+                    <AddIcon fontSize="small" />
+                  </Button>
+                </ButtonGroup>
+              </Box>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <StockChip
+                label={productInStock ? 'In Stock' : 'Out of Stock'}
+                instock={productInStock.toString()}
+                size="small"
+              />
+            </Box>
+
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              fullWidth
               onClick={handleAddToCart}
-              disabled={(selectedVariant ? selectedVariant.quantity <= 0 : product.quantity <= 0)}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={!productInStock}
+              sx={{ py: 1.5 }}
             >
               Add to Cart
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="mb-6">
-        <ReviewForm productId={product.id} onReviewSubmit={handleReviewSubmit}/>
-      </div>
-      <div className="mt-6">
-        <h3 className="text-xl font-semibold mb-4">Customer Reviews</h3>
-        {reviews && reviews.length > 0 ? (
-          reviews.map((review) => (
-            <div key={review.id} className="border-b border-gray-200 pb-4 mb-4">
-              <h4 className="font-semibold text-lg">{review.title}</h4>
-              <div className="flex items-center mb-2">
-                <span className="text-yellow-500">{"★".repeat(review.rating)}</span>
-              </div>
-              <p>{review.content}</p>
-            </div>
-          ))
-        ) : (
-          <p>No reviews yet. Be the first to leave a review!</p>
-        )}
-      </div>
-    </div>
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Paper elevation={3} sx={{ mb: 4 }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange}
+          variant="fullWidth"
+        >
+          <Tab label="Reviews" />
+          <Tab label="Write a Review" />
+        </Tabs>
+        
+        <Box sx={{ p: 3 }}>
+          {activeTab === 0 && (
+            <>
+              <Typography variant="h6" gutterBottom>
+                Customer Reviews
+              </Typography>
+              {reviews && reviews.length > 0 ? (
+                reviews.map((review) => (
+                  <Card key={review.id} sx={{ mb: 2 }}>
+                    <CardContent>
+                      <Typography variant="h6">{review.title}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Rating value={review.rating} readOnly size="small" />
+                      </Box>
+                      <Typography variant="body2">{review.content}</Typography>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Typography color="text.secondary">
+                  No reviews yet. Be the first to leave a review!
+                </Typography>
+              )}
+            </>
+          )}
+          
+          {activeTab === 1 && (
+            <Box sx={{ mt: 2 }}>
+              <ReviewForm productId={product.id} onReviewSubmit={handleReviewSubmit} />
+            </Box>
+          )}
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 

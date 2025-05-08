@@ -152,7 +152,6 @@ def create_product_image(product_id):
         return jsonify({'message': 'Product could not be found.'}), 404
     try:
         data = request.form.to_dict()
-        data['is_primary'] = data.get('is_primary', '').lower() == 'true'
         file = request.files.get('file')
         if file:
             data['file'] = file 

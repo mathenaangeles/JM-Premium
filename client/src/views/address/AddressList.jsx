@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Alert, Box, Typography, Button, List, ListItem, Divider, Grid, IconButton, Chip } from '@mui/material';
+import { Alert, Box, Typography, Button, List, ListItem, Grid, IconButton, Chip } from '@mui/material';
 import { EditOutlined as EditOutlinedIcon, DeleteOutlineOutlined as DeleteOutlineOutlinedIcon, AccountBalanceOutlined as AccountBalanceOutlinedIcon, LocalShippingOutlined as LocalShippingOutlinedIcon, Add as AddIcon } from '@mui/icons-material';
 
 import AddressForm from './AddressForm';
 import DeleteConfirmationModal from '../../components/DeleteConfirmation';
-import { getUserAddresses, deleteAddress, clearMessages } from '../../slices/addressSlice';
+import { getUserAddresses, deleteAddress, clearAddressMessages } from '../../slices/addressSlice';
 
 const AddressList = () => {
   const dispatch = useDispatch();
@@ -57,12 +57,12 @@ const AddressList = () => {
   return (
     <Box>
       {error && (
-        <Alert severity="error" onClose={() => dispatch(clearMessages())} sx={{ mb: 3 }}>
+        <Alert severity="error" onClose={() => dispatch(clearAddressMessages())} sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
       {success && (
-        <Alert severity="success" onClose={() => dispatch(clearMessages())} sx={{ mb: 3 }}>
+        <Alert severity="success" onClose={() => dispatch(clearAddressMessages())} sx={{ mb: 3 }}>
           {success}
         </Alert>
       )}

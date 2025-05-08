@@ -71,6 +71,7 @@ const UserList = () => {
     if (userToDelete) {
       dispatch(deleteUser({ userId: userToDelete.id }));
       setShowDeleteConfirmation(false);
+      setUserToDelete(null); 
     }
   };
 
@@ -89,7 +90,7 @@ const UserList = () => {
     <Typography variant="h4" fontWeight={600} mb={3}>
       Manage Users
     </Typography>
-    <Grid container spacing={3} alignItems="flex-start" sx={{ my: 3 }}>
+    <Grid container spacing={1} alignItems="flex-start" sx={{ my: 3 }}>
       <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
@@ -101,14 +102,16 @@ const UserList = () => {
             }
           }}
           placeholder="Search users by name or email"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={handleSearch} edge="end">
-                  <SearchIcon color="primary" />
-                </IconButton>
-              </InputAdornment>
-            )
+          slotProps = {{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleSearch} edge="end">
+                    <SearchIcon color="primary" />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
           }}
           variant="outlined"
           size="small"
@@ -165,7 +168,7 @@ const UserList = () => {
             users.map((user) => (
               <TableRow key={user.id} hover>
                 <TableCell>
-                  { (user.first_name || user.last_name) ? (
+                  {(user.first_name || user.last_name) ? (
                     <>{`${user.first_name} ${user.last_name}`}</>
                   ) : (
                     <Typography variant="body2" color="text.secondary">Anonymous</Typography>
@@ -185,14 +188,10 @@ const UserList = () => {
                   />
                 </TableCell>
                 <TableCell>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    useFlexGap
-                  >
+                  <Stack direction="row" spacing={1} useFlexGap>
                     <Tooltip title={user.is_admin ? 'Remove Admin Role' : 'Grant Admin Role'}>
                       <Button
-                        variant="outlined"
+                        variant="contained"
                         color={user.is_admin ? 'error' : 'primary'}
                         startIcon={user.is_admin ? <PersonRemoveIcon /> : <PersonAddAltIcon />}
                         onClick={() => handleUpdate(user.id, !user.is_admin)}
@@ -203,18 +202,17 @@ const UserList = () => {
                         {user.is_admin ? 'Remove Admin' : 'Add Admin'}
                       </Button>
                     </Tooltip>
-                    <Tooltip title="Delete User">
-                      <IconButton
-                        color="error"
-                        onClick={() => openDeleteConfirmation(user)}
-                        sx={{
-                          border: '1.5px solid',
-                          borderColor: 'error.main',
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon/>}
+                      onClick={() => openDeleteConfirmation(user)}
+                      sx={{
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Delete User
+                    </Button>
                   </Stack>
                 </TableCell>
               </TableRow>
