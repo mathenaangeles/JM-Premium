@@ -239,7 +239,7 @@ const ProductList = () => {
                   </TableCell>
                   <TableCell>${product.display_price?.toFixed(2)}</TableCell>
                   <TableCell>{product.total_stock}</TableCell>
-                  <TableCell><Chip label={product.is_active ? 'Active' : 'Inactive'} size="small" sx={{ backgroundColor: product.is_active ? 'rgba(151, 167, 99, 0.15)' : 'grey.100', p: 1 }} /></TableCell>
+                  <TableCell><Chip label={product.is_active ? 'Active' : 'Inactive'} size="small" sx={{ backgroundColor: product.is_active ? 'primary.light' : 'grey.100', color: product.is_active ? 'secondary.main' : 'common.grey', p: 1, fontWeight: 600 }} /></TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1} useFlexGap>
                       <Link to={`/manage/products/form/${product.id}`}>

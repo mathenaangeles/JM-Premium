@@ -107,9 +107,22 @@ const CategoryForm = () => {
           borderRadius: 5,
         }}
       >
-        <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
-          {categoryId ? 'Edit Category' : 'Create Category'}
-        </Typography>
+        <Box sx={{ position: 'relative', display: 'inline-block', mb: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ mb: 0.5 }}>
+            {categoryId ? 'Edit Category' : 'Create Category'}
+          </Typography>
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: -6,
+              left: 0,
+              height: '3px',
+              width: '60px',
+              bgcolor: 'primary.main',
+              borderRadius: 2,
+            }}
+          />
+        </Box>
         {error && (
           <Alert severity="error" onClose={() => dispatch(clearCategoryMessages())} sx={{ mb: 3 }}>
             {error}

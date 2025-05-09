@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon }  from '@mui/icons-material';
+import { AddShoppingCartOutlined as AddShoppingCartOutlinedIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon }  from '@mui/icons-material';
 import { Card, CardMedia, CardContent, Typography, Box, Chip, Rating, Stack, Button } from '@mui/material';
 
 import { addToCart } from '../../slices/cartSlice';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onAddToCartSuccess = null }) => {
   const dispatch = useDispatch();
 
   if (!product || !product.is_active) return null;
@@ -21,6 +21,7 @@ const ProductCard = ({ product }) => {
   
   const handleAddToCart = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     const variantId =
       product.variants && product.variants.length > 0
         ? product.variants[0].id
@@ -30,6 +31,9 @@ const ProductCard = ({ product }) => {
       variant_id: variantId,
       quantity: 1
     }));
+    if (typeof onAddToCartSuccess === 'function') {
+      onAddToCartSuccess();
+    }
   };
   
   return (
@@ -58,7 +62,7 @@ const ProductCard = ({ product }) => {
             title={product.name}
             alt={product.name}
             sx={{
-              paddingTop: '100%', // 1:1 aspect ratio
+              paddingTop: '100%',
               backgroundColor: '#F5F5F5',
               position: 'relative',
             }}
@@ -141,82 +145,97 @@ const ProductCard = ({ product }) => {
             ({reviewCount})
           </Typography>
         </Box>
-        {variantCount > 0 && (
+        {variantCount > 1 && (
           <Chip
-            label={`${variantCount} ${variantCount === 1 ? 'Option' : 'Options'}`}
+            label={`${variantCount} Options`}
             size="small"
             sx={{
               fontSize: '0.75rem',
-              backgroundColor: '#F0F4F8',
-              color: '#516F90',
+              backgroundColor: 'grey.100',
+              color: 'common.grey',
               alignSelf: 'flex-start',
               mb: 0.5,
             }}
           />
         )}
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 'auto' }}>
+        <Stack direction="row" spacing={1} alignItems="baseline" sx={{ mt: 'auto', flexWrap: 'wrap' }}>
           {finalSalePrice > 0 && (
             <Typography
               variant="body2"
               sx={{
                 textDecoration: 'line-through',
-                color: 'text.secondary',
-                fontSize: '0.85rem',
+                color: 'common.grey',
               }}
             >
               ${parseFloat(finalBasePrice).toFixed(2)}
             </Typography>
           )}
           <Typography 
-            variant="h6" 
+            variant="body1" 
             sx={{ 
-              color: finalSalePrice > 0 ? '#E5484D' : '#2A3548',
+              color: finalSalePrice > 0 ? 'primary.main' : 'text.primary',
               fontWeight: 600,
-              fontSize: '1.1rem',
+              fontSize: '1.2rem'
             }}
           >
             ${parseFloat(product.display_price).toFixed(2)}
-          </Typography>
-            {finalSalePrice > 0 && (
-              <>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: 'text.secondary',
-                  ml: 1,
-                }}
-              >
-                {Math.round(discount)}% OFF
-              </Typography>
-              </>
-            )}
-          {!isInStock && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box
-                sx={{
-                  display: 'inline-block',
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  mr: 0.75,
-                  backgroundColor:'error.main',
-                }}
-              />
-              <Typography variant="caption" color="text.secondary">
-                Out of Stock
-              </Typography>
-            </Box>
+          {finalSalePrice > 0 && (
+            <Chip
+              label={`${Math.round(discount)}% OFF`}
+              size="small"
+              sx={{
+                ml: 1,
+                bgcolor: 'red',
+                color: 'white',
+                fontWeight: 500,
+              }}
+            />
           )}
+          </Typography>
         </Stack>
+        {isInStock ? (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'inline-block',
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                mr: 0.75,
+                backgroundColor: '#4CAF50',
+              }}
+            />
+            <Typography variant="caption" sx={{ color: 'common.grey' }}>
+              In Stock
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'inline-block',
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                mr: 0.75,
+                backgroundColor: '#E5484D',
+              }}
+            />
+            <Typography variant="caption" sx={{ color: 'common.grey' }}>
+              Out of Stock
+            </Typography>
+          </Box>
+        )}
         <Button
           variant="contained"
           fullWidth
           disableElevation
           disabled={!isInStock}
-          onClick={{handleAddToCart}}
+          onClick={handleAddToCart}
           sx={{
             mt: 1,
           }}
+          startIcon={<AddShoppingCartOutlinedIcon />}
         >
           Add to Cart
         </Button>

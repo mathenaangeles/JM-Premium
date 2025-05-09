@@ -78,14 +78,15 @@ const CategoryList = () => {
             <Box>
               <Chip
                 icon={<Inventory2OutlinedIcon color='secondary'/>}
-                label={`${category.product_count || 0} Products`}
+                label={`${category.product_count || 0} ${category.product_count > 1 ? 'Products' : 'Product'} `}
                 size="small"
                 sx={{
-                  bgcolor: 'rgba(151, 167, 99, 0.15)',
+                  bgcolor: 'primary.light',
                   color: 'secondary.main',
-                  p: 2,
+                  px: 1,
+                  py: 1.7
                 }}
-              />
+              />   
             </Box>
           </Link>
         </CardContent>
@@ -129,13 +130,14 @@ const CategoryList = () => {
               {category.name}
             </Typography>
             <Chip
-              icon={<Inventory2OutlinedIcon color="secondary" />}
-              label={`${category.product_count || 0} Products`}
+              icon={<Inventory2OutlinedIcon color='secondary'/>}
+              label={`${category.product_count || 0} ${category.product_count > 1 ? 'Products' : 'Product'} `}
               size="small"
               sx={{
-                bgcolor: 'rgba(151, 167, 99, 0.15)',
+                bgcolor: 'primary.light',
                 color: 'secondary.main',
-                p: 2,
+                px: 1,
+                py: 1.7
               }}
             />
           </Box>

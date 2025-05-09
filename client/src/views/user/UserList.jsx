@@ -177,12 +177,13 @@ const UserList = () => {
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
                   <Chip
-                    icon={user.is_admin ? <SupervisorAccountIcon fontSize="small" /> : null}
+                    icon={user.is_admin ? <SupervisorAccountIcon fontSize="small" color="secondary" /> : null}
                     label={user.is_admin ? 'Admin' : 'Regular User'}
                     size="small"
                     sx={{
-                      bgcolor: user.is_admin ? 'rgba(151, 167, 99, 0.15)' : 'grey.100',
-                      color: user.is_admin ? 'secondary.main' : 'text.secondary',
+                      backgroundColor: user.is_admin ? 'primary.light' : 'grey.100',
+                      color: user.is_admin ? 'secondary.main' : 'common.grey',
+                      fontWeight: 600,
                       p: 1,
                     }}
                   />

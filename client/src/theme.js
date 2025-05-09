@@ -15,10 +15,11 @@ const theme = createTheme({
       black: '#1B1B1B',
       white: '#FAF9F6',
       grey:  '#726E69',
-      creme: '#F7F1E8'
+      creme: '#ECE4CE'
     },
     primary: {
       main: '#97A763',
+      light: '#F1F6E9'
     },
     secondary: {
       main: '#607049',

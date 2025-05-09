@@ -1,6 +1,6 @@
 import uuid
-from sqlalchemy.orm import joinedload
 from typing import Dict, Optional, Any
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -21,8 +21,8 @@ class CartService:
                 cart = (
                     db.session.query(Cart)
                     .options(
-                        joinedload(Cart.items).joinedload(CartItem.variant),
-                        joinedload(Cart.items).joinedload(CartItem.product)
+                        selectinload(Cart.items).selectinload(CartItem.variant),
+                        selectinload(Cart.items).selectinload(CartItem.product)
                     )
                     .filter_by(user_id=user_id)
                     .with_for_update()

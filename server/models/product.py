@@ -18,7 +18,6 @@ class Product(Base, TimestampMixin):
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
     meta_title: Mapped[Optional[str]] = mapped_column(String(255))
     meta_description: Mapped[Optional[str]] = mapped_column(Text)
-    meta_keywords: Mapped[Optional[str]] = mapped_column(String(255)) 
 
     weight: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0)
     width: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), default=0) 

@@ -1,8 +1,8 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from 'react';
-import { Save as SaveIcon, Delete as DeleteIcon, Add as AddIcon, Star as StarIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
-import {InputLabel, FormControl, Select, Box, Grid, Paper, Typography, TextField, Button, FormControlLabel, Switch, Divider, IconButton, Card, CardMedia, CardContent, CardActions, MenuItem, CircularProgress, Alert, Chip, InputAdornment } from '@mui/material';
+import { InfoOutlined as InfoOutlinedIcon, Save as SaveIcon, Delete as DeleteIcon, Add as AddIcon, Star as StarIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
+import { Tooltip, IconButton, InputLabel, FormControl, Select, Box, Grid, Paper, Typography, TextField, Button, FormControlLabel, Switch, Divider, Card, CardMedia, CardContent, CardActions, MenuItem, CircularProgress, Alert, Chip, InputAdornment } from '@mui/material';
 
 import { getCategories } from '../../slices/categorySlice';
 import ImageUploader from '../../components/ImageUploader';
@@ -31,7 +31,6 @@ const ProductForm = () => {
     is_active: true,
     meta_title: '',
     meta_description: '',
-    meta_keywords: '',
     weight: 0,
     width: 0,
     height: 0,
@@ -57,6 +56,7 @@ const ProductForm = () => {
   });
   const [variants, setVariants] = useState([]);
   const [currentVariant, setCurrentVariant] = useState(null);
+
   const editVariant = (variant) => {
     setCurrentVariant(variant);
     setVariantData({
@@ -64,7 +64,6 @@ const ProductForm = () => {
     });
   };
   
-
   useEffect(() => {
     dispatch(getCategories({ tree: false }));
   }, [dispatch]);
@@ -84,7 +83,6 @@ const ProductForm = () => {
         is_active: product.is_active || true,
         meta_title: product.meta_title || '',
         meta_description: product.meta_description || '',
-        meta_keywords: product.meta_keywords || '',
         weight: product.weight || 0,
         width: product.width || 0,
         height: product.height || 0,
@@ -256,23 +254,7 @@ const ProductForm = () => {
   );
 
   return (
-    <Box sx={{ p: 4, backgroundColor: "common.white" }}>
-      <Box sx={{ position: 'relative', display: 'inline-block', mb: 4 }}>
-        <Typography variant="h4" component="h2" sx={{ mb: 0.5 }}>
-        {productId ? 'Edit Product' : 'Create Product'}
-        </Typography>
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: -6,
-            left: 0,
-            height: '3px',
-            width: '60px',
-            bgcolor: 'primary.main',
-            borderRadius: 2,
-          }}
-        />
-      </Box>
+    <Box sx={{ px: 4, py: 2, backgroundColor: "primary.main", color: "common.white" }}>
       {error && (
         <Alert severity="error" onClose={() => dispatch(clearProductMessages())} sx={{ mb: 3 }}>
           {error}
@@ -283,8 +265,24 @@ const ProductForm = () => {
           {success}
         </Alert>
       )}
-      <Paper component="form" onSubmit={handleSubmit} elevation={3} sx={{ mb: 4, p: 4 }}>
-        <Typography variant="h5" sx={{ mb: 3 }}>
+      <Paper component="form" onSubmit={handleSubmit} elevation={3} sx={{ p: 4, my: 3 }}>
+         <Box sx={{ position: 'relative', display: 'inline-block', mb: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ mb: 0.5 }}>
+            Product Information
+          </Typography>
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: -6,
+              left: 0,
+              height: '3px',
+              width: '60px',
+              bgcolor: 'primary.main',
+              borderRadius: 2,
+            }}
+          />
+        </Box>
+        <Typography variant="h5" sx={{ mb: 2 }}>
           General Information
         </Typography>
         <Grid container spacing={3}>
@@ -298,7 +296,7 @@ const ProductForm = () => {
               fullWidth
             />
           </Grid>
-          <Grid size={{ xs: 12 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
               <InputLabel id="product-category-label" shrink>Category</InputLabel>
               <Select
@@ -330,7 +328,7 @@ const ProductForm = () => {
               onChange={handleProductChange}
               fullWidth
               multiline
-              rows={4}
+              rows={6}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 4 }}>
@@ -355,7 +353,16 @@ const ProductForm = () => {
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               name="sale_price"
-              label="Sale Price"
+              label={
+                <Box display="flex" alignItems="center">
+                  Sale Price
+                  <Tooltip title="Only add a sale price if this item is on sale.">
+                    <IconButton size="small" sx={{ ml: 0.5 }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              }
               value={productData.sale_price}
               onChange={handleProductChange}
               fullWidth
@@ -369,7 +376,6 @@ const ProductForm = () => {
                   startAdornment: <InputAdornment position="start">$</InputAdornment>
                 }
               }}
-              helperText="Only add a sale price if this item is on sale."
             />
           </Grid>
           <Grid size={{ xs: 12, md: 4 }}>
@@ -387,136 +393,6 @@ const ProductForm = () => {
               }}
             />
           </Grid>
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              name="meta_title"
-              label="Meta Title"
-              value={productData.meta_title}
-              onChange={handleProductChange}
-              fullWidth
-              helperText={`${productData.meta_title.length}/60 characters recommended`}
-            />
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              name="meta_description"
-              label="Meta Description"
-              value={productData.meta_description}
-              onChange={handleProductChange}
-              fullWidth
-              multiline
-              rows={3}
-              helperText={`${productData.meta_description.length}/160 characters recommended`}
-            />
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              name="meta_keywords"
-              label="Meta Keywords"
-              value={productData.meta_keywords}
-              onChange={handleProductChange}
-              fullWidth
-              helperText="Comma separated keywords"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              name="weight"
-              label="Weight (kg)"
-              value={productData.weight}
-              onChange={handleProductChange}
-              fullWidth
-              type="number"
-              slotProps={{
-                htmlInput: {
-                  step: "0.01", 
-                  min: "0"
-                },
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            name="width"
-            label="Width (cm)"
-            value={productData.width}
-            onChange={handleProductChange}
-            fullWidth
-            type="number"
-            slotProps={{
-              htmlInput: {
-                step: "0.01", 
-                min: "0"
-              },
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            name="height"
-            label="Height (cm)"
-            value={productData.height}
-            onChange={handleProductChange}
-            fullWidth
-            type="number"
-            slotProps={{
-              htmlInput: {
-                step: "0.01", 
-                min: "0"
-              },
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            name="length"
-            label="Length (cm)"
-            value={productData.length}
-            onChange={handleProductChange}
-            fullWidth
-            type="number"
-            slotProps={{
-              htmlInput: {
-                step: "0.01", 
-                min: "0"
-              },
-            }}
-          />
-        </Grid>
-          <Grid item xs={12} sm={6}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    name="is_active"
-                    checked={productData.is_active}
-                    onChange={handleProductChange}
-                    color="primary"
-                  />
-                }
-                label="Active Product"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    name="is_featured"
-                    checked={productData.is_featured}
-                    onChange={handleProductChange}
-                    color="secondary"
-                  />
-                }
-                label="Featured Product"
-              />
-            </Box>
-          </Grid>
-        </Grid>
-        <Typography variant="h6" sx={{ my: 2 }}>
-          Product Options
-        </Typography>
-        <Typography variant="body2" color="textSecondary" paragraph>
-          Define options like size, color, material, flavor, and the like to create product variants.
-        </Typography>
-        <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               name="option1_name"
@@ -543,356 +419,503 @@ const ProductForm = () => {
               onChange={handleProductChange}
               fullWidth
             />
-          </Grid>
-        </Grid>
-        <Grid size={{ xs: 12 }} sx={{ my: 2 }}>
-          {productId ? (
-            <>
-              <ImageUploader
-                multiple={true}
-                maxImages={6}
-                existingImages={images}
-                validationRules={{
-                  maxSize: 5 * 1024 * 1024,
-                  allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-                }}
-                loading={loading}
-                disabled={loading}
-                onFileUpload={handleImageUpload} 
-                onFileDelete={(image) => {
-                  handleImageDelete(image)
-                }}
-              />
-            </>
-          ) : (
-            <Alert severity="info" sx={{ mt: 2 }}>
-              You need to save the product first before uploading images
-            </Alert>
-          )}
+          </Grid>  
         </Grid>
         <Typography variant="h5" sx={{ my: 3 }}>
-          Variants Information
+          Search Engine Optimization 
         </Typography>
-        <Grid item xs={12}>
-          <Divider sx={{ my: 3 }} />
-          <Typography variant="h6" gutterBottom>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              name="meta_title"
+              label="Meta Title"
+              value={productData.meta_title}
+              onChange={handleProductChange}
+              fullWidth
+              helperText={`${productData.meta_title.length}/60 characters recommended`}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              name="meta_description"
+              label="Meta Description"
+              value={productData.meta_description}
+              onChange={handleProductChange}
+              fullWidth
+              multiline
+              rows={3}
+              helperText={`${productData.meta_description.length}/160 characters recommended`}
+            />
+          </Grid>
+        </Grid>
+        <Typography variant="h5" sx={{ my: 3 }}>
+          Physical Dimensions
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <TextField
+              name="weight"
+              label="Weight (kg)"
+              value={productData.weight}
+              onChange={handleProductChange}
+              fullWidth
+              type="number"
+              slotProps={{
+                htmlInput: {
+                  step: "0.01", 
+                  min: "0"
+                },
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
+          <TextField
+            name="width"
+            label="Width (cm)"
+            value={productData.width}
+            onChange={handleProductChange}
+            fullWidth
+            type="number"
+            slotProps={{
+              htmlInput: {
+                step: "0.01", 
+                min: "0"
+              },
+            }}
+          />
+          </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <TextField
+              name="height"
+              label="Height (cm)"
+              value={productData.height}
+              onChange={handleProductChange}
+              fullWidth
+              type="number"
+              slotProps={{
+                htmlInput: {
+                  step: "0.01", 
+                  min: "0"
+                },
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <TextField
+              name="length"
+              label="Length (cm)"
+              value={productData.length}
+              onChange={handleProductChange}
+              fullWidth
+              type="number"
+              slotProps={{
+                htmlInput: {
+                  step: "0.01", 
+                  min: "0"
+                },
+              }}
+            />
+          </Grid>
+         </Grid>
+         <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} sx={{ my: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    name="is_active"
+                    checked={productData.is_active}
+                    onChange={handleProductChange}
+                    color="primary"
+                  />
+                }
+                label="Active Product"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    name="is_featured"
+                    checked={productData.is_featured}
+                    onChange={handleProductChange}
+                    color="secondary"
+                  />
+                }
+                label="Featured Product"
+              />
+            </Box>
+          </Grid>
+        </Grid>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12 }}>
+            {productId ? (
+              <>
+                <ImageUploader
+                  multiple={true}
+                  maxImages={6}
+                  existingImages={images}
+                  validationRules={{
+                    maxSize: 5 * 1024 * 1024,
+                    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+                  }}
+                  loading={loading}
+                  disabled={loading}
+                  onFileUpload={handleImageUpload} 
+                  onFileDelete={(image) => {
+                    handleImageDelete(image)
+                  }}
+                />
+              </>
+            ) : (
+              <Alert severity="info">
+                You need to save the product first before uploading images
+              </Alert>
+            )}
+          </Grid>
+        </Grid>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 3 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            sx={{ mr: 1 }}
+            startIcon={loading ? <CircularProgress size={20} /> : ''}
+          >
+            {productId ? 'Update Product' : 'Create Product'}
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => navigate('/manage/products')}
+          >
+            Cancel
+          </Button>
+        </Box>  
+      </Paper>
+
+      <Paper component="form" onSubmit={handleSubmit} elevation={3} sx={{ p: 4, my: 3 }}>
+      <Box sx={{ position: 'relative', display: 'inline-block', mb: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ mb: 0.5 }}>
             Product Variants
           </Typography>
-          {!variantSectionEnabled && (
-            <Alert severity="info" sx={{ mb: 3 }}>
-              Define at least one option name above to create variants
-            </Alert>
-          )}
-          {variants.length > 0 ? (
-            <Grid container spacing={2}>
-              {variants.map((variant) => (
-                <Grid size={{ xs: 12 }} key={variant.id}>
-                  <Paper elevation={2} sx={{ p: 2 }}>
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12, sm : 6 }}>
-                        <TextField
-                          label="Variant Name"
-                          value={variant.name}
-                          onChange={handleVariantChange}
-                          fullWidth
-                          size="small"
-                          required
-                        />
-                      </Grid>
-                      {productData.option1_name && (
-                        <Grid size={{ xs: 12, sm : 4 }}>
-                          <TextField
-                            label={productData.option1_name}
-                            value={variant.option1_value}
-                            onChange={handleVariantChange}
-                            fullWidth
-                            size="small"
-                          />
-                        </Grid>
-                      )}
-                      {productData.option2_name && (
-                        <Grid size={{ xs: 12, sm : 4 }}>
-                          <TextField
-                            label={productData.option2_name}
-                            value={variant.option2_value}
-                            onChange={handleVariantChange}
-                            fullWidth
-                            size="small"
-                          />
-                        </Grid>
-                      )}
-                      {productData.option3_name && (
-                        <Grid size={{ xs: 12, sm : 4 }}>
-                          <TextField
-                            label={productData.option3_name}
-                            value={variant.option3_value}
-                            onChange={handleVariantChange}
-                            fullWidth
-                            size="small"
-                          />
-                        </Grid>
-                      )}
-                      <Grid size={{ xs: 12, sm : 4 }}>
-                        <TextField
-                          label="Base Price"
-                          value={variant.base_price}
-                          onChange={handleVariantChange}
-                          fullWidth
-                          size="small"
-                          type="number"
-                          slotProps={{
-                            htmlInput: {
-                              step: "0.01", 
-                              min: "0"
-                            },
-                            input: {
-                              startAdornment: <InputAdornment position="start">$</InputAdornment>
-                            }
-                          }}
-                          required
-                        />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm : 4 }}>
-                        <TextField
-                          label="Sale Price"
-                          value={variant.sale_price}
-                          onChange={handleVariantChange}
-                          fullWidth
-                          size="small"
-                          type="number"
-                          slotProps={{
-                            htmlInput: {
-                              step: "0.01", 
-                              min: "0"
-                            },
-                            input: {
-                              startAdornment: <InputAdornment position="start">$</InputAdornment>
-                            }
-                          }}
-                        />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm : 4 }}>
-                        <TextField
-                          label="Stock"
-                          value={variant.stock}
-                          onChange={handleVariantChange}
-                          fullWidth
-                          size="small"
-                          type="number"
-                          slotProps={{
-                            htmlInput: {
-                              min: "0"
-                            },
-                          }}
-                          required
-                        />
-                      </Grid>
-                      <Grid size={{ xs: 12 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                        <Button
-                          variant="outlined"
-                          color="primary"
-                          size="small"
-                          startIcon={<SaveIcon />}
-                          onClick={() => editVariant(variant)}
-                          sx={{ mr: 1 }}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          startIcon={<DeleteIcon />}
-                          onClick={() => handleDeleteClick(variant, 'variant')}
-                        >
-                          Remove
-                        </Button>
-                        </Box>
-                      </Grid>
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: -6,
+              left: 0,
+              height: '3px',
+              width: '60px',
+              bgcolor: 'primary.main',
+              borderRadius: 2,
+            }}
+          />
+        </Box>
+        {!variantSectionEnabled && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Define at least one option name above to create variants.
+          </Alert>
+        )}
+        {variants.length > 0 ? (
+          <Grid container spacing={2}>
+            {variants.map((variant) => (
+              <Grid size={{ xs: 12 }} key={variant.id}>
+                <Box>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm : 6 }}>
+                      <TextField
+                        label="Variant Name"
+                        value={variant.name}
+                        onChange={handleVariantChange}
+                        fullWidth
+                        size="small"
+                        required
+                      />
                     </Grid>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          ) : (
-            <Grid item xs={12}>
-              <Typography color="textSecondary">
-                No variants added yet
-              </Typography>
-            </Grid>
-          )}
-          <Typography variant="h6" gutterBottom>
-            Add New Variant
-          </Typography>
-          <Paper sx={{ p: 2 }} elevation={1}>
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  name="name"
-                  label="Variant Name"
-                  value={variantData.name}
-                  onChange={handleVariantChange}
-                  fullWidth
-                  size="small"
-                  disabled={!variantSectionEnabled}
-                />
-              </Grid>
-              {productData.option1_name && (
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    name="option1_value"
-                    label={productData.option1_name}
-                    value={variantData.option1_value}
-                    onChange={handleVariantChange}
-                    fullWidth
-                    size="small"
-                  />
-                </Grid>
-              )}
-              {productData.option2_name && (
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    name="option2_value"
-                    label={productData.option2_name}
-                    value={variantData.option2_value}
-                    onChange={handleVariantChange}
-                    fullWidth
-                    size="small"
-                  />
-                </Grid>
-              )}
-              {productData.option3_name && (
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    name="option3_value"
-                    label={productData.option3_name}
-                    value={variantData.option3_value}
-                    onChange={handleVariantChange}
-                    fullWidth
-                    size="small"
-                  />
-                </Grid>
-              )}
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  name="base_price"
-                  label="Base Price"
-                  value={variantData.base_price}
-                  onChange={handleVariantChange}
-                  fullWidth
-                  size="small"
-                  type="number"
-                  required
-                  disabled={!variantSectionEnabled}
-                  slotProps={{
-                    htmlInput: {
-                      step: "0.01", 
-                      min: "0"
-                    },
-                    input: {
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>
-                    }
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  label="Sale Price"
-                  name="sale_price"
-                  value={variantData.sale_price}
-                  onChange={handleVariantChange}
-                  fullWidth
-                  size="small"
-                  type="number"
-                  disabled={!variantSectionEnabled}
-                  slotProps={{
-                    htmlInput: {
-                      step: "0.01", 
-                      min: "0"
-                    },
-                    input: {
-                      startAdornment: <InputAdornment position="start">$</InputAdornment>
-                    }
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  name="stock"
-                  label="Stock"
-                  value={variantData.stock}
-                  onChange={handleVariantChange}
-                  fullWidth
-                  size="small"
-                  type="number"
-                  required
-                  disabled={!variantSectionEnabled}
-                  slotProps={{
-                    htmlInput: {
-                      min: "0"
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                  {currentVariant ? (
-                    <>
+                    {productData.option1_name && (
+                      <Grid size={{ xs: 12, sm : 4 }}>
+                        <TextField
+                          label={productData.option1_name}
+                          value={variant.option1_value}
+                          onChange={handleVariantChange}
+                          fullWidth
+                          size="small"
+                        />
+                      </Grid>
+                    )}
+                    {productData.option2_name && (
+                      <Grid size={{ xs: 12, sm : 4 }}>
+                        <TextField
+                          label={productData.option2_name}
+                          value={variant.option2_value}
+                          onChange={handleVariantChange}
+                          fullWidth
+                          size="small"
+                        />
+                      </Grid>
+                    )}
+                    {productData.option3_name && (
+                      <Grid size={{ xs: 12, sm : 4 }}>
+                        <TextField
+                          label={productData.option3_name}
+                          value={variant.option3_value}
+                          onChange={handleVariantChange}
+                          fullWidth
+                          size="small"
+                        />
+                      </Grid>
+                    )}
+                    <Grid size={{ xs: 12, sm : 4 }}>
+                      <TextField
+                        label="Base Price"
+                        value={variant.base_price}
+                        onChange={handleVariantChange}
+                        fullWidth
+                        size="small"
+                        type="number"
+                        slotProps={{
+                          htmlInput: {
+                            step: "0.01", 
+                            min: "0"
+                          },
+                          input: {
+                            startAdornment: <InputAdornment position="start">$</InputAdornment>
+                          }
+                        }}
+                        required
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm : 4 }}>
+                      <TextField
+                        label="Sale Price"
+                        value={variant.sale_price}
+                        onChange={handleVariantChange}
+                        fullWidth
+                        size="small"
+                        type="number"
+                        slotProps={{
+                          htmlInput: {
+                            step: "0.01", 
+                            min: "0"
+                          },
+                          input: {
+                            startAdornment: <InputAdornment position="start">$</InputAdornment>
+                          }
+                        }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm : 4 }}>
+                      <TextField
+                        label="Stock"
+                        value={variant.stock}
+                        onChange={handleVariantChange}
+                        fullWidth
+                        size="small"
+                        type="number"
+                        slotProps={{
+                          htmlInput: {
+                            min: "0"
+                          },
+                        }}
+                        required
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                       <Button
                         variant="outlined"
-                        color="secondary"
-                        onClick={cancelEdit}
+                        color="primary"
+                        size="small"
+                        startIcon={<SaveIcon />}
+                        onClick={() => editVariant(variant)}
                         sx={{ mr: 1 }}
                       >
-                        Cancel
+                        Edit
                       </Button>
                       <Button
-                        type="button"
-                        variant="contained"
-                        color="primary"
-                        startIcon={<SaveIcon />}
-                        onClick={handleUpdateVariant}
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDeleteClick(variant, 'variant')}
                       >
-                        Update Variant
+                        Remove
                       </Button>
-                    </>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="contained"
-                      color="primary"
-                      startIcon={<AddIcon />}
-                      onClick={handleAddVariant}
-                      disabled={!variantSectionEnabled}
-                    >
-                      Add Variant
-                    </Button>
-                  )}
+                      </Box>
+                    </Grid>
+                  </Grid>
                 </Box>
               </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: { xs: 3 },
+              px: { xs: 2 },
+              backgroundColor: 'grey.100',
+              borderRadius: 2,
+              border: '1px dashed #CCCCCC',
+              my: 3
+            }}
+          >
+            <Typography variant="h6" color="text.secondary">
+              No Variants Found
+            </Typography>
+            <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
+              This product has no variants.
+            </Typography>
+          </Box>
+        )}
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 2, my: 3 }}>
+          <Typography variant="h5" sx={{ my: 3 }}>
+            Variant Details
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                name="name"
+                label="Variant Name"
+                value={variantData.name}
+                onChange={handleVariantChange}
+                fullWidth
+                size="small"
+                disabled={!variantSectionEnabled}
+              />
             </Grid>
-          </Paper>
-        </Grid>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 3 }}>
-        <Button
-          variant="outlined"
-          color="error"
-          onClick={() => navigate('/manage/products')}
-          sx={{ mr: 2 }}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-        >
-          {productId ? 'Update Product' : 'Create Product'}
-        </Button>
-      </Box>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <TextField
+                name="base_price"
+                label="Base Price"
+                value={variantData.base_price}
+                onChange={handleVariantChange}
+                fullWidth
+                size="small"
+                type="number"
+                required
+                disabled={!variantSectionEnabled}
+                slotProps={{
+                  htmlInput: {
+                    step: "0.01", 
+                    min: "0"
+                  },
+                  input: {
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>
+                  }
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <TextField
+                name="sale_price"
+                label="Sale Price"
+                value={variantData.sale_price}
+                onChange={handleVariantChange}
+                fullWidth
+                size="small"
+                type="number"
+                disabled={!variantSectionEnabled}
+                slotProps={{
+                  htmlInput: {
+                    step: "0.01", 
+                    min: "0"
+                  },
+                  input: {
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>
+                  }
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <TextField
+                name="stock"
+                label="Stock"
+                value={variantData.stock}
+                onChange={handleVariantChange}
+                fullWidth
+                size="small"
+                type="number"
+                required
+                disabled={!variantSectionEnabled}
+                slotProps={{
+                  htmlInput: {
+                    min: "0"
+                  },
+                }}
+              />
+            </Grid>
+            {productData.option1_name && (
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  name="option1_value"
+                  label={productData.option1_name}
+                  value={variantData.option1_value}
+                  onChange={handleVariantChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+            )}
+            {productData.option2_name && (
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  name="option2_value"
+                  label={productData.option2_name}
+                  value={variantData.option2_value}
+                  onChange={handleVariantChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+            )}
+            {productData.option3_name && (
+              <Grid size={{ xs: 12  }}>
+                <TextField
+                  name="option3_value"
+                  label={productData.option3_name}
+                  value={variantData.option3_value}
+                  onChange={handleVariantChange}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+            )}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+              {currentVariant ? (
+                <>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={cancelEdit}
+                    sx={{ mr: 1 }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="contained"
+                    color="primary"
+                    startIcon={<SaveIcon />}
+                    onClick={handleUpdateVariant}
+                  >
+                    Update Variant
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddVariant}
+                  disabled={!variantSectionEnabled}
+                >
+                  Add Variant
+                </Button>
+              )}
+            </Box>
+          </Grid>
+        </Paper>
       </Paper>
       <DeleteConfirmationModal
         open={deleteDialogState.open}

@@ -30,7 +30,7 @@ class Category(Base, TimestampMixin):
             'description': self.description,
             'slug': self.slug,
             'image': self.image.to_dict() if self.image else None,
-            'product_count': len(self.products) if self.products else 0,
+            'product_count': len(self.products) + sum(len(subcategory.products) for subcategory in self.subcategories),
         }
         if include_subcategories:
             subcategories = self.subcategories if self.subcategories is not None else []

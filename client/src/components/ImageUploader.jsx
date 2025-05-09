@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Box, Button, CircularProgress, IconButton, Paper, Typography, Grid } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { Box, Button, CircularProgress, IconButton, Paper, Typography, Grid, Divider } from '@mui/material';
+import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Image as ImageIcon, Add as AddIcon } from '@mui/icons-material';
 
 const ImageUploader = ({
   onFileSelect,
@@ -19,6 +19,7 @@ const ImageUploader = ({
   const normalizedExistingImages = existingImages 
     ? (Array.isArray(existingImages) ? existingImages : [existingImages])
     : [];
+    
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [fileError, setFileError] = useState(null);
@@ -84,11 +85,11 @@ const ImageUploader = ({
 
   const validateFile = (file) => {
     if (!validationRules.allowedTypes.includes(file.type)) {
-      setFileError(`The file type is not supported. Please use: ${validationRules.allowedTypes.map(type => type.split('/')[1].toUpperCase()).join(', ')}`);
+      setFileError(`File type not supported. Please use: ${validationRules.allowedTypes.map(type => type.split('/')[1].toUpperCase()).join(', ')}`);
       return false;
     }
     if (file.size > validationRules.maxSize) {
-      setFileError(`The file too large. Maximum Size: ${Math.floor(validationRules.maxSize / (1024 * 1024))}MB`);
+      setFileError(`File too large. Maximum size: ${Math.floor(validationRules.maxSize / (1024 * 1024))}MB`);
       return false;
     }
     return true;
@@ -137,6 +138,7 @@ const ImageUploader = ({
         fileInputRef.current.value = '';
       }
       setSelectedFiles([]);
+      setFileError(null);
     }
   };
 
@@ -154,10 +156,14 @@ const ImageUploader = ({
     if (normalizedExistingImages.length === 0) return null;
     
     return (
-      <Box sx={{ mb: 3 }}>        
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6" sx={{ my: 1 }}>
+          {multiple ? 'Current Images' : 'Current Image'}
+        </Typography>
+        <Divider sx={{ mb: 3  }} />
         <Grid container spacing={2}>
           {normalizedExistingImages.map((image, index) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={`existing-${index}`}>
+            <Grid item xs={12} sm={6} md={4} key={`existing-${index}`}>
               <Paper
                 elevation={2}
                 sx={{
@@ -174,7 +180,7 @@ const ImageUploader = ({
                 <Box
                   component="img"
                   src={image.url}
-                  alt={image.name || "Uploaded Image"}
+                  alt={image.name || "Uploaded image"}
                   sx={{
                     width: '100%',
                     height: '100%',
@@ -184,7 +190,7 @@ const ImageUploader = ({
                 />
                 {onFileDelete && (
                   <IconButton
-                    aria-label="Delete Image"
+                    aria-label="delete image"
                     onClick={() => handleRemoveExisting(image, index)}
                     disabled={loading || disabled}
                     size="small"
@@ -215,12 +221,13 @@ const ImageUploader = ({
     
     return (
       <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle1" sx={{ my: 1, fontWeight: 700, color: "primary.main" }}>
+        <Typography variant="h6" sx={{ my: 1 }}>
           {multiple ? 'Selected Images' : 'Selected Image'}
         </Typography>
+        <Divider sx={{ mb: 3  }} />
         <Grid container spacing={2}>
           {selectedFiles.map((file, index) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={`selected-${index}`}>
+            <Grid item xs={12} sm={6} md={4} key={`selected-${index}`}>
               <Paper
                 elevation={1}
                 sx={{
@@ -246,6 +253,7 @@ const ImageUploader = ({
                         variant="body2" 
                         noWrap 
                         title={file.name}
+                        sx={{ fontWeight: 500 }}
                       >
                         {file.name}
                       </Typography>
@@ -298,17 +306,21 @@ const ImageUploader = ({
     
     if (selectedFiles.length > 0) {
       return (
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          onClick={handleUpload}
-          disabled={loading || disabled || fileError || selectedFiles.length === 0}
-          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
-          sx={{ mt: 2 }}
-        >
-          {loading ? 'Uploading...' : (multiple ? 'Upload Images' : 'Upload Image')}
-        </Button>
+        <>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={handleUpload}
+            disabled={loading || disabled || fileError || selectedFiles.length === 0}
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
+            sx={{ mt: 2, mb: multiple ? 3 : 0 }}
+          >
+            {loading ? 'Uploading...' : (multiple ? 'Upload Images' : 'Upload Image')}
+          </Button>
+          
+          {multiple && canAddMore && renderDropArea()}
+        </>
       );
     }
     
@@ -319,7 +331,10 @@ const ImageUploader = ({
         </Typography>
       );
     }
-    
+    return renderDropArea();
+  };
+  
+  const renderDropArea = () => {
     return (
       <Paper
         elevation={1}
@@ -328,8 +343,7 @@ const ImageUploader = ({
           borderRadius: 2,
           bgcolor: 'background.default',
           position: 'relative',
-          mt: normalizedExistingImages.length > 0 ? 4 : 2,
-          mb: 2
+          mt: normalizedExistingImages.length > 0 ? 3 : 0
         }}
       >
         <Box 
@@ -381,7 +395,6 @@ const ImageUploader = ({
             />
           </Button>
         </Box>
-
         {fileError && (
           <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
             {fileError}

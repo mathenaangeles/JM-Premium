@@ -44,7 +44,6 @@ class ProductService:
                 is_featured=data.get('is_featured', False),
                 meta_title=data.get('meta_title'),
                 meta_description=data.get('meta_description'),
-                meta_keywords=data.get('meta_keywords'),
                 weight=data.get('weight'),
                 width=data.get('width'),
                 height=data.get('height'),
@@ -75,7 +74,7 @@ class ProductService:
         if not product:
             return None
         try:
-            for field in ['name', 'description', 'category_id', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'meta_keywords', 'weight', 'width', 'height', 'length', 'option1_name', 'option2_name', 'option3_name', 'base_price', 'sale_price', 'stock']:
+            for field in ['name', 'description', 'category_id', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'weight', 'width', 'height', 'length', 'option1_name', 'option2_name', 'option3_name', 'base_price', 'sale_price', 'stock']:
                 if field in data:
                     setattr(product, field, data[field])
             if 'name' in data:

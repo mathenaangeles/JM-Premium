@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Inventory2Outlined as Inventory2OutlinedIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
-import { LinearProgress, Chip, Box, Breadcrumbs, Button, Alert, CardMedia, Container, Collapse, FormControl, Grid, MenuItem, Select, Typography, Paper, IconButton } from '@mui/material';
+import { Pagination, Card, CardContent, LinearProgress, Chip, Box, Breadcrumbs, Button, Alert, CardMedia, Container, Collapse, Grid, Snackbar, Typography, IconButton } from '@mui/material';
+import { ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, Inventory2Outlined as Inventory2OutlinedIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 
 import ProductCard from '../product/ProductCard';
 import { getProducts } from '../../slices/productSlice';
@@ -13,9 +13,10 @@ const CategoryDetail = () => {
   const dispatch = useDispatch();
 
   const { category, breadcrumbs, error, loading } = useSelector(state => state.category);
-  const { products, totalPages, currentPage, } = useSelector(state => state.product);
+  const { products, totalPages, currentPage, count } = useSelector(state => state.product);
 
-  const [perPage, setPerPage] = useState(12);
+  const [perPage, _] = useState(50);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [showSubcategories, setShowSubcategories] = useState(true);
 
   useEffect(() => {
@@ -43,10 +44,12 @@ const CategoryDetail = () => {
     dispatch(getProducts({ categoryIds, page, perPage }));
   };
 
-
-  const handlePerPageChange = (e) => {
-    setPerPage(e.target.value);
+  const handleAddToCartSuccess = () => {
+    setSnackbarOpen(true);
   };
+
+  const startItem = products.length > 0 ? (currentPage - 1) * perPage + 1 : 0;
+  const endItem = Math.min(currentPage * perPage, count || 0);
 
   if (loading) {
     return (<LinearProgress />)
@@ -81,7 +84,7 @@ const CategoryDetail = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'common.white' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       <Box
         sx={{
           position: 'relative',
@@ -229,33 +232,53 @@ const CategoryDetail = () => {
             <Collapse in={showSubcategories} timeout={300} unmountOnExit>
               <Grid container spacing={3}>
                 {category.subcategories.map(subcategory => (
-                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={subcategory.id}>
-                    <Paper
-                      component={Link}
-                      to={`/categories/${subcategory.slug}`}
-                      elevation={2}
+                  <Grid component={Link} to={`/categories/${subcategory.slug}`} sx={{ textDecoration: 'none', color: 'inherit' }} size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={subcategory.id}>
+                    <Card
                       sx={{
-                        p: 3,
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        textDecoration: 'none',
-                        color: 'inherit',
                         borderRadius: 2,
-                        transition: 'all 0.2s ease',
                         cursor: 'pointer',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: 'shadows[1]',
                           '& .subcategory-name': {
-                            color: 'primary.main'
-                          }
+                            color: 'primary.main',
+                          },
                         },
                       }}
                     >
-                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography
+                      {subcategory.image?.url ? (
+                        <CardMedia
+                          component="img"
+                          image={subcategory.image.url}
+                          title={subcategory.name}
+                          sx={{
+                            height: 140,
+                            objectFit: 'cover',
+                            backgroundColor: '#F5F5F5',
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          height="140px"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          backgroundColor="#F5F5F5"
+                          color="grey.500"
+                        >
+                          <ImageNotSupportedOutlinedIcon fontSize="large" />
+                        </Box>
+                      )}
+                      <CardContent>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Typography
                             variant="h6"
                             className="subcategory-name"
                             sx={{
@@ -267,24 +290,24 @@ const CategoryDetail = () => {
                           </Typography>
                           <Chip
                             icon={<Inventory2OutlinedIcon color="secondary" />}
-                            label={`${subcategory.product_count || 0} Products`}
+                            label={`${subcategory.product_count || 0} ${subcategory.product_count > 1 ? 'Products' : 'Product'} `}
                             size="small"
                             sx={{
-                              bgcolor: 'rgba(151, 167, 99, 0.15)',
+                              bgcolor: 'primary.light',
                               color: 'secondary.main',
-                              p: 2,
+                              px: 1,
+                              py: 1.7
                             }}
                           />
                         </Box>
-                    </Paper>
+                      </CardContent>
+                    </Card>
                   </Grid>
                 ))}
               </Grid>
             </Collapse>
           </Box>
         )}
-
-        {/* Products Section */}
         <Box sx={{ mt: 6 }}>
           <Box
             sx={{
@@ -310,142 +333,85 @@ const CategoryDetail = () => {
                 }}
               />
             </Box>
-
-            <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
-              <Select
-                value={perPage}
-                onChange={handlePerPageChange}
-                displayEmpty
-                sx={{
-                  borderRadius: 2,
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'divider'
-                  }
-                }}
-              >
-                <MenuItem value={12}>12 per page</MenuItem>
-                <MenuItem value={24}>24 per page</MenuItem>
-                <MenuItem value={48}>48 per page</MenuItem>
-              </Select>
-            </FormControl>
-
           </Box>
+          {products && products.length > 0 ? (
+            <>
+            <Grid container spacing={4}>
+              {products.map(product => (
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product.id}>
+                  <ProductCard product={product} onAddToCartSuccess={handleAddToCartSuccess} />
+                </Grid>
+              ))}
+            </Grid>
+            <Snackbar
+              open={snackbarOpen}
+              autoHideDuration={5000}
+              onClose={() => setSnackbarOpen(false)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+              <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
+                Item was successfully added to cart.
+              </Alert>
+            </Snackbar>
+            </>
+          ) : (
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: { xs: 4, sm: 8 },
+                px: { xs: 2, sm: 2 },
+                backgroundColor: 'grey.100',
+                borderRadius: 2,
+                border: '1px dashed #CCCCCC',
+              }}
+            >
+              <Typography variant="h6" color="text.secondary">
+                No Products Found
+              </Typography>
+              <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
+                There are currently no products available in this category.
+              </Typography>
+            </Box>
+          )}
 
-          <>
-            {products && products.length > 0 ? (
-              <Grid container spacing={4}>
-                {products.map(product => (
-                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product.id}>
-                    <ProductCard product={product} />
-                  </Grid>
-                ))}
-              </Grid>
-            ) : (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  py: { xs: 4, sm: 8 },
-                  px: { xs: 2, sm: 2 },
-                  backgroundColor: 'grey.100',
-                  borderRadius: 2,
-                  border: '1px dashed #CCCCCC',
+          {products && products.length > 0 && (
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'column', md: 'row' }, 
+                justifyContent: 'space-between', 
+                alignItems: { xs: 'center', md: 'center' }, 
+                mt: 6,
+                pt: 4,
+                borderTop: '1px solid',
+                borderColor: 'divider'
+              }}
+            >
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  mb: { xs: 3, md: 0 },
+                  flexWrap: 'wrap',
+                  justifyContent: { xs: 'center', md: 'flex-start' }
                 }}
               >
-                <Typography variant="h6" color="text.secondary">
-                  No Products Found
-                </Typography>
-                <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
-                  There are currently no products available in this category.
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  {count > 0 ? 
+                    `Showing ${startItem}-${endItem} of ${count} products` : 
+                    'No results found'}
                 </Typography>
               </Box>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-                <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden' }}>
-                  <Button
-                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    variant="outlined"
-                    sx={{
-                      borderRadius: '4px 0 0 4px',
-                      borderRight: 'none',
-                      px: 2,
-                      py: 1,
-                      minWidth: { xs: '60px', sm: '80px' },
-                      color: currentPage === 1 ? 'disabled' : 'primary.main'
-                    }}
-                  >
-                    Previous
-                  </Button>
-
-                  {[...Array(totalPages)].map((_, index) => {
-                    const page = index + 1;
-                    if (
-                      page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    ) {
-                      return (
-                        <Button
-                          key={page}
-                          onClick={() => handlePageChange(page)}
-                          variant={currentPage === page ? "contained" : "outlined"}
-                          sx={{
-                            borderRadius: 0,
-                            borderLeft: 'none',
-                            borderRight: 'none',
-                            px: { xs: 1.5, sm: 2 },
-                            py: 1,
-                            minWidth: { xs: '40px', sm: '50px' }
-                          }}
-                        >
-                          {page}
-                        </Button>
-                      );
-                    } else if (page === currentPage - 2 || page === currentPage + 2) {
-                      return (
-                        <Button
-                          key={page}
-                          disabled
-                          variant="outlined"
-                          sx={{
-                            borderRadius: 0,
-                            borderLeft: 'none',
-                            borderRight: 'none',
-                            px: { xs: 1.5, sm: 2 },
-                            py: 1,
-                            minWidth: { xs: '40px', sm: '50px' }
-                          }}
-                        >
-                          ...
-                        </Button>
-                      );
-                    }
-                    return null;
-                  })}
-
-                  <Button
-                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    variant="outlined"
-                    sx={{
-                      borderRadius: '0 4px 4px 0',
-                      borderLeft: 'none',
-                      px: 2,
-                      py: 1,
-                      minWidth: { xs: '60px', sm: '80px' },
-                      color: currentPage === totalPages ? 'disabled' : 'primary.main'
-                    }}
-                  >
-                    Next
-                  </Button>
-                </Box>
-              </Box>
-            )}
-          </>
-            
+              <Pagination 
+                count={totalPages || 1} 
+                page={currentPage} 
+                onChange={handlePageChange} 
+                shape="rounded"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>
