@@ -13,13 +13,28 @@ import { getProductBySlug } from '../../slices/productSlice';
 const StyledListItem = styled(ListItem)(({ theme }) => ({
   paddingTop: theme.spacing(2),
   paddingBottom: theme.spacing(2),
-  paddingLeft: theme.spacing(8),
-  paddingRight: theme.spacing(8),
+  paddingLeft: theme.spacing(2),
+  paddingRight: theme.spacing(2),
   backgroundColor: theme.palette.secondary.main,
   borderBottom: '1px solid',
   borderColor: theme.palette.common.white,
   '&:hover': {
     backgroundColor: theme.palette.primary.main,
+  },
+  '&:first-of-type': {
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  '&:last-of-type': {
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+}));
+
+const StyledListItemText = styled(ListItemText)(({ theme }) => ({
+  '& .MuiListItemText-primary': {
+    fontWeight: 600,
+    color: theme.palette.common.white,
   },
 }));
 
@@ -156,523 +171,522 @@ const ProductDetail = () => {
   const productImages = product.images || [];
 
   return (
-    <Box>
-      <Box sx={{ px: 5, py: 3 }}>
-        <Breadcrumbs
-          separator={<NavigateNextIcon fontSize="small" />}
-          aria-label="breadcrumb"
-          sx={{ mb: 4, color: 'text.secondary' }}
-        >
-          <Link to="/shop" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Typography color="text.secondary" variant="body2">Shop</Typography>
-          </Link>
-          <Link to={`/categories/${product.category_slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Typography color="text.secondary" variant="body2">{product.category_name}</Typography>
-          </Link>
-          <Typography color="primary.main" variant="body2" sx={{ fontWeight: '600' }}>{product.name}</Typography>
-        </Breadcrumbs>
-        <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: 1, 
-              mr: 2,
-              width: '80px',
-            }}>
-              {productImages.map((image) => (
-                <Box
-                  key={image.id}
-                  onClick={() => handleImageClick(image.url)}
-                  sx={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    backgroundColor: '#F5F5F5',
-                    border: selectedImage === image.url ? '2px solid' : '1px solid',
-                    borderColor: selectedImage === image.url ? 'primary.main' : 'grey.300',
-                    '&:hover': {
-                      borderColor: 'primary.light',
-                    }
-                  }}
-                >
-                  <img
-                    src={image.url}
-                    alt={`${product.name} thumbnail`}
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'cover',
-                    }}
-                  />
-                </Box>
-              ))}
-            </Box>
-            <Box sx={{ 
-              flexGrow: 1,
-              height: { xs: 350, sm: 550 }, 
-              backgroundColor: '#F5F5F5',
-              borderRadius: 2,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              overflow: 'hidden',
-              position: 'relative',
-              border: '1px solid',
-              borderColor: 'grey.100',
-            }}>
-              {selectedImage ? (
-                <img
-                  src={selectedImage}
-                  alt={product.name}
-                  style={{ 
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    position: 'absolute',
-                  }}
-                />
-              ) : (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: "grey.500"
-                  }}
-                >
-                  <ImageNotSupportedOutlinedIcon fontSize="large"  />
-                </Box>
-                
-              )}
-              {product.is_featured && (
-                <Chip
-                  label="Featured"
-                  color="secondary"
-                  size="small"
-                  sx={{
-                    position: 'absolute',
-                    top: 16,
-                    left: 16,
-                    fontWeight: 600,
-                    fontSize: '0.75rem',
-                  }}
-                />
-              )}
-              {productImages.length > 1 && (
-                <>
-                  <IconButton 
-                    sx={{ 
-                      position: 'absolute', 
-                      left: 8, 
-                      top: '50%', 
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'rgba(255,255,255,0.1)',  
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.5)' },
-                      boxShadow: 1,
-                    }}
-                    onClick={() => {
-                      const currentIndex = productImages.findIndex(img => img.url === selectedImage);
-                      const prevIndex = currentIndex <= 0 ? productImages.length - 1 : currentIndex - 1;
-                      setSelectedImage(productImages[prevIndex].url);
-                    }}
-                  >
-                    <ChevronLeftIcon />
-                  </IconButton>
-                  <IconButton 
-                    sx={{ 
-                      position: 'absolute', 
-                      right: 8, 
-                      top: '50%', 
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'rgba(255,255,255,0.1)', 
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.5)' },
-                      boxShadow: 1,
-                    }}
-                    onClick={() => {
-                      const currentIndex = productImages.findIndex(img => img.url === selectedImage);
-                      const nextIndex = (currentIndex + 1) % productImages.length;
-                      setSelectedImage(productImages[nextIndex].url);
-                    }}
-                  >
-                    <ChevronRightIcon />
-                  </IconButton>
-                </>
-              )}
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography 
-              variant="h4" 
-              gutterBottom
-              sx={{ 
-                mb: 2,
-                fontWeight: 600,
-              }}
-            >
-              {product.name}
-            </Typography>
-            <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  mb: 2,
-                  flexWrap: 'wrap'
+    <Box sx={{ px: 5, py: 3 }}>
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{ mb: 4, color: 'text.secondary' }}
+      >
+        <Link to="/shop" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Typography color="text.secondary" variant="body2">Shop</Typography>
+        </Link>
+        <Link to={`/categories/${product.category_slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Typography color="text.secondary" variant="body2">{product.category_name}</Typography>
+        </Link>
+        <Typography color="primary.main" variant="body2" sx={{ fontWeight: '600' }}>{product.name}</Typography>
+      </Breadcrumbs>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 1, 
+            mr: 2,
+            width: '80px',
+          }}>
+            {productImages.map((image) => (
+              <Box
+                key={image.id}
+                onClick={() => handleImageClick(image.url)}
+                sx={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  backgroundColor: '#F5F5F5',
+                  border: selectedImage === image.url ? '2px solid' : '1px solid',
+                  borderColor: selectedImage === image.url ? 'primary.main' : 'grey.300',
+                  '&:hover': {
+                    borderColor: 'primary.light',
+                  }
                 }}
               >
-              <Rating 
-                value={product.average_rating} 
-                precision={0.5} 
-                readOnly 
+                <img
+                  src={image.url}
+                  alt={`${product.name} thumbnail`}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover',
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+          <Box sx={{ 
+            flexGrow: 1,
+            height: { xs: 350, sm: 550 }, 
+            backgroundColor: '#F5F5F5',
+            borderRadius: 2,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            overflow: 'hidden',
+            position: 'relative',
+            border: '1px solid',
+            borderColor: 'grey.100',
+          }}>
+            {selectedImage ? (
+              <img
+                src={selectedImage}
+                alt={product.name}
+                style={{ 
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  position: 'absolute',
+                }}
               />
-                <Typography 
-                  variant="body2" 
-                  color="secondary.main" 
-                  component={Link} 
-                  to="#reviews" 
-                  onClick={() => setTimeout(() => {
-                    reviewsRef.current?.scrollIntoView({ behavior: 'smooth' });
-                  }, 100)}
+            ) : (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: "grey.500"
+                }}
+              >
+                <ImageNotSupportedOutlinedIcon fontSize="large"  />
+              </Box>
+              
+            )}
+            {product.is_featured && (
+              <Chip
+                label="Featured"
+                color="secondary"
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  top: 16,
+                  left: 16,
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                }}
+              />
+            )}
+            {productImages.length > 1 && (
+              <>
+                <IconButton 
                   sx={{ 
-                    ml: 1, 
+                    position: 'absolute', 
+                    left: 8, 
+                    top: '50%', 
+                    transform: 'translateY(-50%)',
+                    bgcolor: 'rgba(255,255,255,0.1)',  
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.5)' },
+                    boxShadow: 1,
+                  }}
+                  onClick={() => {
+                    const currentIndex = productImages.findIndex(img => img.url === selectedImage);
+                    const prevIndex = currentIndex <= 0 ? productImages.length - 1 : currentIndex - 1;
+                    setSelectedImage(productImages[prevIndex].url);
                   }}
                 >
-                  {reviewCount > 0 ? 
-                    `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}` : 
-                    'Be the first to review'
-                  }
-                </Typography>
-            </Box>
-            <Box 
+                  <ChevronLeftIcon />
+                </IconButton>
+                <IconButton 
+                  sx={{ 
+                    position: 'absolute', 
+                    right: 8, 
+                    top: '50%', 
+                    transform: 'translateY(-50%)',
+                    bgcolor: 'rgba(255,255,255,0.1)', 
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.5)' },
+                    boxShadow: 1,
+                  }}
+                  onClick={() => {
+                    const currentIndex = productImages.findIndex(img => img.url === selectedImage);
+                    const nextIndex = (currentIndex + 1) % productImages.length;
+                    setSelectedImage(productImages[nextIndex].url);
+                  }}
+                >
+                  <ChevronRightIcon />
+                </IconButton>
+              </>
+            )}
+          </Box>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Typography 
+            variant="h4" 
+            gutterBottom
+            sx={{ 
+              mb: 2,
+              fontWeight: 600,
+            }}
+          >
+            {product.name}
+          </Typography>
+          <Box 
               sx={{ 
                 display: 'flex', 
-                alignItems: 'baseline', 
-                mb: 3,
-                flexWrap: 'wrap',
-                gap: 1
+                alignItems: 'center', 
+                mb: 2,
+                flexWrap: 'wrap'
               }}
             >
-            {compareAtPrice && (
+            <Rating 
+              value={product.average_rating} 
+              precision={0.5} 
+              readOnly 
+            />
               <Typography 
                 variant="body2" 
-                component="span" 
+                color="secondary.main" 
+                component={Link} 
+                to="#reviews" 
+                onClick={() => setTimeout(() => {
+                  reviewsRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 100)}
                 sx={{ 
-                  textDecoration: 'line-through',
-                  color: 'common.grey'
-                  }}
-              >
-                ${parseFloat(compareAtPrice).toFixed(2)}
-              </Typography>
-              )}
-              <Typography 
-                variant="body1" 
-                component="span" 
-                sx={{ 
-                  fontWeight: 700,
-                  color: compareAtPrice ? 'primary.main' : 'text.primary',
-                  fontSize: '1.2rem'
+                  ml: 1, 
                 }}
               >
-                ${parseFloat(currentPrice).toFixed(2)}
+                {reviewCount > 0 ? 
+                  `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}` : 
+                  'Be the first to review'
+                }
               </Typography>
-              {compareAtPrice && (
-                <Chip
-                  label={`${Math.round(discount)}% OFF`}
-                  size="small"
-                  sx={{
-                    ml: 1,
-                    bgcolor: 'red',
-                    color: 'white',
-                    fontWeight: 500,
-                }}/>
-              )}
-            </Box>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ mb: 3 }}
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(product.description || 'No description available'),
+          </Box>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'baseline', 
+              mb: 3,
+              flexWrap: 'wrap',
+              gap: 1
+            }}
+          >
+          {compareAtPrice && (
+            <Typography 
+              variant="body2" 
+              component="span" 
+              sx={{ 
+                textDecoration: 'line-through',
+                color: 'common.grey'
+                }}
+            >
+              ${parseFloat(compareAtPrice).toFixed(2)}
+            </Typography>
+            )}
+            <Typography 
+              variant="body1" 
+              component="span" 
+              sx={{ 
+                fontWeight: 700,
+                color: compareAtPrice ? 'primary.main' : 'text.primary',
+                fontSize: '1.2rem'
               }}
-            />
-            {product.variants && product.variants.length > 0 && (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="body2"  sx={{ mb: 1, fontWeight: 600 }}>
-                  Select Option:
-                  {selectedVariant && (
-                    <Typography 
-                      component="span" 
-                      variant="body2" 
-                      color="secondary.main" 
-                      sx={{ ml: 1, fontWeight: 600 }}
-                    >
-                      {selectedVariant.name}
-                    </Typography>
-                  )}
-                </Typography>
-                <Grid container spacing={1} sx={{ mb: 2 }}>
-                  {product.variants.map((variant) => {
-                    const isSelected = selectedVariant && selectedVariant.id === variant.id;
-                    const isInStock = variant.stock > 0;
-                    const variantImage = variant.images && variant.images.length > 0 
-                      ? variant.images[0].url 
-                      : null;
-                    return (
-                      <Grid item key={variant.id} xs="auto">
-                        <Box
-                          onClick={() => isInStock && handleVariantSelect(variant)}
-                          sx={{
-                            width: '80px',
-                            height: '80px',
-                            borderRadius: 1,
-                            overflow: 'hidden',
-                            cursor: isInStock ? 'pointer' : 'not-allowed',
-                            backgroundColor: '#F5F5F5',
-                            border: '2px solid',
-                            borderColor: isSelected ? 'primary.main' : 'grey.300',
-                            opacity: isInStock ? 1 : 0.5,
-                            '&:hover': {
-                              borderColor: isInStock ? 'primary.light' : 'grey.300',
-                            },
-                            position: 'relative',
-                          }}
-                        >
-                          {variantImage ? (
-                            <Box>
-                              <img
-                                src={variantImage}
-                                alt={variant.name}
-                                style={{ 
-                                  width: '100%', 
-                                  height: '100%', 
-                                  objectFit: 'cover',
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                }}
-                              />
-                            </Box>
-                          ) : (
-                            <Box 
-                              sx={{ 
-                                height: '100%', 
+            >
+              ${parseFloat(currentPrice).toFixed(2)}
+            </Typography>
+            {compareAtPrice && (
+              <Chip
+                label={`${Math.round(discount)}% OFF`}
+                size="small"
+                sx={{
+                  ml: 1,
+                  bgcolor: 'red',
+                  color: 'white',
+                  fontWeight: 500,
+              }}/>
+            )}
+          </Box>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 3 }}
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(product.description || 'No description available'),
+            }}
+          />
+          {product.variants && product.variants.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2"  sx={{ mb: 1, fontWeight: 600 }}>
+                Select Option:
+                {selectedVariant && (
+                  <Typography 
+                    component="span" 
+                    variant="body2" 
+                    color="secondary.main" 
+                    sx={{ ml: 1, fontWeight: 600 }}
+                  >
+                    {selectedVariant.name}
+                  </Typography>
+                )}
+              </Typography>
+              <Grid container spacing={1} sx={{ mb: 2 }}>
+                {product.variants.map((variant) => {
+                  const isSelected = selectedVariant && selectedVariant.id === variant.id;
+                  const isInStock = variant.stock > 0;
+                  const variantImage = variant.images && variant.images.length > 0 
+                    ? variant.images[0].url 
+                    : null;
+                  return (
+                    <Grid item key={variant.id} xs="auto">
+                      <Box
+                        onClick={() => isInStock && handleVariantSelect(variant)}
+                        sx={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          cursor: isInStock ? 'pointer' : 'not-allowed',
+                          backgroundColor: '#F5F5F5',
+                          border: '2px solid',
+                          borderColor: isSelected ? 'primary.main' : 'grey.300',
+                          opacity: isInStock ? 1 : 0.5,
+                          '&:hover': {
+                            borderColor: isInStock ? 'primary.light' : 'grey.300',
+                          },
+                          position: 'relative',
+                        }}
+                      >
+                        {variantImage ? (
+                          <Box>
+                            <img
+                              src={variantImage}
+                              alt={variant.name}
+                              style={{ 
                                 width: '100%', 
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',  
-                                color: isSelected ? 'primary.main' : 'common.grey'                            
-                              }}
-                            >
-                              <Typography variant="body2" fontWeight={600}>
-                                {variant.option1_value || variant.option2_value || variant.option3_value}
-                              </Typography>
-                            </Box>
-                          )}
-                          
-                          {isSelected && (
-                            <Box 
-                              sx={{ 
+                                height: '100%', 
+                                objectFit: 'cover',
                                 position: 'absolute',
                                 top: 0,
                                 left: 0,
-                                width: '100%',
-                                height: '100%',
-                                borderRadius: 1,
-                                pointerEvents: 'none',
                               }}
                             />
-                          )}
-                          {!isInStock && (
-                            <Box sx={{ 
-                              position: 'absolute', 
+                          </Box>
+                        ) : (
+                          <Box 
+                            sx={{ 
+                              height: '100%', 
                               width: '100%', 
-                              height: '1px', 
-                              bgcolor: 'text.disabled',
-                              transform: 'rotate(-45deg)',
-                              top: '50%'
-                            }} />
-                          )}
-                        </Box>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
-              </Box>
-            )}
-            <Box sx={{ mb: 4 }}>
-              <Typography 
-                variant="body2" 
-                sx={{ mb: 1, fontWeight: 600 }}
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',  
+                              color: isSelected ? 'primary.main' : 'common.grey'                            
+                            }}
+                          >
+                            <Typography variant="body2" fontWeight={600}>
+                              {variant.option1_value || variant.option2_value || variant.option3_value}
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        {isSelected && (
+                          <Box 
+                            sx={{ 
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              borderRadius: 1,
+                              pointerEvents: 'none',
+                            }}
+                          />
+                        )}
+                        {!isInStock && (
+                          <Box sx={{ 
+                            position: 'absolute', 
+                            width: '100%', 
+                            height: '1px', 
+                            bgcolor: 'text.disabled',
+                            transform: 'rotate(-45deg)',
+                            top: '50%'
+                          }} />
+                        )}
+                      </Box>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Box>
+          )}
+          <Box sx={{ mb: 4 }}>
+            <Typography 
+              variant="body2" 
+              sx={{ mb: 1, fontWeight: 600 }}
+            >
+              Quantity
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  border: '1px solid',
+                  borderColor: 'primary.main',
+                  borderRadius: 1.5,
+                  overflow: 'hidden',
+                  height: 40,
+                }}
               >
-                Quantity
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box
+                <Button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  aria-label="decrease quantity"
                   sx={{
-                    display: 'flex',
-                    border: '1px solid',
+                    minWidth: 40,
+                    px: 0,
+                    borderRight: '1px solid',
                     borderColor: 'primary.main',
-                    borderRadius: 1.5,
-                    overflow: 'hidden',
-                    height: 40,
+                    borderRadius: 0,
                   }}
                 >
-                  <Button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    aria-label="decrease quantity"
+                  <RemoveIcon fontSize="small" />
+                </Button>
+                <TextField
+                  size="small"
+                  type="number"
+                  slotProps = {{
+                    htmlInput: {
+                      min: 1,
+                      max: selectedVariant? selectedVariant.stock : product.total_stock,
+                      style: { 
+                        textAlign: 'center', 
+                        padding: '8px 0',
+                        MozAppearance: 'textfield'
+                      } 
+                    }
+                  }}                  
+                  value={quantity}
+                  onChange={handleQuantityChange}
+                  sx={{
+                    width: 50,
+                    '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+                      WebkitAppearance: 'none',
+                      margin: 0,
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                    '& input': {
+                      textAlign: 'center',
+                    },
+                  }}
+                />
+                <Button
+                  onClick={() => setQuantity(Math.min(selectedVariant? selectedVariant.stock : product.total_stock, quantity + 1))}
+                  aria-label="increase quantity"
+                  sx={{
+                    minWidth: 40,
+                    px: 0,
+                    borderLeft: '1px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 0,
+                  }}
+                >
+                  <AddIcon fontSize="small" />
+                </Button>
+              </Box>
+              {isInStock ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', ml: 2  }}>
+                  <Box
                     sx={{
-                      minWidth: 40,
-                      px: 0,
-                      borderRight: '1px solid',
-                      borderColor: 'primary.main',
-                      borderRadius: 0,
-                    }}
-                  >
-                    <RemoveIcon fontSize="small" />
-                  </Button>
-                  <TextField
-                    size="small"
-                    type="number"
-                    slotProps = {{
-                      htmlInput: {
-                        min: 1,
-                        max: selectedVariant? selectedVariant.stock : product.total_stock,
-                        style: { 
-                          textAlign: 'center', 
-                          padding: '8px 0',
-                          MozAppearance: 'textfield'
-                        } 
-                      }
-                    }}                  
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                    sx={{
-                      width: 50,
-                      '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
-                        WebkitAppearance: 'none',
-                        margin: 0,
-                      },
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                      '& input': {
-                        textAlign: 'center',
-                      },
+                      display: 'inline-block',
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      mr: 0.75,
+                      backgroundColor: '#4CAF50',
                     }}
                   />
-                  <Button
-                    onClick={() => setQuantity(Math.min(selectedVariant? selectedVariant.stock : product.total_stock, quantity + 1))}
-                    aria-label="increase quantity"
-                    sx={{
-                      minWidth: 40,
-                      px: 0,
-                      borderLeft: '1px solid',
-                      borderColor: 'primary.main',
-                      borderRadius: 0,
-                    }}
-                  >
-                    <AddIcon fontSize="small" />
-                  </Button>
+                  <Typography variant="caption" sx={{ color: 'common.grey' }}>
+                    In Stock
+                  </Typography>
                 </Box>
-                {isInStock ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2  }}>
-                    <Box
-                      sx={{
-                        display: 'inline-block',
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        mr: 0.75,
-                        backgroundColor: '#4CAF50',
-                      }}
-                    />
-                    <Typography variant="caption" sx={{ color: 'common.grey' }}>
-                      In Stock
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-                    <Box
-                      sx={{
-                        display: 'inline-block',
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        mr: 0.75,
-                        backgroundColor: '#E5484D',
-                      }}
-                    />
-                    <Typography variant="caption" sx={{ color: 'common.grey' }}>
-                      Out of Stock
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'inline-block',
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      mr: 0.75,
+                      backgroundColor: '#E5484D',
+                    }}
+                  />
+                  <Typography variant="caption" sx={{ color: 'common.grey' }}>
+                    Out of Stock
+                  </Typography>
+                </Box>
+              )}
             </Box>
-            {product.weight &&  product.dimensions (
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                {product.weight && (
+          </Box>
+          {(product.weight &&  product.dimensions) && (
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              {product.weight && (
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Weight
+                </Typography>
+                <Typography variant="body2">
+                  {product.weight || 0} kg
+                </Typography>
+              </Grid>
+              )}
+              {product.dimensions && (
                 <Grid size={{ xs: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Weight
+                    Dimensions
                   </Typography>
                   <Typography variant="body2">
-                    {product.weight || 0} kg
+                    {(() => {
+                      const { width, length, height } = product.dimensions || {};
+                      const dimensions = [
+                        width && `${width}W`,
+                        length && `${length}L`,
+                        height && `${height}H`
+                      ].filter(Boolean);
+                      
+                      return dimensions.length > 0 ? dimensions.join(' x ') : null;
+                    })()}
                   </Typography>
                 </Grid>
-                )}
-                {product.dimensions && (
-                  <Grid size={{ xs: 6 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Dimensions
-                    </Typography>
-                    <Typography variant="body2">
-                      {(() => {
-                        const { width, length, height } = product.dimensions || {};
-                        const dimensions = [
-                          width && `${width}W`,
-                          length && `${length}L`,
-                          height && `${height}H`
-                        ].filter(Boolean);
-                        
-                        return dimensions.length > 0 ? dimensions.join(' x ') : null;
-                      })()}
-                    </Typography>
-                  </Grid>
-                )}
-              </Grid>
-            )}
-            <Grid size={{ xs: 12 }}>
-              <Button
-                variant="contained"
-                fullWidth
-                disableElevation
-                disabled={!isInStock}
-                onClick={handleAddToCart}
-                startIcon={<AddShoppingCartOutlinedIcon />}
-                size="large"
-                sx={{ width: '250px' }}
-              >
-                Add to Cart
-              </Button>
+              )}
             </Grid>
+          )}
+          <Grid size={{ xs: 12 }}>
+            <Button
+              variant="contained"
+              fullWidth
+              disableElevation
+              disabled={!isInStock}
+              onClick={handleAddToCart}
+              startIcon={<AddShoppingCartOutlinedIcon />}
+              size="large"
+              sx={{ width: '250px' }}
+            >
+              Add to Cart
+            </Button>
           </Grid>
         </Grid>
-      </Box>
-      <Box sx={{ my: 5, overflow: 'hidden' }}>
-        <List sx={{ py: 0 }}>
+      </Grid>
+
+      <List sx={{ py: 0, my: 4 }}>
+        {product.benefits && (<>
           <StyledListItem button onClick={() => toggleSection('benefits')}>
-            <ListItemText slotProps={{ primary: { fontWeight: 600, color: 'common.white' }, }} primary="Benefits" />
+            <StyledListItemText primary="Benefits" />
               {expandedSection === 'benefits' ? <ExpandLessIcon sx={{ color: 'common.white' }} /> : <ExpandMoreIcon sx={{ color: 'common.white' }} />}
           </StyledListItem>
-          <Collapse in={expandedSection === 'benefits'}  sx={{ px: 8 }}>
+          <Collapse in={expandedSection === 'benefits'}  sx={{ px: 2 }}>
             <Typography
               variant="body1"
               dangerouslySetInnerHTML={{
@@ -680,11 +694,13 @@ const ProductDetail = () => {
               }}
             />
           </Collapse>
+        </>)}
+        {product.instructions && (<>
           <StyledListItem button onClick={() => toggleSection('instructions')}>
-            <ListItemText slotProps={{ primary: { fontWeight: 600, color: 'common.white' } }} primary="Instructions" />
+            <StyledListItemText primary="Instructions" />
               {expandedSection === 'instructions' ? <ExpandLessIcon sx={{ color: 'common.white' }}  /> : <ExpandMoreIcon sx={{ color: 'common.white' }}  />}
           </StyledListItem>
-          <Collapse in={expandedSection === 'instructions'} sx={{ px: 8 }}>
+          <Collapse in={expandedSection === 'instructions'} sx={{ px: 2 }}>
             <Typography
               variant="body1"
               dangerouslySetInnerHTML={{
@@ -692,11 +708,13 @@ const ProductDetail = () => {
               }}
             />
           </Collapse>
+        </>)}
+        {product.ingredients && (<>
           <StyledListItem button onClick={() => toggleSection('ingredients')}>
-            <ListItemText slotProps={{ primary: { fontWeight: 600, color: 'common.white' }, }} primary="Ingredients" />
+            <StyledListItemText primary="Ingredients" />
               {expandedSection === 'ingredients' ? <ExpandLessIcon sx={{ color: 'common.white' }} /> : <ExpandMoreIcon sx={{ color: 'common.white' }} />}
           </StyledListItem>
-          <Collapse in={expandedSection === 'ingredients'}  sx={{ px: 8 }}>
+          <Collapse in={expandedSection === 'ingredients'}  sx={{ px: 2 }}>
             <Typography
               variant="body1"
               dangerouslySetInnerHTML={{
@@ -704,217 +722,175 @@ const ProductDetail = () => {
               }}
             />
           </Collapse>
-        </List>
-      </Box>
+        </>)}
+      </List>
 
-      <Box ref={reviewsRef} sx={{ px: 5, py: 3 }}>
-
-      </Box>
-
-      {/* <Paper ref={reviewsRef} elevation={0} 
-        sx={{ 
-          mb: 6, 
-          border: '1px solid', 
-          borderColor: 'divider',
-          borderRadius: 2,
-          overflow: 'hidden'
-        }}
-        id="reviews"
-      >
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange}
-          variant="fullWidth"
+      <Box ref={reviewsRef} sx={{ display: 'inline-block', position: 'relative', mb: 5 }}>
+        <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
+          Customer Reviews
+        </Typography>
+        <Box
           sx={{
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontSize: '1rem',
-              fontWeight: 500,
-              py: 2
-            }
+            position: 'absolute',
+            bottom: -6,
+            left: 0,
+            height: '3px',
+            width: '60px',
+            bgcolor: 'primary.main',
+            borderRadius: 2,
           }}
-        >
-          <Tab label={`Reviews (${reviewCount})`} />
-          <Tab label="Write a Review" />
-        </Tabs>
-        
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          {activeTab === 0 && (
-            <>
-              {reviewCount > 0 && (
-                <Box sx={{ mb: 4 }}>
-                  <Grid container spacing={3} alignItems="center">
-                    <Grid item xs={12} sm={4} md={3}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: { xs: 'center', sm: 'flex-start' },
-                        mb: { xs: 2, sm: 0 }
-                      }}>
-                        <Typography variant="h3" color="primary.main" sx={{ fontWeight: 600 }}>
-                          {product.average_rating.toFixed(1)}
-                        </Typography>
-                        
-                        <Rating 
-                          value={product.average_rating} 
-                          precision={0.5} 
-                          readOnly 
-                          size="medium"
-                          sx={{ mb: 1 }}
-                        />
-                        
-                        <Typography color="text.secondary" variant="body2">
-                          {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    
-                    <Grid item xs={12} sm={8} md={9}>
-                      <Box>
-                        {[5, 4, 3, 2, 1].map((star) => (
-                          <Box 
-                            key={star} 
-                            sx={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              mb: 0.5 
-                            }}
-                          >
-                            <Typography variant="body2" sx={{ width: 15, mr: 1 }}>
-                              {star}
-                            </Typography>
-                            <StarIcon sx={{ color: 'warning.main', fontSize: 18, mr: 1 }} />
-                            <Box 
-                              sx={{ 
-                                flexGrow: 1, 
-                                height: 8, 
-                                backgroundColor: 'grey.100',
-                                borderRadius: 1,
-                                position: 'relative',
-                                overflow: 'hidden'
-                              }}
-                            >
-                              <Box 
-                                sx={{ 
-                                  width: `${star * 20}%`, 
-                                  height: '100%', 
-                                  backgroundColor: 'warning.main',
-                                  borderRadius: 1,
-                                }}
-                              />
-                            </Box>
-                            <Typography variant="body2" sx={{ width: 30, ml: 1, color: 'text.secondary' }}>
-                              {Math.round(reviewCount * (star / 15))}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Box>
-              )}
-        
-              <Typography 
-                variant="h6" 
-                sx={{ mb: 2, fontWeight: 600 }}
-              >
-                Customer Reviews
-              </Typography>
-              
-              {reviews && reviews.length > 0 ? (
-                reviews.map((review) => (
-                  <Card 
-                    key={review.id} 
-                    elevation={0}
-                    sx={{ 
-                      mb: 3, 
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 2
-                    }}
-                  >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                          {review.title}
-                        </Typography>
-                        
-                        <Typography variant="body2" color="text.secondary">
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </Typography>
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Rating value={review.rating} readOnly size="small" />
-                        <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                          Verified Purchase
-                        </Typography>
-                      </Box>
-                      
-                      <Typography variant="body2">{review.content}</Typography>
-                      
-                      {review.images && review.images.length > 0 && (
-                        <Box sx={{ display: 'flex', mt: 2, gap: 1 }}>
-                          {review.images.map((image, index) => (
-                            <Box
-                              key={index}
-                              sx={{
-                                width: 60,
-                                height: 60,
-                                borderRadius: 1,
-                                overflow: 'hidden'
-                              }}
-                            >
-                              <img 
-                                src={image.url} 
-                                alt={`Review ${index + 1}`}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
-                            </Box>
-                          ))}
-                        </Box>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
+        />
+      </Box>
+
+      {/* <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        {reviewCount > 0 ? (
+          <Box sx={{ mb: 4 }}>
+            <Grid container spacing={3} alignItems="center">
+              <Grid item xs={12} sm={4} md={3}>
                 <Box sx={{ 
-                  py: 6, 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  alignItems: 'center' 
+                  alignItems: { xs: 'center', sm: 'flex-start' },
+                  mb: { xs: 2, sm: 0 }
                 }}>
-                  <Typography color="text.secondary" sx={{ mb: 2 }}>
-                    No reviews yet. Be the first to leave a review!
+                  <Typography variant="h3" color="primary.main" sx={{ fontWeight: 600 }}>
+                    {product.average_rating.toFixed(1)}
                   </Typography>
                   
-                  <Button 
-                    onClick={(e) => handleTabChange(e, 1)} 
-                    variant="outlined"
-                    sx={{ textTransform: 'none' }}
-                  >
-                    Write a Review
-                  </Button>
+                  <Rating 
+                    value={product.average_rating} 
+                    precision={0.5} 
+                    readOnly 
+                    size="medium"
+                    sx={{ mb: 1 }}
+                  />
+                  
+                  <Typography color="text.secondary" variant="body2">
+                    Based on {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
+                  </Typography>
                 </Box>
-              )}
-            </>
-          )}
-          
-          {activeTab === 1 && (
-            <Box>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                Share Your Experience
-              </Typography>
-              <ReviewForm 
-                productId={product.id} 
-                onReviewSubmit={handleReviewSubmit} 
-              />
-            </Box>
-          )}
-        </Box>
-      </Paper> */}
+              </Grid>
+              
+              <Grid item xs={12} sm={8} md={9}>
+                <Box>
+                  {[5, 4, 3, 2, 1].map((star) => (
+                    <Box 
+                      key={star} 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        mb: 0.5 
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ width: 15, mr: 1 }}>
+                        {star}
+                      </Typography>
+                      <StarIcon sx={{ color: 'warning.main', fontSize: 18, mr: 1 }} />
+                      <Box 
+                        sx={{ 
+                          flexGrow: 1, 
+                          height: 8, 
+                          backgroundColor: 'grey.100',
+                          borderRadius: 1,
+                          position: 'relative',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        <Box 
+                          sx={{ 
+                            width: `${star * 20}%`, 
+                            height: '100%', 
+                            backgroundColor: 'warning.main',
+                            borderRadius: 1,
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="body2" sx={{ width: 30, ml: 1, color: 'text.secondary' }}>
+                        {Math.round(reviewCount * (star / 15))}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        ) : (
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography color="text.secondary" variant="body1" sx={{ mb: 2 }}>
+              This product doesn't have any reviews yet.
+            </Typography>
+            <Typography color="text.secondary" variant="body2" sx={{ mb: 3 }}>
+              Share your thoughts and be the first to review this product!
+            </Typography>
+          </Box>
+        )}
+        {reviews && reviews.length > 0 ? (
+          <>
+            <Typography 
+              variant="h6" 
+              sx={{ mb: 2, fontWeight: 600 }}
+            >
+              {reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}
+            </Typography>
+            
+            {reviews.map((review) => (
+              <Card 
+                key={review.id} 
+                elevation={0}
+                sx={{ 
+                  mb: 3, 
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2
+                }}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {review.title}
+                    </Typography>
+                    
+                    <Typography variant="body2" color="text.secondary">
+                      {new Date(review.created_at).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Rating value={review.rating} readOnly size="small" />
+                    <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                      Verified Purchase
+                    </Typography>
+                  </Box>
+                  
+                  <Typography variant="body2">{review.content}</Typography>
+                  
+                  {review.images && review.images.length > 0 && (
+                    <Box sx={{ display: 'flex', mt: 2, gap: 1 }}>
+                      {review.images.map((image, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            width: 60,
+                            height: 60,
+                            borderRadius: 1,
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <img 
+                            src={image.url} 
+                            alt={`Review ${index + 1}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : null}
+      </Box> */}
 
     </Box>
   );
