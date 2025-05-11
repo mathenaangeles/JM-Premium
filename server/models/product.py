@@ -13,6 +13,9 @@ class Product(Base, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
+    benefits: Mapped[Optional[str]] = mapped_column(Text)
+    ingredients: Mapped[Optional[str]] = mapped_column(Text)
+    instructions: Mapped[Optional[str]] = mapped_column(Text)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -148,6 +151,9 @@ class Product(Base, TimestampMixin):
             "name": self.name,
             "slug": self.slug,
             "description": self.description,
+            "benefits": self.benefits,
+            "ingredients": self.ingredients,
+            "instructions": self.instructions,
             "is_active": self.is_active,
             "is_featured": self.is_featured,
             "meta_title": self.meta_title,
@@ -162,6 +168,8 @@ class Product(Base, TimestampMixin):
             "option2_name": self.option2_name,
             "option3_name": self.option3_name,
             "category_id": self.category_id,
+            "category_name": self.category.name if self.category else None,
+            "category_slug": self.category.slug if self.category else None,
             "average_rating": self.average_rating,
             "total_stock": float(self.total_stock),
             "display_price": float(self.display_price),

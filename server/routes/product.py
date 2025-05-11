@@ -147,15 +147,15 @@ def manage_product_variant(product_id, variant_id):
 @product_blueprint.route('/<int:product_id>/images', methods=['POST'])
 @admin_required
 def create_product_image(product_id):
+    variant_id = request.args.get('variant_id', default=None, type=int)
     product = product_service.get_product_by_id(product_id)
     if not product:
-        return jsonify({'message': 'Product could not be found.'}), 404
+        return jsonify({'message': 'Product or product variant could not be found.'}), 404
     try:
         data = request.form.to_dict()
         file = request.files.get('file')
         if file:
             data['file'] = file 
-        variant_id = data.get('variant_id')
         image = product_service.create_product_image(product_id, data, variant_id)
         if not image:
             return jsonify({'message': 'Image could not be created.'}), 400

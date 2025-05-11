@@ -1,0 +1,68 @@
+/* reactQuillOverrides.css */
+
+.ql-toolbar button:hover .ql-stroke,
+.ql-toolbar button.ql-active .ql-stroke {
+    stroke: #97A763 !important;
+}
+
+.ql-toolbar button:hover .ql-fill,
+.ql-toolbar button.ql-active .ql-fill {
+    fill: #97A763 !important;
+}
+
+.ql-toolbar button:hover,
+.ql-toolbar button.ql-active {
+    color: #97A763 !important;
+}
+
+.ql-toolbar .ql-picker-label:hover,
+.ql-toolbar .ql-picker-item:hover {
+    color: #97A763 !important;
+}
+
+.ql-editor a {
+    color: #97A763;
+    text-decoration: underline;
+}
+
+.ql-editor a:hover {
+    color: #97A763;
+}
+
+.ql-toolbar button.ql-active,
+.ql-toolbar .ql-picker-label.ql-active,
+.ql-toolbar .ql-picker-item.ql-selected {
+    color: #97A763 !important;
+}
+
+.ql-toolbar button.ql-active .ql-stroke,
+.ql-toolbar button.ql-active .ql-fill,
+.ql-toolbar .ql-picker-label.ql-active svg,
+.ql-toolbar .ql-picker-item.ql-selected svg {
+    stroke: #97A763 !important;
+}
+
+.ql-toolbar button.ql-active:hover,
+.ql-toolbar .ql-picker-label.ql-active:hover {
+    color: #97A763 !important;
+}
+
+.ql-toolbar button.ql-active:hover .ql-stroke {
+    stroke: #97A763 !important;
+}
+
+.ql-snow .ql-picker:not(.ql-color-picker):not(.ql-icon-picker) .ql-stroke {
+    stroke: #97A763 !important;
+}
+
+.ql-container {
+    min-height: 150px;
+    font-size: 16px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+  
+.ql-toolbar {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}

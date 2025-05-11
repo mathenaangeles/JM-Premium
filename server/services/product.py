@@ -40,6 +40,9 @@ class ProductService:
                 slug=generate_slug(data.get('name')),
                 category_id=data.get('category_id'),
                 description=data.get('description'),
+                benefits=data.get('benefits'),
+                ingredients=data.get('ingredients'),
+                instructions=data.get('instructions'),
                 is_active=data.get('is_active', False),
                 is_featured=data.get('is_featured', False),
                 meta_title=data.get('meta_title'),
@@ -74,7 +77,7 @@ class ProductService:
         if not product:
             return None
         try:
-            for field in ['name', 'description', 'category_id', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'weight', 'width', 'height', 'length', 'option1_name', 'option2_name', 'option3_name', 'base_price', 'sale_price', 'stock']:
+            for field in ['name', 'description', 'benefits', 'ingredients', 'instructions', 'category_id', 'is_active', 'is_featured', 'meta_title', 'meta_description', 'weight', 'width', 'height', 'length', 'option1_name', 'option2_name', 'option3_name', 'base_price', 'sale_price', 'stock']:
                 if field in data:
                     setattr(product, field, data[field])
             if 'name' in data:
@@ -194,9 +197,6 @@ class ProductService:
         return db.session.get(ProductImage, image_id)
     
     def create_product_image(self, product_id: int, data: Dict[str, Any], variant_id: Optional[int] = None) -> Optional[ProductImage]:
-        product = self.get_product_by_id(product_id)
-        if not product:
-            return None
         try:
             if 'file' in data:
                 image_url = upload_image_to_gcs(data['file'], folder="products")

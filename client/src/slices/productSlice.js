@@ -118,9 +118,12 @@ export const deleteProductVariant = createAsyncThunk(
 
 export const addProductImage = createAsyncThunk(
   '/addProductImage',
-  async ({ productId, imageData }, { rejectWithValue }) => {
+  async ({ productId, variantId, imageData }, { rejectWithValue }) => {
     try {
-      const { data } = await Axios.post(`/products/${productId}/images`, imageData);
+      const url = variantId
+        ? `/products/${productId}/images?variant_id=${variantId}`
+        : `/products/${productId}/images`;
+      const { data } = await Axios.post(url, imageData);
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);

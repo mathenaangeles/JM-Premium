@@ -6,7 +6,8 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import '@fontsource/open-sans';
-import '@fontsource/dm-serif-display'; 
+import '@fontsource/dm-serif-display';
+import 'react-quill-new/dist/quill.snow.css';
 
 import './index.css'
 import App from './App.jsx'

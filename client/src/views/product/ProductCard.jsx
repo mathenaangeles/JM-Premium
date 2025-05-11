@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { AddShoppingCartOutlined as AddShoppingCartOutlinedIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon }  from '@mui/icons-material';
 import { Card, CardMedia, CardContent, Typography, Box, Chip, Rating, Stack, Button } from '@mui/material';
+import { AddShoppingCartOutlined as AddShoppingCartOutlinedIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon }  from '@mui/icons-material';
 
 import { addToCart } from '../../slices/cartSlice';
 
@@ -86,6 +86,7 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                color: "grey.500"
               }}
             >
               <ImageNotSupportedOutlinedIcon fontSize="large" />
@@ -96,10 +97,9 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
         {product.is_featured && (
           <Chip
             label="Featured"
+            color="secondary"
             size="small"
             sx={{
-              backgroundColor: 'secondary.main',
-              color: 'secondary.contrastText',
               fontWeight: 600,
               fontSize: '0.75rem',
             }}
@@ -172,9 +172,10 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
           )}
           <Typography 
             variant="body1" 
+            color="primary"
             sx={{ 
               color: finalSalePrice > 0 ? 'primary.main' : 'text.primary',
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: '1.2rem'
             }}
           >

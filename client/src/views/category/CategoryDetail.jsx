@@ -160,31 +160,17 @@ const CategoryDetail = () => {
             aria-label="breadcrumb"
             sx={{ mb: 4, color: 'text.secondary' }}
           >
-            <Link
-              to="/shop"
-              style={{
-                textDecoration: 'none',
-                color: 'inherit',
-              }}
-            >
-              Shop
+            <Link to="/shop" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Typography color="text.secondary" variant="body2">Shop</Typography>
             </Link>
             {breadcrumbs.map((item, index) => (
               <Box key={item.id}>
                 {index < breadcrumbs.length - 1 ? (
-                  <Link
-                    to={`/categories/${item.slug}`}
-                    style={{
-                      textDecoration: 'none',
-                      color: 'inherit',
-                    }}
-                  >
-                    {item.name}
+                  <Link to={`/categories/${item.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Typography color="text.secondary" variant="body2">{item.name}</Typography>
                   </Link>
                 ) : (
-                  <Typography color="primary.main" sx={{ fontWeight: '600' }}>
-                    {item.name}
-                  </Typography>
+                  <Typography color="primary.main" variant="body2" sx={{ fontWeight: '600' }}>{item.name}</Typography>
                 )}
               </Box>
             ))}

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Box, Button, CircularProgress, IconButton, Paper, Typography, Grid, Divider } from '@mui/material';
+import { Chip, Box, Button, CircularProgress, IconButton, Paper, Typography, Grid, Divider } from '@mui/material';
 import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon, Image as ImageIcon, Add as AddIcon } from '@mui/icons-material';
 
 const ImageUploader = ({
@@ -163,7 +163,7 @@ const ImageUploader = ({
         <Divider sx={{ mb: 3  }} />
         <Grid container spacing={2}>
           {normalizedExistingImages.map((image, index) => (
-            <Grid item xs={12} sm={6} md={4} key={`existing-${index}`}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={`existing-${index}`}>
               <Paper
                 elevation={2}
                 sx={{
@@ -188,6 +188,26 @@ const ImageUploader = ({
                     display: 'block'
                   }}
                 />
+                {image.variant_id && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      zIndex: 1
+                    }}
+                  >
+                    <Chip
+                        label={`Variant ID: ${image.variant_id}`}
+                        size="small"
+                        sx={{
+                          backgroundColor: 'primary.light',
+                          color: 'secondary.main',
+                          fontWeight: 600
+                        }}
+                      />
+                  </Box>
+                )}
                 {onFileDelete && (
                   <IconButton
                     aria-label="delete image"
@@ -227,7 +247,7 @@ const ImageUploader = ({
         <Divider sx={{ mb: 3  }} />
         <Grid container spacing={2}>
           {selectedFiles.map((file, index) => (
-            <Grid item xs={12} sm={6} md={4} key={`selected-${index}`}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={`selected-${index}`}>
               <Paper
                 elevation={1}
                 sx={{

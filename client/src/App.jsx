@@ -45,7 +45,7 @@ function App() {
           <Route path="/shop" element={<Shop/>}/>
           <Route path="/checkout" element={<Checkout/>}/>
           <Route path="/orders/:orderId?" element={<OrderDetails/>}/>
-          <Route path="/products/:slug" element={<ProductDetail />}/>
+          <Route path="/products/:productSlug" element={<ProductDetail />}/>
           <Route path="/categories/:categorySlug" element={<CategoryDetail />}/>
 
           <Route path="/orders/all/:userId?" element={<PrivateRoute><OrderList/></PrivateRoute>}/>
