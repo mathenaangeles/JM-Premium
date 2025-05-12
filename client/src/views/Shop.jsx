@@ -205,7 +205,6 @@ const Shop = () => {
         <ListItem 
           sx={{ 
             py: 0.5, 
-            pl: 0, 
             pr: 0,
             borderLeft: level > 0 ? `1px solid ${theme.palette.divider}` : 'none',
             ml: level > 0 ? 1 : 0,
@@ -381,7 +380,7 @@ const Shop = () => {
         <Container maxWidth="xl" sx={{ py: 4 }}>
           <Box sx={{ mb: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 300 }}>
-              Shop Collection
+              Shop
             </Typography>
             {selectedCategoryIds.length === 1 && breadcrumbs && renderBreadcrumbs()}
           </Box>

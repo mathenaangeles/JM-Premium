@@ -57,9 +57,13 @@ const Cart = () => {
   return (
     <Box>
       <IconButton 
+        size="large"
         color="inherit" 
         aria-describedby={id} 
         onClick={handleOpen}
+        sx={{ 
+          p: 1,
+        }}
       >
         <Badge badgeContent={cartItemCount} color="primary" 
           sx={{ 

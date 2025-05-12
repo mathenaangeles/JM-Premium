@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ListItemIcon, alpha, AppBar, Box, Toolbar, Typography, Button, IconButton, Menu, MenuItem, Container, Drawer, List, ListItem, ListItemText, Divider, Avatar, useMediaQuery, useTheme } from '@mui/material';
-import { Menu as MenuIcon, AccountCircle as AccountCircleIcon, KeyboardArrowDown as KeyboardArrowDownIcon, Close as CloseIcon, Person as PersonIcon, ShoppingBag as ShoppingBagIcon, Star as StarIcon, AdminPanelSettings as AdminPanelSettingsIcon, Logout as LogoutIcon, Category as CategoryIcon, Inventory as InventoryIcon, PeopleAlt as PeopleAltIcon, Receipt as ReceiptIcon, Payment as PaymentIcon, RateReview as RateReviewIcon, Home as HomeIcon } from '@mui/icons-material';
+import { LocalMall as LocalMallIcon, Menu as MenuIcon, AccountCircle as AccountCircleIcon, KeyboardArrowDown as KeyboardArrowDownIcon, Close as CloseIcon, Person as PersonIcon, ShoppingBag as ShoppingBagIcon, Star as StarIcon, AdminPanelSettings as AdminPanelSettingsIcon, Logout as LogoutIcon, Category as CategoryIcon, Inventory as InventoryIcon, PeopleAlt as PeopleAltIcon, Receipt as ReceiptIcon, Payment as PaymentIcon, RateReview as RateReviewIcon, Home as HomeIcon } from '@mui/icons-material';
 
 import Cart from '../views/Cart'; 
 import { persistor } from '../store';
@@ -17,84 +17,49 @@ const Navbar = () => {
   const { user } = useSelector((state) => state.user);
   const { categories } = useSelector((state) => state.category);
   
-  const [adminAnchorEl, setAdminAnchorEl] = useState(null);
-  const [accountAnchorEl, setAccountAnchorEl] = useState(null);
-  const [categoryAnchorEl, setCategoryAnchorEl] = useState(null);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [menus, setMenus] = useState({
+    admin: null,
+    account: null,
+    category: null,
+    mobileDrawer: false
+  });
 
-  const isAdminMenuOpen = Boolean(adminAnchorEl);
-  const isAccountMenuOpen = Boolean(accountAnchorEl);
-  const isCategoryMenuOpen = Boolean(categoryAnchorEl);
+  const isMenuOpen = {
+    admin: Boolean(menus.admin),
+    account: Boolean(menus.account),
+    category: Boolean(menus.category)
+  };
+
+  const handleMenuOpen = (menuName) => (event) => {
+    setMenus({ ...menus, [menuName]: event.currentTarget });
+  };
+
+  const handleMenuClose = (menuName) => () => {
+    setMenus({ ...menus, [menuName]: null });
+  };
+
+  const toggleMobileDrawer = () => {
+    setMenus({ ...menus, mobileDrawer: !menus.mobileDrawer });
+  };
 
   const handleLogout = async () => {
     await persistor.purge();
     dispatch(logout());
-    handleAccountMenuClose();
+    handleMenuClose('account')();
     navigate('/login');
   };
 
-  const handleAdminMenuOpen = (event) => {
-    setAdminAnchorEl(event.currentTarget);
-  };
-
-  const handleAdminMenuClose = () => {
-    setAdminAnchorEl(null);
-  };
-  
-  const handleAccountMenuOpen = (event) => {
-    setAccountAnchorEl(event.currentTarget);
-  };
-
-  const handleAccountMenuClose = () => {
-    setAccountAnchorEl(null);
-  };
-  
-  const handleCategoryMenuOpen = (event) => {
-    setCategoryAnchorEl(event.currentTarget);
-  };
-
-  const handleCategoryMenuClose = () => {
-    setCategoryAnchorEl(null);
-  };
-  
-  const toggleMobileDrawer = () => {
-    setMobileDrawerOpen(!mobileDrawerOpen);
-  };
-
-  const menuPaperProps = {
-    elevation: 2,
-    sx: {
-      overflow: 'visible',
-      filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.08))',
-      mt: 1.5,
-      borderRadius: 1,
-      '& .MuiMenuItem-root': {
-        px: 3,
-        py: 1.5,
-        '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.light, 0.1),
-        },
-      },
-      '&:before': {
-        content: '""',
-        display: 'block',
-        position: 'absolute',
-        top: 0,
-        right: 14,
-        width: 10,
-        height: 10,
-        bgcolor: 'background.paper',
-        transform: 'translateY(-50%) rotate(45deg)',
-        zIndex: 0,
-      },
-    },
-  };
+  const adminMenuItems = [
+    { icon: <PeopleAltIcon fontSize="small" color="primary" />, text: "Manage Users", path: "/manage/users" },
+    { icon: <CategoryIcon fontSize="small" color="primary" />, text: "Manage Categories", path: "/manage/categories" },
+    { icon: <InventoryIcon fontSize="small" color="primary" />, text: "Manage Products", path: "/manage/products" },
+    { icon: <ReceiptIcon fontSize="small" color="primary" />, text: "Manage Orders", path: "/orders/all" },
+    { icon: <PaymentIcon fontSize="small" color="primary" />, text: "Manage Payments", path: "/manage/payments" },
+    { icon: <RateReviewIcon fontSize="small" color="primary" />, text: "Manage Reviews", path: "/reviews/all" }
+  ];
 
   const adminMenu = (
-    <Menu
-      anchorEl={adminAnchorEl}
-      open={isAdminMenuOpen}
-      onClose={handleAdminMenuClose}
+    <Menu anchorEl={menus.admin} open={isMenuOpen.admin} onClose={handleMenuClose('admin')}
       anchorOrigin={{
         vertical: 'bottom',
         horizontal: 'right',
@@ -103,52 +68,23 @@ const Navbar = () => {
         vertical: 'top',
         horizontal: 'right',
       }}
-      slotProps={menuPaperProps}
     >
-      <MenuItem component={Link} to="/manage/users" onClick={handleAdminMenuClose}>
-        <ListItemIcon>
-          <PeopleAltIcon fontSize="small" color="primary" />
-        </ListItemIcon>
-        <ListItemText primary="Manage Users" />
-      </MenuItem>
-      <MenuItem component={Link} to="/manage/categories" onClick={handleAdminMenuClose}>
-        <ListItemIcon>
-          <CategoryIcon fontSize="small" color="primary" />
-        </ListItemIcon>
-        <ListItemText primary="Manage Categories" />
-      </MenuItem>
-      <MenuItem component={Link} to="/manage/products" onClick={handleAdminMenuClose}>
-        <ListItemIcon>
-          <InventoryIcon fontSize="small" color="primary" />
-        </ListItemIcon>
-        <ListItemText primary="Manage Products" />
-      </MenuItem>
-      <MenuItem component={Link} to="/orders/all" onClick={handleAdminMenuClose}>
-        <ListItemIcon>
-          <ReceiptIcon fontSize="small" color="primary" />
-        </ListItemIcon>
-        <ListItemText primary="Manage Orders" />
-      </MenuItem>
-      <MenuItem component={Link} to="/manage/payments" onClick={handleAdminMenuClose}>
-        <ListItemIcon>
-          <PaymentIcon fontSize="small" color="primary" />
-        </ListItemIcon>
-        <ListItemText primary="Manage Payments" />
-      </MenuItem>
-      <MenuItem component={Link} to="/reviews/all" onClick={handleAdminMenuClose}>
-        <ListItemIcon>
-          <RateReviewIcon fontSize="small" color="primary" />
-        </ListItemIcon>
-        <ListItemText primary="Manage Reviews" />
-      </MenuItem>
+      {adminMenuItems.map((item) => (
+        <MenuItem key={item.path} component={Link} to={item.path} onClick={handleMenuClose('admin')}>
+          <ListItemIcon>
+            {item.icon}
+          </ListItemIcon>
+          <ListItemText primary={item.text} />
+        </MenuItem>
+      ))}
     </Menu>
   );
 
   const accountMenu = (
     <Menu
-      anchorEl={accountAnchorEl}
-      open={isAccountMenuOpen}
-      onClose={handleAccountMenuClose}
+      anchorEl={menus.account}
+      open={isMenuOpen.account}
+      onClose={handleMenuClose('account')}
       anchorOrigin={{
         vertical: 'bottom',
         horizontal: 'right',
@@ -157,43 +93,37 @@ const Navbar = () => {
         vertical: 'top',
         horizontal: 'right',
       }}
-      slotProps={menuPaperProps}
+      slotProps={{
+        paper: {
+          sx: { minWidth: '150px' },
+        }
+      }}
     >
-      <Box sx={{ px: 3, py: 1.5, display: 'flex', alignItems: 'center', mb: 1 }}>
-        <Avatar 
-          sx={{ 
-            width: 32, 
-            height: 32, 
-            mr: 1.5, 
-            bgcolor: 'primary.main' 
-          }}
-        >
-          {user?.name?.charAt(0)}
-        </Avatar>
-        <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-          {user?.name || 'Account'}
+      <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center'}}>
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+          {user?.first_name ? (<>Hey, {user.first_name}!</>) : (<>Your Account</>)}
         </Typography>
-      </Box>
-      <Divider sx={{ mx: 2 }} />
-      <MenuItem component={Link} to="/profile" onClick={handleAccountMenuClose}>
+      </Box>    
+      <Divider sx={{ my: 1 }}/>  
+      <MenuItem component={Link} to="/profile" onClick={handleMenuClose('account')}>
         <ListItemIcon>
           <PersonIcon fontSize="small" color="primary" />
         </ListItemIcon>
         <ListItemText primary="Profile" />
       </MenuItem>
-      <MenuItem component={Link} to={`/orders/all/${user?.id}`} onClick={handleAccountMenuClose}>
+      <MenuItem component={Link} to={`/orders/all/${user?.id}`} onClick={handleMenuClose('account')}>
         <ListItemIcon>
-          <ShoppingBagIcon fontSize="small" color="primary" />
+          <LocalMallIcon fontSize="small" color="primary" />
         </ListItemIcon>
         <ListItemText primary="Orders" />
       </MenuItem>
-      <MenuItem component={Link} to={`/reviews/all/${user?.id}`} onClick={handleAccountMenuClose}>
+      <MenuItem component={Link} to={`/reviews/all/${user?.id}`} onClick={handleMenuClose('account')}>
         <ListItemIcon>
           <StarIcon fontSize="small" color="primary" />
         </ListItemIcon>
         <ListItemText primary="Reviews" />
       </MenuItem>
-      <Divider sx={{ mx: 2 }} />
+      <Divider/>
       <MenuItem onClick={handleLogout}>
         <ListItemIcon>
           <LogoutIcon fontSize="small" color="error" />
@@ -203,11 +133,12 @@ const Navbar = () => {
     </Menu>
   );
 
+  // Categories menu with dynamic content
   const categoryMenu = (
     <Menu
-      anchorEl={categoryAnchorEl}
-      open={isCategoryMenuOpen}
-      onClose={handleCategoryMenuClose}
+      anchorEl={menus.category}
+      open={isMenuOpen.category}
+      onClose={handleMenuClose('category')}
       anchorOrigin={{
         vertical: 'bottom',
         horizontal: 'center',
@@ -216,42 +147,13 @@ const Navbar = () => {
         vertical: 'top',
         horizontal: 'center',
       }}
-      slotProps={{
-        elevation: 2,
-        sx: {
-          overflow: 'visible',
-          filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.08))',
-          mt: 1.5,
-          minWidth: 180,
-          borderRadius: 1,
-          '& .MuiMenuItem-root': {
-            px: 3,
-            py: 1.5,
-            '&:hover': {
-              backgroundColor: alpha(theme.palette.primary.light, 0.1),
-            },
-          },
-          '&:before': {
-            content: '""',
-            display: 'block',
-            position: 'absolute',
-            top: 0,
-            left: '50%',
-            width: 10,
-            height: 10,
-            bgcolor: 'background.paper',
-            transform: 'translate(-50%, -50%) rotate(45deg)',
-            zIndex: 0,
-          },
-        },
-      }}
     >
       {categories.map((category) => (
         <MenuItem 
           key={category.id} 
           component={Link} 
           to={`/categories/${category?.slug}`} 
-          onClick={handleCategoryMenuClose}
+          onClick={handleMenuClose('category')}
         >
           {category.name}
         </MenuItem>
@@ -259,10 +161,11 @@ const Navbar = () => {
     </Menu>
   );
 
+  // Mobile drawer with responsive navigation
   const mobileDrawer = (
     <Drawer
       anchor="right"
-      open={mobileDrawerOpen}
+      open={menus.mobileDrawer}
       onClose={toggleMobileDrawer}
       PaperProps={{
         sx: {
@@ -282,13 +185,19 @@ const Navbar = () => {
         }} 
         role="presentation"
       >
+        {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 3, mb: 2 }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>JM Premium</Typography>
-          <IconButton onClick={toggleMobileDrawer} sx={{ color: 'text.primary' }}>
+          <IconButton 
+            onClick={toggleMobileDrawer} 
+            sx={{ color: 'text.primary' }}
+            aria-label="Close menu"
+          >
             <CloseIcon />
           </IconButton>
         </Box>
         
+        {/* User profile card if logged in */}
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', px: 3, py: 2, mb: 1, bgcolor: alpha(theme.palette.primary.light, 0.08) }}>
             <Avatar 
@@ -298,6 +207,7 @@ const Navbar = () => {
                 width: 40,
                 height: 40
               }}
+              aria-label={user.name}
             >
               {user.name?.charAt(0)}
             </Avatar>
@@ -310,17 +220,14 @@ const Navbar = () => {
         
         <Divider sx={{ mb: 1 }} />
         
+        {/* Navigation links */}
         <List sx={{ px: 1 }}>
+          {/* Home link */}
           <ListItem 
             button 
             component={Link} 
             to="/" 
             onClick={toggleMobileDrawer}
-            sx={{ 
-              borderRadius: 1,
-              mb: 0.5,
-              '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-            }}
           >
             <ListItemIcon sx={{ minWidth: 40 }}>
               <HomeIcon color="primary" fontSize="small" />
@@ -331,15 +238,16 @@ const Navbar = () => {
             />
           </ListItem>
           
+          {/* Shop with categories dropdown */}
           <ListItem 
             button 
-            onClick={() => setCategoryAnchorEl(categoryAnchorEl ? null : document.getElementById('mobile-categories'))}
-            id="mobile-categories"
-            sx={{ 
-              borderRadius: 1,
-              mb: 0.5,
-              '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
+            onClick={() => {
+              const newState = menus.mobileCategories ? null : document.getElementById('mobile-categories');
+              setMenus({ ...menus, mobileCategories: newState });
             }}
+            id="mobile-categories"
+            aria-expanded={Boolean(menus.mobileCategories)}
+            aria-controls="category-menu"
           >
             <ListItemIcon sx={{ minWidth: 40 }}>
               <CategoryIcon color="primary" fontSize="small" />
@@ -350,14 +258,15 @@ const Navbar = () => {
             />
             <KeyboardArrowDownIcon 
               sx={{ 
-                transform: categoryAnchorEl ? 'rotate(180deg)' : 'rotate(0)',
+                transform: menus.mobileCategories ? 'rotate(180deg)' : 'rotate(0)',
                 transition: 'transform 0.3s'
               }} 
             />
           </ListItem>
           
-          {Boolean(categoryAnchorEl) && (
-            <Box sx={{ ml: 2, mb: 1 }}>
+          {/* Category items when expanded */}
+          {Boolean(menus.mobileCategories) && (
+            <Box sx={{ ml: 2, mb: 1 }} id="category-menu">
               {categories.map((category) => (
                 <ListItem 
                   button 
@@ -367,9 +276,6 @@ const Navbar = () => {
                   onClick={toggleMobileDrawer}
                   sx={{ 
                     pl: 5,
-                    borderRadius: 1,
-                    mb: 0.5,
-                    '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
                   }}
                 >
                   <ListItemText 
@@ -384,18 +290,15 @@ const Navbar = () => {
           
           <Divider sx={{ my: 1.5 }} />
           
+          {/* User section */}
           {user ? (
             <>
+              {/* User navigation items */}
               <ListItem 
                 button 
                 component={Link} 
                 to="/profile" 
                 onClick={toggleMobileDrawer}
-                sx={{ 
-                  borderRadius: 1,
-                  mb: 0.5,
-                  '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                }}
               >
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   <PersonIcon color="primary" fontSize="small" />
@@ -411,11 +314,6 @@ const Navbar = () => {
                 component={Link} 
                 to={`/orders/all/${user.id}`} 
                 onClick={toggleMobileDrawer}
-                sx={{ 
-                  borderRadius: 1,
-                  mb: 0.5,
-                  '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                }}
               >
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   <ShoppingBagIcon color="primary" fontSize="small" />
@@ -431,11 +329,6 @@ const Navbar = () => {
                 component={Link} 
                 to={`/reviews/all/${user.id}`} 
                 onClick={toggleMobileDrawer}
-                sx={{ 
-                  borderRadius: 1,
-                  mb: 0.5,
-                  '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                }}
               >
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   <StarIcon color="primary" fontSize="small" />
@@ -446,18 +339,19 @@ const Navbar = () => {
                 />
               </ListItem>
               
+              {/* Admin section if user is admin */}
               {user.is_admin && (
                 <>
                   <Divider sx={{ my: 1.5 }} />
                   <ListItem
                     button
-                    onClick={() => setAdminAnchorEl(adminAnchorEl ? null : document.getElementById('mobile-admin'))}
-                    id="mobile-admin"
-                    sx={{ 
-                      borderRadius: 1,
-                      mb: 0.5,
-                      '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
+                    onClick={() => {
+                      const newState = menus.mobileAdmin ? null : document.getElementById('mobile-admin');
+                      setMenus({ ...menus, mobileAdmin: newState });
                     }}
+                    id="mobile-admin"
+                    aria-expanded={Boolean(menus.mobileAdmin)}
+                    aria-controls="admin-menu"
                   >
                     <ListItemIcon sx={{ minWidth: 40 }}>
                       <AdminPanelSettingsIcon color="primary" fontSize="small" />
@@ -468,139 +362,35 @@ const Navbar = () => {
                     />
                     <KeyboardArrowDownIcon 
                       sx={{ 
-                        transform: adminAnchorEl ? 'rotate(180deg)' : 'rotate(0)',
+                        transform: menus.mobileAdmin ? 'rotate(180deg)' : 'rotate(0)',
                         transition: 'transform 0.3s'
                       }} 
                     />
                   </ListItem>
                   
-                  {Boolean(adminAnchorEl) && (
-                    <Box sx={{ ml: 2, mb: 1 }}>
-                      <ListItem 
-                        button 
-                        component={Link} 
-                        to="/manage/users" 
-                        onClick={toggleMobileDrawer}
-                        sx={{ 
-                          pl: 5,
-                          borderRadius: 1,
-                          mb: 0.5,
-                          '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40 }}>
-                          <PeopleAltIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary="Manage Users"
-                          slotProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                      
-                      <ListItem 
-                        button 
-                        component={Link} 
-                        to="/manage/categories" 
-                        onClick={toggleMobileDrawer}
-                        sx={{ 
-                          pl: 5,
-                          borderRadius: 1,
-                          mb: 0.5,
-                          '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40 }}>
-                          <CategoryIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary="Manage Categories"
-                          slotProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                      
-                      <ListItem 
-                        button 
-                        component={Link} 
-                        to="/manage/products" 
-                        onClick={toggleMobileDrawer}
-                        sx={{ 
-                          pl: 5,
-                          borderRadius: 1,
-                          mb: 0.5,
-                          '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40 }}>
-                          <InventoryIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary="Manage Products"
-                          slotProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                      
-                      <ListItem 
-                        button 
-                        component={Link} 
-                        to="/orders/all" 
-                        onClick={toggleMobileDrawer}
-                        sx={{ 
-                          pl: 5,
-                          borderRadius: 1,
-                          mb: 0.5,
-                          '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40 }}>
-                          <ReceiptIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary="Manage Orders"
-                          slotProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                      
-                      <ListItem 
-                        button 
-                        component={Link} 
-                        to="/manage/payments" 
-                        onClick={toggleMobileDrawer}
-                        sx={{ 
-                          pl: 5,
-                          borderRadius: 1,
-                          mb: 0.5,
-                          '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40 }}>
-                          <PaymentIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary="Manage Payments"
-                          slotProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                      
-                      <ListItem 
-                        button 
-                        component={Link} 
-                        to="/reviews/all" 
-                        onClick={toggleMobileDrawer}
-                        sx={{ 
-                          pl: 5,
-                          borderRadius: 1,
-                          mb: 0.5,
-                          '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 40 }}>
-                          <RateReviewIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary="Manage Reviews"
-                          slotProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
+                  {/* Admin menu items when expanded */}
+                  {Boolean(menus.mobileAdmin) && (
+                    <Box sx={{ ml: 2, mb: 1 }} id="admin-menu">
+                      {adminMenuItems.map((item) => (
+                        <ListItem 
+                          button 
+                          key={item.path}
+                          component={Link} 
+                          to={item.path} 
+                          onClick={toggleMobileDrawer}
+                          sx={{ 
+                            pl: 5,
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 40 }}>
+                            {React.cloneElement(item.icon, { fontSize: "small" })}
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={item.text}
+                            slotProps={{ variant: 'body2' }}
+                          />
+                        </ListItem>
+                      ))}
                     </Box>
                   )}
                 </>
@@ -608,12 +398,11 @@ const Navbar = () => {
               
               <Divider sx={{ my: 1.5 }} />
               
+              {/* Logout button */}
               <ListItem 
                 button 
                 onClick={handleLogout}
                 sx={{ 
-                  borderRadius: 1,
-                  mb: 0.5,
                   '&:hover': { bgcolor: alpha(theme.palette.error.light, 0.1) }
                 }}
               >
@@ -629,16 +418,12 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              {/* Authentication options when not logged in */}
               <ListItem 
                 button 
                 component={Link} 
                 to="/login" 
                 onClick={toggleMobileDrawer}
-                sx={{ 
-                  borderRadius: 1,
-                  mb: 1,
-                  '&:hover': { bgcolor: alpha(theme.palette.primary.light, 0.1) }
-                }}
               >
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   <PersonIcon color="primary" fontSize="small" />
@@ -679,199 +464,161 @@ const Navbar = () => {
   return (
     <>
       <AppBar 
-        position="static" 
-        color="transparent" 
+        position="sticky" 
         elevation={0} 
-        sx={{ 
-          borderBottom: '1px solid', 
-          borderColor: 'divider',
-          bgcolor: 'background.paper'
+        sx={{
+          px: 3,
+          py: 0.5,
+          borderBottom: '2px solid', 
+          borderColor: 'primary.main',
+          backgroundColor: 'common.white',
+          color: 'common.black',
+          zIndex: (theme) => theme.zIndex.drawer + 1
         }}
       >
-        <Container maxWidth="xl">
-          <Toolbar 
-            disableGutters
-            sx={{ 
-              height: 70, 
-              justifyContent: 'space-between'
-            }}
-          >
-            <Typography
-              variant="h5"
-              component={Link}
-              to="/"
+        <Toolbar disableGutters sx={{ height: { xs: 50, md: 60 }, justifyContent: 'space-between' }} >
+          <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <Box component="img" src="/jm-black-logo.png" alt="JM Premium Logo"
               sx={{
-                fontWeight: 700,
-                color: 'primary.main',
+                height: { xs: 32, md: 40 },
+                mr: 1.5,
+              }}
+            />
+            <Typography variant="h5"
+              sx={{
+                fontWeight: 600,
+                color: 'common.black',
                 textDecoration: 'none',
-                letterSpacing: 0.5,
-                flexGrow: { xs: 1, md: 0 }
+                fontSize: { xs: '1.2rem', md: '1.5rem' }
               }}
             >
               JM Premium
             </Typography>
-            
-            {!isMobile && (
-              <>
-                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-                  <Button
-                    onClick={handleCategoryMenuOpen}
-                    sx={{ 
-                      my: 2, 
-                      color: 'text.primary', 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      textTransform: 'none',
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                      '&:hover': {
-                        bgcolor: 'transparent',
-                        color: 'primary.main'
-                      }
-                    }}
-                    disableRipple
-                  >
-                    Shop
-                  </Button>
-                  {categoryMenu}
-                </Box>
-                
-                <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center' }}>
-                  <Cart/>
-                  {user ? (
-                    <>
-                      <IconButton
-                        size="large"
-                        onClick={handleAccountMenuOpen}
-                        color="inherit"
+          </Box>
+          {!isMobile && (
+            <>
+              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                <Button
+                  onClick={handleMenuOpen('category')}
+                  sx={{ 
+                    my: 2, 
+                    color: isMenuOpen.category ? 'primary.main' : 'text.primary', 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                      color: 'primary.main'
+                    }
+                  }}
+                  endIcon={
+                    <KeyboardArrowDownIcon 
+                      sx={{ 
+                        transition: 'transform 0.3s',
+                        transform: isMenuOpen.category ? 'rotate(180deg)' : 'rotate(0)'
+                      }} 
+                    />
+                  }
+                  disableRipple
+                  aria-haspopup="true"
+                  aria-expanded={isMenuOpen.category}
+                >
+                  Shop
+                </Button>
+                {categoryMenu}
+              </Box>
+              
+              <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center' }}>
+                <Cart/>
+                {user ? (
+                  <>
+                    <IconButton
+                      size="large"
+                      onClick={handleMenuOpen('account')}
+                      color="inherit"
+                      sx={{ 
+                        borderColor: isMenuOpen.account ? 'primary.main' : 'primary.main',
+                        p: 1,
+                      }}
+                      aria-label="account menu"
+                      aria-haspopup="true"
+                      aria-expanded={isMenuOpen.account}
+                    >
+                      <AccountCircleIcon 
                         sx={{ 
-                          ml: 1.5,
-                          border: isAccountMenuOpen ? '2px solid' : '1px solid',
-                          borderColor: isAccountMenuOpen ? 'primary.main' : 'divider',
-                          p: '6px',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {user.name ? (
-                          <Avatar 
+                          color: isMenuOpen.account ? 'primary.main' : 'text.primary',
+                        }} 
+                      />
+                    </IconButton>
+                    {accountMenu}
+                    {user.is_admin && (
+                      <>
+                          <IconButton
+                            size="large"
+                            onClick={handleMenuOpen('admin')}
+                            color="inherit"
                             sx={{ 
-                              width: 30, 
-                              height: 30,
-                              bgcolor: isAccountMenuOpen ? 'primary.main' : alpha(theme.palette.primary.main, 0.7),
-                              fontSize: '0.875rem',
-                              fontWeight: 500
+                              borderColor: isMenuOpen.admin ? 'primary.main' : 'primary.main',
+                              p: 1,
                             }}
+                            aria-label="admin menu"
+                            aria-haspopup="true"
+                            aria-expanded={isMenuOpen.admin}
                           >
-                            {user.name.charAt(0)}
-                          </Avatar>
-                        ) : (
-                          <AccountCircleIcon 
-                            sx={{ 
-                              color: isAccountMenuOpen ? 'primary.main' : 'text.primary'
-                            }} 
-                          />
-                        )}
-                      </IconButton>
-                      {accountMenu}
-                      
-                      {user.is_admin && (
-                        <>
-                          <Button
-                            onClick={handleAdminMenuOpen}
-                            sx={{ 
-                              ml: 2, 
-                              color: isAdminMenuOpen ? 'primary.main' : 'text.primary',
-                              textTransform: 'none',
-                              fontSize: '0.95rem',
-                              fontWeight: 500,
-                              borderRadius: 2,
-                              px: 2,
-                              py: 0.7,
-                              border: '1px solid',
-                              borderColor: isAdminMenuOpen ? 'primary.main' : 'divider',
-                              '&:hover': {
-                                bgcolor: alpha(theme.palette.primary.main, 0.05),
-                                borderColor: 'primary.main'
-                              }
-                            }}
-                            startIcon={<AdminPanelSettingsIcon />}
-                            endIcon={
-                              <KeyboardArrowDownIcon 
-                                sx={{ 
-                                  transition: 'transform 0.3s',
-                                  transform: isAdminMenuOpen ? 'rotate(180deg)' : 'rotate(0)'
-                                }} 
-                              />
-                            }
-                          >
-                            Admin
-                          </Button>
-                          {adminMenu}
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Button 
-                        component={Link} 
-                        to="/login" 
-                        sx={{ 
-                          ml: 2,
-                          textTransform: 'none',
-                          fontWeight: 500,
-                          fontSize: '0.95rem',
-                          color: 'text.primary',
-                          '&:hover': {
-                            color: 'primary.main',
-                            bgcolor: 'transparent'
-                          }
-                        }}
-                        disableRipple
-                      >
-                        Login
-                      </Button>
-                      <Button 
-                        component={Link} 
-                        to="/register" 
-                        variant="contained" 
-                        sx={{ 
-                          ml: 2,
-                          textTransform: 'none',
-                          fontWeight: 500,
-                          fontSize: '0.95rem',
-                          boxShadow: 'none',
-                          '&:hover': {
-                            boxShadow: 'none',
-                            bgcolor: 'primary.main'
-                          }
-                        }}
-                      >
-                        Register
-                      </Button>
-                    </>
-                  )}
-                </Box>
-              </>
-            )}
-            
-            {isMobile && (
-              <IconButton
-                size="large"
-                edge="end"
-                color="inherit"
-                aria-label="menu"
-                onClick={toggleMobileDrawer}
-                sx={{ 
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  p: '8px'
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-            )}
-          </Toolbar>
-        </Container>
+                            <AdminPanelSettingsIcon 
+                              sx={{ 
+                                color: isMenuOpen.admin ? 'primary.main' : 'text.primary',
+                              }} 
+                            />
+                        </IconButton>
+                        {adminMenu}
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      component={Link} 
+                      to="/login" 
+                      variant="outlined"
+                      color="secondary"
+                      sx={{ mx: 1 }}
+                    >
+                      Sign In
+                    </Button>
+                    <Button 
+                      component={Link} 
+                      to="/register" 
+                      variant="contained" 
+                    >
+                      Join Now
+                    </Button>
+                  </>
+                )}
+              </Box>
+            </>
+          )}
+          
+          {/* Mobile menu button */}
+          {isMobile && (
+            <IconButton
+              size="large"
+              edge="end"
+              color="inherit"
+              aria-label="Open menu"
+              onClick={toggleMobileDrawer}
+              sx={{ 
+                border: '1px solid',
+                borderColor: 'divider',
+                p: '8px'
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+        </Toolbar>
       </AppBar>
       {mobileDrawer}
     </>
