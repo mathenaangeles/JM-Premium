@@ -59,7 +59,7 @@ const Profile = () => {
         sx={{
           width: '100%',
           maxWidth: 'md',
-          p: { xs: 3, md: 5 },
+          p: { xs: 4, md: 5 },
           borderRadius: 5,
           bgcolor: 'common.white',
         }}
