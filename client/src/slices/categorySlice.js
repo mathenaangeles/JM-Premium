@@ -14,6 +14,18 @@ export const getCategories = createAsyncThunk(
     }
 );
 
+export const getCategoryTree = createAsyncThunk(
+    '/getCategoryTree',
+    async ( _, { rejectWithValue }) => {
+      try {
+        const { data } = await Axios.get(`/categories/?tree=true`);
+        return data;
+      } catch (err) {
+        return rejectWithValue(err.response?.data?.error || err.message);
+      }
+    }
+);
+
 export const getRootCategories = createAsyncThunk(
     '/getRootCategories',
     async ( _, { rejectWithValue }) => {
@@ -132,6 +144,7 @@ const categorySlice = createSlice({
     loading: false,
     success: null,
     error: null,
+    categoryTree: [],
   },
   reducers: {
     clearCategoryMessages: (state) => {
@@ -151,6 +164,20 @@ const categorySlice = createSlice({
         state.loading = false;
     })
     .addCase(getCategories.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+    })
+
+    .addCase(getCategoryTree.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = null;
+    })
+    .addCase(getCategoryTree.fulfilled, (state, action) => {
+        state.categoryTree = action.payload.categories;
+        state.loading = false;
+    })
+    .addCase(getCategoryTree.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
     })

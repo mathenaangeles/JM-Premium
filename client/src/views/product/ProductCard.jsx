@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Card, CardMedia, CardContent, Typography, Box, Chip, Rating, Stack, Button } from '@mui/material';
@@ -40,6 +39,7 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
     <Card
       sx={{
         height: '100%',
+        width: '100%',
         display: 'flex',
         flexDirection: 'column',
         transition: 'transform 0.3s ease, box-shadow 0.3s ease',
@@ -119,10 +119,10 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
       }}
       >
         <Typography
-          variant="body1"
+          variant="h5"
           sx={{
             fontWeight: 600,
-            fontSize: '1.2rem',
+            fontSize: '1.4rem',
             lineHeight: 1.2,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -170,15 +170,7 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
               ${parseFloat(finalBasePrice).toFixed(2)}
             </Typography>
           )}
-          <Typography 
-            variant="body1" 
-            color="primary"
-            sx={{ 
-              color: finalSalePrice > 0 ? 'primary.main' : 'text.primary',
-              fontWeight: 700,
-              fontSize: '1.2rem'
-            }}
-          >
+          <Typography variant="h6">
             ${parseFloat(product.display_price).toFixed(2)}
           {finalSalePrice > 0 && (
             <Chip
@@ -235,6 +227,7 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
           onClick={handleAddToCart}
           sx={{
             mt: 1,
+            backgroundColor: 'common.black'
           }}
           startIcon={<AddShoppingCartOutlinedIcon />}
         >

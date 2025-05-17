@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { ListItemIcon, alpha, AppBar, Box, Toolbar, Typography, Button, IconButton, Menu, MenuItem, Container, Drawer, List, ListItem, ListItemText, Divider, Avatar, useMediaQuery, useTheme } from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
+import { CircularProgress, ListItemIcon, alpha, AppBar, Box, Toolbar, Typography, Button, IconButton, Menu, MenuItem, Container, Drawer, List, ListItem, ListItemText, Divider, Avatar, useMediaQuery, useTheme } from '@mui/material';
 import { Store as StoreIcon, LocalMall as LocalMallIcon, Menu as MenuIcon, AccountCircle as AccountCircleIcon, KeyboardArrowDown as KeyboardArrowDownIcon, Close as CloseIcon, Person as PersonIcon, ShoppingBag as ShoppingBagIcon, Star as StarIcon, AdminPanelSettings as AdminPanelSettingsIcon, Logout as LogoutIcon, Category as CategoryIcon, Inventory as InventoryIcon, PeopleAlt as PeopleAltIcon, Receipt as ReceiptIcon, Payment as PaymentIcon, RateReview as RateReviewIcon, Home as HomeIcon } from '@mui/icons-material';
 
 import Cart from '../views/Cart'; 
 import { persistor } from '../store';
 import { logout } from '../slices/userSlice';
-import { getCategories } from '../slices/categorySlice';
+import { getCategoryTree } from '../slices/categorySlice';
 
 const listItemHoverStyle = {
   '&:hover': {
@@ -29,7 +29,7 @@ const Navbar = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const { user } = useSelector((state) => state.user);
-  const { categories } = useSelector((state) => state.category);
+  const { categoryTree } = useSelector((state) => state.category);
   
   const [menus, setMenus] = useState({
     admin: null,
@@ -40,8 +40,22 @@ const Navbar = () => {
     mobileAdmin: null
   });
 
+  const hoverTimeoutRef = useRef(null);
+  const categoryButtonRef = useRef(null);
+
+  const handleCategoryMouseEnter = () => {
+    clearTimeout(hoverTimeoutRef.current);
+    setMenus({ ...menus, category: categoryButtonRef.current });
+  };
+
+  const handleCategoryMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setMenus({ ...menus, category: null });
+    }, 200);
+  };
+
   useEffect(() => {
-    dispatch(getCategories({tree: false}));
+    dispatch(getCategoryTree());
   }, [dispatch]); 
 
   const isMenuOpen = {
@@ -51,8 +65,8 @@ const Navbar = () => {
   };
 
   const handleMenuOpen = (menuName) => (e) => {
-    if (menuName === 'category' && categories.length === 0) {
-      dispatch(getCategories());
+    if (menuName === 'category' && categoryTree.length === 0) {
+      dispatch(getCategoryTree());
     }
     setMenus({ ...menus, [menuName]: e.currentTarget });
   };
@@ -62,8 +76,8 @@ const Navbar = () => {
   };
 
   const toggleMobileDrawer = () => {
-    if (categories.length === 0) {
-      dispatch(getCategories());
+    if (categoryTree.length === 0) {
+      dispatch(getCategoryTree());
     }
     setMenus({ ...menus, mobileDrawer: !menus.mobileDrawer });
   };
@@ -170,7 +184,10 @@ const Navbar = () => {
   );
 
   const categoryMenu = (
-    <Menu anchorEl={menus.category} open={isMenuOpen.category} onClose={handleMenuClose('category')}
+    <Menu 
+      anchorEl={menus.category} 
+      open={Boolean(menus.category)} 
+      onClose={handleMenuClose('category')}
       anchorOrigin={{
         vertical: 'bottom',
         horizontal: 'left',
@@ -179,52 +196,105 @@ const Navbar = () => {
         vertical: 'top',
         horizontal: 'left',
       }}
+      transitionDuration={250}
+      elevation={3}
       slotProps={{
+        list: {
+          onMouseEnter: handleCategoryMouseEnter,
+          onMouseLeave: handleCategoryMouseLeave,
+        },
         paper: {
           sx: { 
-            minWidth: '220px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            borderRadius: '8px',
-            mt: 1.5,
-            overflow: 'hidden',
+            minWidth: '450px',
+            borderRadius: 1,
+            m: 0.5,
+            boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
             '& .MuiList-root': {
               padding: 0
-            }
+            },
           },
+          onMouseEnter: handleCategoryMouseEnter,
+          onMouseLeave: handleCategoryMouseLeave,
         }
       }}
     >
-      <Box sx={{ backgroundColor: 'primary.main', py: 1.5, px: 2 }}>
-        <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 600 }}>
-          Categories
-        </Typography>
-      </Box>
-      <Box sx={{ maxHeight: '500px', overflowY: 'auto' }}>
-        {categories.length > 0 ? (
-          categories.map((category) => (
-            <MenuItem 
-              key={category.id} 
-              component={Link} 
-              to={`/categories/${category?.slug}`} 
-              onClick={handleMenuClose('category')}
-              sx={{ 
-                py: 1.2,
-                pl: 3,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.light, 0.1),
-                  pl: 4
-                }
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {category.name}
-              </Typography>
-            </MenuItem>
-          ))
+      <Box sx={{ maxHeight: '600px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
+        {categoryTree.length > 0 ? (
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'row',
+            p: 1
+          }}>
+            {categoryTree.map((category) => (
+              <Box 
+                key={category.id} 
+                sx={{ 
+                  flex: 1,
+                  borderRight: category.id !== categoryTree[categoryTree.length-1].id ? 
+                    `1px solid ${theme.palette.divider}` : 'none',
+                  px: 1
+                }}
+              >
+                <MenuItem 
+                  component={Link} 
+                  to={`/categories/${category?.slug}`} 
+                  onClick={handleMenuClose('category')}
+                  sx={{ 
+                    py: 1.2,
+                    pl: 2,
+                    mb: 1,
+                    borderRadius: 2,
+                    color: theme.palette.primary.main,
+                    fontWeight: 600,
+                    transition: 'all 0.15s ease',
+                    '&:hover': {
+                      backgroundColor: theme.palette.primary.light,
+                      color: theme.palette.primary.contrastText,
+                    }
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    {category.name}
+                  </Typography>
+                </MenuItem>
+                {category.subcategories && category.subcategories.length > 0 && (
+                  <Box sx={{ ml: 1 }}>
+                    {category.subcategories.map(subcategory => (
+                      <MenuItem 
+                        key={subcategory.id}
+                        component={Link} 
+                        to={`/categories/${subcategory?.slug}`} 
+                        onClick={handleMenuClose('category')}
+                        sx={{ 
+                          py: 0.8,
+                          pl: 2,
+                          mb: 0.5,
+                          borderRadius: 2,
+                          fontSize: '0.85rem',
+                          transition: 'all 0.15s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.light, 0.2),
+                            color: theme.palette.primary.main,
+                            '& .subcategory-text': {
+                              fontWeight: 700
+                            }
+                          }
+                        }}
+                      >
+                        <Typography className="subcategory-text"  variant="body2">
+                          {subcategory.name}
+                        </Typography>
+                      </MenuItem>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Box>
         ) : (
-          <MenuItem disabled sx={{ py: 2, justifyContent: 'center' }}>
-            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+          <MenuItem disabled sx={{ py: 3, justifyContent: 'center' }}>
+            <CircularProgress size={20} sx={{ mr: 1.5, color: 'text.secondary' }} />
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               Loading categories...
             </Typography>
           </MenuItem>
@@ -236,12 +306,17 @@ const Navbar = () => {
         to="/shop" 
         onClick={handleMenuClose('category')}
         sx={{ 
-          py: 1.5, 
+          py: 1.5,
           justifyContent: 'center',
-          backgroundColor: alpha(theme.palette.primary.light, 0.05)
+          transition: 'all 0.15s ease',
+          '&:hover': {
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.common.white,
+          }
         }}
       >
-        <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+        <StoreIcon fontSize="small" />
+        <Typography variant="body2" sx={{ fontWeight: 600, ml: 1 }}>
           Browse All Categories
         </Typography>
       </MenuItem>
@@ -294,8 +369,8 @@ const Navbar = () => {
           </ListItem>
           <ListItem id="mobile-categories" button 
             onClick={() => {
-              if (categories.length === 0) {
-                dispatch(getCategories());
+              if (categoryTree.length === 0) {
+                dispatch(getCategoryTree());
               }
               const newState = menus.mobileCategories ? null : document.getElementById('mobile-categories');
               setMenus({ ...menus, mobileCategories: newState });
@@ -323,30 +398,58 @@ const Navbar = () => {
           </ListItem>
           {Boolean(menus.mobileCategories) && (
             <Box sx={{ ml: 2, mb: 1 }} id="category-menu">
-              {categories.length > 0 ? (
-                categories.map((category) => (
-                  <ListItem 
-                    button 
-                    key={category.id} 
-                    component={Link} 
-                    to={`/categories/${category?.slug}`} 
-                    onClick={toggleMobileDrawer}
-                    sx={{ 
-                      color: 'inherit', 
-                      textDecoration: 'none',
-                      pl: 5,
-                      ...listItemHoverStyle,
-                    }}
-                  >
-                    <ListItemText 
-                      primary={
-                        <Typography variant="body2" color="secondary" fontWeight="bold">
-                          {category.name}
-                        </Typography>
-                      }
-                      sx={{ my: 0 }}
-                    />
-                  </ListItem>
+              {categoryTree.length > 0 ? (
+                categoryTree.map((category) => (
+                  <React.Fragment key={category.id}>
+                    <ListItem 
+                      button 
+                      component={Link} 
+                      to={`/categories/${category?.slug}`} 
+                      onClick={toggleMobileDrawer}
+                      sx={{ 
+                        color: 'inherit', 
+                        textDecoration: 'none',
+                        pl: 5,
+                        backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                        ...listItemHoverStyle,
+                      }}
+                    >
+                      <ListItemText 
+                        primary={
+                          <Typography variant="body2" color="secondary" fontWeight="bold">
+                            {category.name}
+                          </Typography>
+                        }
+                        sx={{ my: 0 }}
+                      />
+                    </ListItem>
+                    {category.children && category.children.length > 0 && (
+                      category.children.map(child => (
+                        <ListItem 
+                          button 
+                          key={child.id} 
+                          component={Link} 
+                          to={`/categories/${child?.slug}`} 
+                          onClick={toggleMobileDrawer}
+                          sx={{ 
+                            color: 'inherit', 
+                            textDecoration: 'none',
+                            pl: 7,
+                            ...listItemHoverStyle,
+                          }}
+                        >
+                          <ListItemText 
+                            primary={
+                              <Typography variant="body2" color="secondary">
+                                {child.name}
+                              </Typography>
+                            }
+                            sx={{ my: 0 }}
+                          />
+                        </ListItem>
+                      ))
+                    )}
+                  </React.Fragment>
                 ))
               ) : (
                 <ListItem
@@ -563,27 +666,26 @@ const Navbar = () => {
                 </Typography>
               </Box>
             ) : (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                onMouseEnter={handleCategoryMouseEnter}
+                onMouseLeave={handleCategoryMouseLeave}
+                onClick={() => {
+                  navigate('/shop');
+                }}
+              >
                 <Button
-                  onClick={handleMenuOpen('category')}
+                  ref={categoryButtonRef}
                   sx={{
                     color: isMenuOpen.category ? 'primary.main' : 'text.primary',
                     textTransform: 'none',
                     fontSize: '1rem',
-                    fontWeight: 500,
+                    fontWeight: 600,
                     '&:hover': {
                       bgcolor: 'transparent',
                       color: 'primary.main',
                     },
                   }}
-                  endIcon={
-                    <KeyboardArrowDownIcon
-                      sx={{
-                        transition: 'transform 0.3s',
-                        transform: isMenuOpen.category ? 'rotate(180deg)' : 'rotate(0)',
-                      }}
-                    />
-                  }
                   disableRipple
                   aria-haspopup="true"
                   aria-expanded={isMenuOpen.category}

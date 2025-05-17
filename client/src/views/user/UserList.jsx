@@ -21,9 +21,9 @@ const UserList = () => {
   const loadUsers = useCallback(() => {
     dispatch(getUsers({
       page: page,
-      per_page: perPage,
+      perPage: perPage,
       search: search.trim(),
-      admin_only: showAdminOnly ? true : undefined,
+      isAdmin: showAdminOnly ? true : undefined,
     }));
   }, [dispatch, page, perPage, search, showAdminOnly]);
 
