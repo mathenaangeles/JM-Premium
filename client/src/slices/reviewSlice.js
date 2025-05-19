@@ -76,6 +76,12 @@ const reviewSlice = createSlice({
     success: null,
     error: null,
   },
+  reducers: {
+    clearReviewMessages: (state) => {
+      state.success = null;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getReviews.pending, (state) => {
@@ -164,4 +170,5 @@ const reviewSlice = createSlice({
   },
 });
 
+export const { clearReviewMessages } = reviewSlice.actions;
 export default reviewSlice.reducer;

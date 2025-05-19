@@ -11,6 +11,7 @@ def get_products():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     search = request.args.get('search', type=str)
+    sort = request.args.get('sort', type=str)
     category_ids_str = request.args.get('category_ids', '')
     category_ids = [int(cid) for cid in category_ids_str.split(',') if cid.strip()] if category_ids_str else []
     is_featured = request.args.get('is_featured', type=bool)
@@ -19,7 +20,7 @@ def get_products():
     if is_featured is not None:
         filters['is_featured'] = is_featured
     try:
-        products, count, total_pages = product_service.get_all_products(page, per_page, category_ids, filters, search)
+        products, count, total_pages = product_service.get_all_products(page, per_page, category_ids, filters, search, sort)
         return jsonify({
             'products': [product_service.serialize_product(product) for product in products],
             'count': count,

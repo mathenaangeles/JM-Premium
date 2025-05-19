@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
-import { Refresh as RefreshIcon, ClearAll as ClearAllIcon, Sort as SortIcon, ShoppingBagOutlined as ShoppingBagOutlinedIcon, NavigateNext as NavigateNextIcon, Close as CloseIcon, ExpandLess as ExpandLessIcon, ExpandMore as ExpandMoreIcon, Search as SearchIcon,FilterList as FilterListIcon } from '@mui/icons-material';
-import { MenuItem, useTheme, FormControl, Box, Typography, Container, InputLabel, Grid, Paper, Select, Button, TextField, Divider, Checkbox, FormControlLabel, IconButton, Breadcrumbs, Chip, Drawer, useMediaQuery, CircularProgress, Pagination, Collapse, List, ListItem, FormGroup, InputAdornment,Stack } from '@mui/material';
+import { Refresh as RefreshIcon, ClearAll as ClearAllIcon, Sort as SortIcon, ShoppingBagOutlined as ShoppingBagOutlinedIcon, Close as CloseIcon, Search as SearchIcon,FilterList as FilterListIcon } from '@mui/icons-material';
+import { Snackbar, Alert, LinearProgress, MenuItem, useTheme, FormControl, Box, Typography, InputLabel, Grid, Paper, Select, Button, TextField, Divider, Checkbox, FormControlLabel, IconButton, Chip, Drawer, useMediaQuery, Pagination, ListItem, FormGroup, InputAdornment, Stack } from '@mui/material';
 
 import ProductCard from './product/ProductCard';
 import { getProducts } from '../slices/productSlice';
@@ -12,16 +12,17 @@ const Shop = () => {
   const dispatch = useDispatch();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
-  const [perPage] = useState(12);
+  const [perPage] = useState(24);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [searchInput, setSearchInput] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   
   const { categories, loading: categoriesLoading } = useSelector(state => state.category);
-  const { products, totalPages, loading: productsLoading } = useSelector(state => state.product);
+  const { products, totalPages, count, loading: productsLoading } = useSelector(state => state.product);
 
   useEffect(() => {
     dispatch(getCategories({ tree: false }));
@@ -34,15 +35,15 @@ const Shop = () => {
       search: search,
       categoryIds: selectedCategoryIds,
       isActive: true,
+      sort: sortBy,
     }));
-  }, [dispatch, page, perPage, search, selectedCategoryIds]);
+  }, [dispatch, page, perPage, search, selectedCategoryIds, sortBy]);
 
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  const handleSearch = () => {
     setPage(1);
     setSearch(searchInput.trim())
   };
@@ -79,6 +80,10 @@ const Shop = () => {
     setSelectedCategoryIds([]);
     setPage(1);
     setSortBy('newest');
+  };
+
+  const handleAddToCartSuccess = () => {
+    setSnackbarOpen(true);
   };
   
   const renderCategories = (categoryList) => {
@@ -182,347 +187,245 @@ const Shop = () => {
     return null;
   };
 
+  if (productsLoading || categoriesLoading) {
+    return (<LinearProgress />)
+  }
+
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: 8 }}>
-      <Container maxWidth="xl" sx={{ pt: 3, pb: 6 }}>
-        {/* Shop Header */}
-        <Box 
-          sx={{ 
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            mb: 3,
-            gap: 2
-          }}
-        >
-          <Box>
-            <Typography 
-              variant="h4" 
-              component="h1" 
-              sx={{ 
-                fontWeight: 500,
-                letterSpacing: '-0.5px', 
-                mb: 0.5 
-              }}
-            >
-              Shop
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Showing {products?.length} products
-            </Typography>
-          </Box>
-          
-          {/* Sort dropdown */}
-          <FormControl 
-            variant="outlined" 
-            size="small" 
-            sx={{ minWidth: 180 }}
-          >
-            <InputLabel id="sort-select-label">Sort By</InputLabel>
-            <Select
-              labelId="sort-select-label"
-              id="sort-select"
-              value={sortBy}
-              onChange={handleSortChange}
-              label="Sort By"
-              startAdornment={
-                <InputAdornment position="start">
-                  <SortIcon fontSize="small" />
+    <Box sx={{ minHeight: '100vh', p: 4 }}>
+      <Box 
+        sx={{ 
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2
+        }}
+      >
+        <TextField
+          placeholder="Search"
+          variant="standard"
+          size="small"
+          slotProps={{
+            input: {
+              endAdornment:(
+                <InputAdornment position="end">
+                  <SearchIcon className="search-icon" fontSize="medium" 
+                    sx={{ 
+                      mb: 0.5, 
+                      cursor: 'pointer', 
+                  }}/>
                 </InputAdornment>
-              }
-            >
-              <MenuItem value="newest">Newest First</MenuItem>
-              <MenuItem value="price_low">Price: Low to High</MenuItem>
-              <MenuItem value="price_high">Price: High to Low</MenuItem>
-              <MenuItem value="popular">Most Popular</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-          
-        {/* Mobile filter button */}
-        {isMobile && (
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<FilterListIcon />}
-            onClick={toggleDrawer(true)}
-            sx={{ mb: 3 }}
-          >
-            Filter & Search
-          </Button>
-        )}
-        
-        {/* Mobile filter drawer */}
-        <Drawer
-          anchor="left"
-          open={drawerOpen}
-          onClose={toggleDrawer(false)}
-          sx={{ 
-            display: { md: 'none' },
-            '& .MuiDrawer-paper': { 
-              width: '85%', 
-              maxWidth: 360,
-              p: 3,
-              boxSizing: 'border-box',
+              )
+            }
+          }}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          }}
+          sx={{
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: { sm: 350 },
+            '& .MuiInputBase-root:hover .search-icon': {
+              color: 'text.primary',
+            },
+            '& .MuiInputBase-root.Mui-focused .search-icon': {
+              color: 'primary.main',
+            },
+            '& .search-icon': {
+              color: 'text.secondary',
+              mb: 0.5,
+              transition: 'color 0.2s ease',
+              cursor: 'pointer',
             },
           }}
+        />
+        <FormControl 
+          variant="outlined" 
+          size="small" 
+          sx={{ 
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: { sm: 150 },
+           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" fontWeight={600}>Filters</Typography>
-            <IconButton onClick={toggleDrawer(false)} edge="end">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-          <Box sx={{ p: 0 }}>
-            <Typography
-              variant="subtitle1"
-              gutterBottom
-              sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}
-            >
-              Search
+          <InputLabel id="sort-select-label">Sort By</InputLabel>
+          <Select
+            labelId="sort-select-label"
+            id="sort-select"
+            value={sortBy}
+            onChange={handleSortChange}
+            label="Sort By"
+            startAdornment={
+              <InputAdornment position="start">
+                <SortIcon fontSize="small" />
+              </InputAdornment>
+            }
+          >
+            <MenuItem value="newest">Newest First</MenuItem>
+            <MenuItem value="price_low">Price Low to High</MenuItem>
+            <MenuItem value="price_high">Price High to Low</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+      <Typography variant="body2" color="text.secondary" sx={{ my: 1 }}>
+        {products?.length > 0 ? `${products.length} product${products.length > 1 ? 's' : ''}` : 'No Products Found'}
+      </Typography>
+      {isMobile && (
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<FilterListIcon />}
+          onClick={toggleDrawer(true)}
+          sx={{ mb: 3 }}
+        >
+          Filter Products
+        </Button>
+      )}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={toggleDrawer(false)}
+        sx={{ 
+          display: { md: 'none' },
+          '& .MuiDrawer-paper': { 
+            width: '85%', 
+            maxWidth: 360,
+            p: 3,
+            boxSizing: 'border-box',
+            backgroundColor: 'common.white'
+          },
+        
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5">Filters</Typography>
+          <IconButton onClick={toggleDrawer(false)} edge="end">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+        <Box sx={{ p: 0 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" gutterBottom sx={{ fontWeight: 600 }}>
+              Categories
             </Typography>
-
-            <TextField
-              fullWidth
-              placeholder="Search products..."
-              variant="outlined"
-              size="small"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: 'text.secondary' }} />
-                    </InputAdornment>
-                  ),
-                  sx: {
-                    borderRadius: 2,
-                    backgroundColor: 'background.default',
-                  },
-                }
-              }}
-              sx={{
-                mb: 1,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<SearchIcon />}
-              sx={{ mt: 1 }}
-              fullWidth
-              onClick={handleSearch}
-            >
-              Search
-            </Button>
-            <Divider sx={{ my: 3 }} />
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+            <Box sx={{ maxHeight: 400, overflowY: 'auto', pr: 1 }}>
+              {categories?.length > 0 ? (
+                <FormGroup>
+                  {renderCategories(categories)}
+                </FormGroup>
+              ) : (
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+                  No Categories Found
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Drawer>
+      
+      {renderActiveFilters()}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 3}} sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: 2, 
+              position: 'sticky', 
+              borderRadius: 2,
+              backgroundColor: 'common.white',
+            }}
+          >
+            <Box sx={{ p: 0 }}>
+              <Typography variant="body1" gutterBottom sx={{ fontWeight: 600 }}>
                 Categories
               </Typography>
-              
+              <Divider sx={{ mb: 1 }}/>
               <Box sx={{ maxHeight: 400, overflowY: 'auto', pr: 1 }}>
-                {categoriesLoading ? (
-                  <Box sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
-                    <CircularProgress size={24} color="primary" />
-                  </Box>
-                ) : categories?.length > 0 ? (
+                {categories?.length > 0 ? (
                   <FormGroup>
                     {renderCategories(categories)}
                   </FormGroup>
                 ) : (
                   <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                    No categories found
+                    No Categories Found
                   </Typography>
                 )}
               </Box>
             </Box>
-          </Box>
-        </Drawer>
-        
-        {renderActiveFilters()}
-        
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 3}} sx={{ display: { xs: 'none', md: 'block' } }}>
-            <Paper 
-              elevation={0} 
-              sx={{ 
-                p: 3, 
-                position: 'sticky', 
-                top: 20, 
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2
-              }}
-            >
-              <Box sx={{ p: 0 }}>
-            <Typography
-              variant="subtitle1"
-              gutterBottom
-              sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}
-            >
-              Search
-            </Typography>
-
-            <TextField
-              fullWidth
-              placeholder="Search products..."
-              variant="outlined"
-              size="small"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: 'text.secondary' }} />
-                    </InputAdornment>
-                  ),
-                  sx: {
-                    borderRadius: 2,
-                    backgroundColor: 'background.default',
-                  },
-                }
-              }}
-              sx={{
-                mb: 1,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<SearchIcon />}
-              sx={{ mt: 1 }}
-              fullWidth
-              onClick={handleSearch}
-            >
-              Search
-            </Button>
-            <Divider sx={{ my: 3 }} />
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                Categories
-              </Typography>
-              
-              <Box sx={{ maxHeight: 400, overflowY: 'auto', pr: 1 }}>
-                {categoriesLoading ? (
-                  <Box sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
-                    <CircularProgress size={24} color="primary" />
-                  </Box>
-                ) : categories?.length > 0 ? (
-                  <FormGroup>
-                    {renderCategories(categories)}
-                  </FormGroup>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                    No categories found
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </Box>
-            </Paper>
-          </Grid>
-          
-          {/* Main product area */}
-          <Grid size={{ xs: 12, md: 9 }}>
-            {productsLoading ? (
-              <Box sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
-                <CircularProgress size={40} color="primary" />
-              </Box>
-            ) : products?.length > 0 ? (
-              <>
-                <Grid container spacing={3}>
-                  {products.map(product => (
-                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>
-                      <ProductCard product={product} />
-                    </Grid>
-                  ))}
-                </Grid>
-
-                <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center' }}>
-                  <Pagination 
-                    count={totalPages} 
-                    page={page} 
-                    onChange={handlePageChange} 
-                    color="primary"
-                    size={isMobile ? "small" : "medium"}
-                    showFirstButton
-                    showLastButton
-                    sx={{
-                      '& .MuiPaginationItem-root': {
-                        borderRadius: 1
-                      }
-                    }}
-                  />
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                    Showing {((page - 1) * perPage) + 1} - {Math.min(page * perPage, totalPages)} of {totalPages} products
-                  </Typography>
-                </Box>
-              </>
-            ) : (
-              <Paper 
-                elevation={0}
-                sx={{ 
-                  p: 6, 
-                  textAlign: 'center',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 2
-                }}
-              >
-                <Box 
-                  sx={{ 
-                    bgcolor: 'action.hover',
-                    width: 80, 
-                    height: 80, 
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mx: 'auto',
-                    mb: 3
-                  }}
-                >
-                  <ShoppingBagOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary' }} />
-                </Box>
-                <Typography variant="h6" gutterBottom fontWeight={600}>
-                  No products found
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph sx={{ maxWidth: 400, mx: 'auto' }}>
-                  We couldn't find any products matching your current filters. Try adjusting your search criteria or browse our categories.
-                </Typography>
-                {(search || selectedCategoryIds.length > 0) && (
-                  <Button 
-                    variant="contained"
-                    color="primary"
-                    onClick={clearAllFilters}
-                    sx={{ mt: 2 }}
-                    startIcon={<RefreshIcon />}
-                  >
-                    Reset filters
-                  </Button>
-                )}
-              </Paper>
-            )}
-          </Grid>
+          </Paper>
         </Grid>
-      </Container>
+        <Grid size={{ xs: 12, md: 9 }}>
+          {products?.length > 0 ? (
+            <>
+              <Grid container spacing={3}>
+                {products.map(product => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>
+                    <ProductCard product={product} onAddToCartSuccess={handleAddToCartSuccess} />
+                  </Grid>
+                ))}
+              </Grid>
+              <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={5000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+              >
+                <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
+                  Item was successfully added to cart.
+                </Alert>
+              </Snackbar>
+              <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center' }}>
+                <Pagination 
+                  count={totalPages || 1} 
+                  page={page} 
+                  onChange={handlePageChange} 
+                  shape="rounded"
+                  size={isMobile ? "small" : "medium"}
+                  showFirstButton
+                  showLastButton
+                />
+                <Typography variant="body2" color="text.secondary" sx={{  mt: 2 }}>
+                  {count > 0 ? `Showing ${(page - 1) * perPage + 1} - ${Math.min(page * perPage, count)} of ${count} products` : 'No products found'}
+                </Typography>
+              </Box>
+            </>
+          ) : (
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: { xs: 4, sm: 8 },
+                px: { xs: 2, sm: 4 },
+                backgroundColor: 'grey.100',
+                borderRadius: 2,
+                border: '1px dashed #CCCCCC',
+              }}
+            >
+              <ShoppingBagOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary' }} />
+              <Typography variant="h6" color="text.secondary">
+                No Products Found
+              </Typography>
+              <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
+                We couldn't find any products matching your current filters.  Please try adjusting your search criteria or reloading the page.
+              </Typography>
+              {(search || selectedCategoryIds.length > 0) && (
+                <Button 
+                  variant="contained"
+                  color="primary"
+                  onClick={clearAllFilters}
+                  sx={{ mt: 2 }}
+                  startIcon={<RefreshIcon />}
+                >
+                  Reset Filters
+                </Button>
+              )}
+            </Box>
+          )}
+        </Grid>
+      </Grid>
     </Box>
   );
 };

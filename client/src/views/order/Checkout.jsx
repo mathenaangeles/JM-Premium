@@ -1,24 +1,45 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { FaShoppingCart, FaSpinner } from 'react-icons/fa';
+import { MenuItem, Fade, Modal, styled, Box, Button, Card, CardContent, Checkbox, CircularProgress, Divider, FormControl, FormControlLabel, Grid, InputAdornment, Paper, Radio, RadioGroup, Stack, TextField, Typography, Alert } from '@mui/material';
+import { LocalMall as LocalMallIcon, Phone as PhoneIcon, Email as EmailIcon, Person as PersonIcon, Storefront as StorefrontIcon, ShoppingBagOutlined as ShoppingBagOutlinedIcon, Payment as PaymentIcon, LocalShipping as LocalShippingIcon, Home as HomeIcon, LocationCity as LocationCityIcon, CreditCard as CreditCardIcon } from '@mui/icons-material';
 
 import { getCart } from '../../slices/cartSlice';
+import countries from '../../constants/countries';
 import SelectAddress from '../address/SelectAddress';
 import { processPayment } from '../../slices/paymentSlice';
 import { getUserAddresses } from '../../slices/addressSlice';
-import { createOrder, payOrder } from '../../slices/orderSlice';
+import { createOrder, payOrder, clearOrderMessages } from '../../slices/orderSlice';
+
+const SectionTitle = styled(Typography)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  fontWeight: 500,
+  display: 'flex',
+  alignItems: 'center',
+  '& svg': {
+    marginRight: theme.spacing(1),
+  }
+}));
+
+const OrderItem = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  marginBottom: theme.spacing(2),
+  padding: theme.spacing(2),
+  backgroundColor: theme.palette.grey[50],
+  borderRadius: theme.spacing(1.5),
+}));
 
 const Checkout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  const { cart } = useSelector((state) => state.cart);
-  const { loading, error, success, order } = useSelector((state) => state.order);
-  const { addresses } = useSelector((state) => state.address);
   const { user } = useSelector((state) => state.user);
-
-  const [formData, setFormData] = useState({
+  const { cart } = useSelector((state) => state.cart);
+  const { addresses } = useSelector((state) => state.address);
+  const { loading, error, success, order } = useSelector((state) => state.order);
+  
+  const [orderData, setOrderData] = useState({
     email: '',
     first_name: '',
     last_name: '',
@@ -40,11 +61,11 @@ const Checkout = () => {
     payment_method: 'credit_card',
     same_as_shipping: true,
   });
-  
   const [validationErrors, setValidationErrors] = useState({});
-  const [showShippingAddressList, setShowShippingAddressList] = useState(false);
   const [showBillingAddressList, setShowBillingAddressList] = useState(false);
-  const [isGuestCheckout, _ ] = useState(!user);
+  const [showShippingAddressList, setShowShippingAddressList] = useState(false);
+  
+  const isGuestCheckout = !user;
   
   useEffect(() => {
     dispatch(getCart());
@@ -55,8 +76,8 @@ const Checkout = () => {
   
   useEffect(() => {
     if (addresses && addresses.length > 0) {
-      const defaultAddress = addresses.find(addr => addr.is_default) || addresses[0];
-      setFormData(prev => ({
+      const defaultAddress = addresses.find(address => address.is_default) || addresses[0];
+      setOrderData(prev => ({
         ...prev,
         shipping_address_id: defaultAddress.id || '',
         shipping_line_1: defaultAddress.line_1 || '',
@@ -69,8 +90,8 @@ const Checkout = () => {
   }, [addresses]);
   
   useEffect(() => {
-    if (formData.same_as_shipping) {
-      setFormData(prev => ({
+    if (orderData.same_as_shipping) {
+      setOrderData(prev => ({
         ...prev,
         billing_address_id: prev.shipping_address_id,
         billing_line_1: prev.shipping_line_1,
@@ -81,44 +102,44 @@ const Checkout = () => {
       }));
     }
   }, [
-    formData.shipping_address_id, 
-    formData.shipping_line_1, 
-    formData.shipping_line_2, 
-    formData.shipping_city, 
-    formData.shipping_zip_code, 
-    formData.shipping_country,
-    formData.same_as_shipping
+    orderData.shipping_address_id, 
+    orderData.shipping_line_1, 
+    orderData.shipping_line_2, 
+    orderData.shipping_city, 
+    orderData.shipping_zip_code, 
+    orderData.shipping_country,
+    orderData.same_as_shipping
   ]);
   
   useEffect(() => {
     if (success && order) {
-        if (!user && formData.email) {
-            localStorage.setItem('guestEmail', formData.email);
+        if (!user && orderData.email) {
+            localStorage.setItem('guestEmail', orderData.email);
         }
         navigate(`/orders/${order.id}`);
     }
-  }, [success, order, navigate, formData.email, user]);
+  }, [success, order, navigate, orderData.email, user]);
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setOrderData({
+      ...orderData,
       [name]: value
     });
   };
   
   const handleCheckboxChange = (e) => {
     const { name, checked } = e.target;
-    setFormData({
-      ...formData,
+    setOrderData({
+      ...orderData,
       [name]: checked
     });
   };
   
   const handleAddressSelection = (type, address) => {
     if (type === 'shipping') {
-      setFormData({
-        ...formData,
+      setOrderData({
+        ...orderData,
         shipping_address_id: address.id,
         shipping_line_1: address.line_1,
         shipping_line_2: address.line_2,
@@ -128,8 +149,8 @@ const Checkout = () => {
       });
       setShowShippingAddressList(false);
     } else {
-      setFormData({
-        ...formData,
+      setOrderData({
+        ...orderData,
         billing_address_id: address.id,
         billing_line_1: address.line_1,
         billing_line_2: address.line_2,
@@ -144,36 +165,36 @@ const Checkout = () => {
   const validateForm = () => {
     const errors = {};
     if (isGuestCheckout) {
-      if (!formData.email) errors.email = 'Email is required';
-      if (!formData.first_name) errors.first_name = 'First name is required';
-      if (!formData.last_name) errors.last_name = 'Last name is required';
-      if (!formData.phone_number) errors.phone_number = 'Phone number is required';
+      if (!orderData.email) errors.email = 'Email is required';
+      if (!orderData.first_name) errors.first_name = 'First name is required';
+      if (!orderData.last_name) errors.last_name = 'Last name is required';
+      if (!orderData.country_code) errors.country_code = 'Country code is required';
+      if (!orderData.phone_number) errors.phone_number = 'Phone number is required';
     }
     
-    if (!formData.shipping_address_id) {
-      if (!formData.shipping_line_1) errors.shipping_line_1 = 'Street address is required';
-      if (!formData.shipping_city) errors.shipping_city = 'City is required';
-      if (!formData.shipping_zip_code) errors.shipping_zip_code = 'Postal code is required';
-      if (!formData.shipping_country) errors.shipping_country = 'Country is required';
+    if (!orderData.shipping_address_id) {
+      if (!orderData.shipping_line_1) errors.shipping_line_1 = 'Street address for shipping is required';
+      if (!orderData.shipping_city) errors.shipping_city = 'City for shipping is required';
+      if (!orderData.shipping_zip_code) errors.shipping_zip_code = 'Postal code for shipping is required';
+      if (!orderData.shipping_country) errors.shipping_country = 'Country for shipping is required';
     }
     
-    if (!formData.same_as_shipping && !formData.billing_address_id) {
-      if (!formData.billing_line_1) errors.billing_line_1 = 'Street address is required';
-      if (!formData.billing_city) errors.billing_city = 'City is required';
-      if (!formData.billing_zip_code) errors.billing_zip_code = 'Postal code is required';
-      if (!formData.billing_country) errors.billing_country = 'Country is required';
+    if (!orderData.same_as_shipping && !orderData.billing_address_id) {
+      if (!orderData.billing_line_1) errors.billing_line_1 = 'Street address for billing is required';
+      if (!orderData.billing_city) errors.billing_city = 'City for billing is required';
+      if (!orderData.billing_zip_code) errors.billing_zip_code = 'Postal code for billing is required';
+      if (!orderData.billing_country) errors.billing_country = 'Country for billing is required';
     }
-    
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
   
   const calculateTax = () => {
-    return cart.subtotal * 0.1;
+    return cart.subtotal * 0.1; // TO DO: Change for production.
   };
   
   const calculateShipping = () => {
-    return formData.shipping_method === 'express' ? 20.00 : 10.00;
+    return orderData.shipping_method === 'express' ? 20.00 : 10.00; // TO DO: Change for production.
   };
   
   const calculateTotal = () => {
@@ -186,41 +207,37 @@ const Checkout = () => {
       return;
     }
     const orderData = {
-      shipping_address_id: formData.shipping_address_id || null,
-      billing_address_id: formData.same_as_shipping 
-        ? formData.shipping_address_id 
-        : formData.billing_address_id || null,
-      
-      shipping_line_1: formData.shipping_line_1,
-      shipping_line_2: formData.shipping_line_2,
-      shipping_city: formData.shipping_city,
-      shipping_zip_code: formData.shipping_zip_code,
-      shipping_country: formData.shipping_country,
-      
-      billing_line_1: !formData.same_as_shipping ? formData.billing_line_1 : null,
-      billing_line_2: !formData.same_as_shipping ? formData.billing_line_2 : null,
-      billing_city: !formData.same_as_shipping ? formData.billing_city : null,
-      billing_zip_code: !formData.same_as_shipping ? formData.billing_zip_code : null,
-      billing_country: !formData.same_as_shipping ? formData.billing_country : null,
-      
-      email: formData.email || (user?.email || ''),
-      first_name: formData.first_name || (user?.first_name || ''),
-      last_name: formData.last_name || (user?.last_name || ''),
-      country_code: formData.country_code || '',
-      phone_number: formData.phone_number || '',
-      
-      shipping_method: formData.shipping_method,
+      shipping_address_id: orderData.shipping_address_id || null,
+      billing_address_id: orderData.same_as_shipping 
+        ? orderData.shipping_address_id 
+        : orderData.billing_address_id || null,
+      shipping_line_1: orderData.shipping_line_1,
+      shipping_line_2: orderData.shipping_line_2,
+      shipping_city: orderData.shipping_city,
+      shipping_zip_code: orderData.shipping_zip_code,
+      shipping_country: orderData.shipping_country,
+      billing_line_1: !orderData.same_as_shipping ? orderData.billing_line_1 : null,
+      billing_line_2: !orderData.same_as_shipping ? orderData.billing_line_2 : null,
+      billing_city: !orderData.same_as_shipping ? orderData.billing_city : null,
+      billing_zip_code: !orderData.same_as_shipping ? orderData.billing_zip_code : null,
+      billing_country: !orderData.same_as_shipping ? orderData.billing_country : null,
+      email: orderData.email || (user?.email || ''),
+      first_name: orderData.first_name || (user?.first_name || ''),
+      last_name: orderData.last_name || (user?.last_name || ''),
+      country_code: orderData.country_code || (user?.country_code || ''),
+      phone_number: orderData.phone_number || (user?.phone_number || ''),
+      shipping_method: orderData.shipping_method,
       tax: calculateTax(),
       shipping_cost: calculateShipping(),
     };
     const orderResult =  await dispatch(createOrder(orderData));
-    const paymentResult = await dispatch(processPayment({
+    const paymentResult = await dispatch(processPayment({ // TO DO: Change for production.
         user_id: user?.id || null,
         currency: 'PHP',
         amount: calculateTotal(),
         status: 'fulfilled',
         transaction_id: 'T123',
-        payment_method: formData.payment_method
+        payment_method: orderData.payment_method
     }));
     dispatch(payOrder({
         orderId: orderResult?.payload?.order?.id,
@@ -232,433 +249,535 @@ const Checkout = () => {
   
   if (cart?.items?.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white p-6 rounded-lg shadow-md text-center">
-          <FaShoppingCart size={48} className="mx-auto text-gray-400 mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
-          <p className="text-gray-600 mb-4">Add some items to your cart before proceeding to checkout.</p>
-          <button 
-            onClick={() => navigate('/shop')}
-            className="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 transition"
-          >
-            Continue Shopping
-          </button>
-        </div>
-      </div>
+      <Box sx={{ minHeight: '100vh', p: 3, backgroundColor: 'primary.main' }}>
+        <Card sx={{ borderRadius: 2, height: '100%', py: 4 }}>
+          <CardContent sx={{ textAlign: 'center' }}>
+            <ShoppingBagOutlinedIcon sx={{ fontSize: 60, color: 'text.secondary' }} />
+            <Typography variant="h4" gutterBottom color="text.secondary">
+              Your cart is empty
+            </Typography>
+            <Typography variant="body1" color="text.disabled">
+              It looks like you have not added anything to your cart yet.
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate('/shop')}
+              startIcon={<StorefrontIcon />}
+              sx={{ mt: 2 }}
+              size="large"
+            >
+              Shop Now
+            </Button>
+          </CardContent>
+        </Card>
+      </Box>
     );
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Checkout</h1>
-      
+    <Box sx={{  p: 4, minHeight: '100vh', backgroundColor: 'primary.main' }}>
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-md mb-6">
+        <Alert severity="error" onClose={() => dispatch(clearOrderMessages())} sx={{ mb: 3 }}>
           {error}
-        </div>
+        </Alert>
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <form onSubmit={handleSubmit}>
-              {isGuestCheckout && (
-                <>
-                  <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <label className="block text-gray-700 mb-1">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className={`w-full p-2 border rounded ${validationErrors.email ? 'border-red-500' : 'border-gray-300'}`}
-                      />
-                      {validationErrors.email && (
-                        <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 mb-1">Phone Number</label>
-                      <input
-                        type="tel"
-                        name="phone_number"
-                        value={formData.phone_number}
-                        onChange={handleInputChange}
-                        className={`w-full p-2 border rounded ${validationErrors.phone_number ? 'border-red-500' : 'border-gray-300'}`}
-                      />
-                      {validationErrors.phone_number && (
-                        <p className="text-red-500 text-sm mt-1">{validationErrors.phone_number}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 mb-1">First Name</label>
-                      <input
-                        type="text"
-                        name="first_name"
-                        value={formData.first_name}
-                        onChange={handleInputChange}
-                        className={`w-full p-2 border rounded ${validationErrors.first_name ? 'border-red-500' : 'border-gray-300'}`}
-                      />
-                      {validationErrors.first_name && (
-                        <p className="text-red-500 text-sm mt-1">{validationErrors.first_name}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 mb-1">Last Name</label>
-                      <input
-                        type="text"
-                        name="last_name"
-                        value={formData.last_name}
-                        onChange={handleInputChange}
-                        className={`w-full p-2 border rounded ${validationErrors.last_name ? 'border-red-500' : 'border-gray-300'}`}
-                      />
-                      {validationErrors.last_name && (
-                        <p className="text-red-500 text-sm mt-1">{validationErrors.last_name}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 mb-1">Country Code</label>
-                      <input
-                        type="text"
-                        name="country_code"
-                        value={formData.country_code}
-                        onChange={handleInputChange}
-                        placeholder="e.g. US, CA, UK"
-                        className="w-full p-2 border rounded border-gray-300"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-              
-              <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
-              {user && (
-                <div className="mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowShippingAddressList(true)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded transition"
-                  >
-                    Select from Saved Addresses
-                  </button>
-                </div>
-              )}
-              
-              {showShippingAddressList && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-                    <SelectAddress 
-                        title="Select Shipping Address"
-                        addresses={addresses}
-                        onSelect={(address) => handleAddressSelection('shipping', address)}
-                        onClose={() => setShowShippingAddressList(false)}
-                        addressType="shipping"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="col-span-2">
-                  <label className="block text-gray-700 mb-1">Street Address</label>
-                  <input
-                    type="text"
-                    name="shipping_line_1"
-                    value={formData.shipping_line_1}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded ${validationErrors.shipping_line_1 ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {validationErrors.shipping_line_1 && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.shipping_line_1}</p>
-                  )}
-                </div>
-                
-                <div className="col-span-2">
-                  <label className="block text-gray-700 mb-1">Apartment, suite, etc. (optional)</label>
-                  <input
-                    type="text"
-                    name="shipping_line_2"
-                    value={formData.shipping_line_2}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border rounded border-gray-300"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    name="shipping_city"
-                    value={formData.shipping_city}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded ${validationErrors.shipping_city ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {validationErrors.shipping_city && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.shipping_city}</p>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 mb-1">Postal/ZIP Code</label>
-                  <input
-                    type="text"
-                    name="shipping_zip_code"
-                    value={formData.shipping_zip_code}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded ${validationErrors.shipping_zip_code ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {validationErrors.shipping_zip_code && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.shipping_zip_code}</p>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 mb-1">Country</label>
-                  <input
-                    type="text"
-                    name="shipping_country"
-                    value={formData.shipping_country}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded ${validationErrors.shipping_country ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {validationErrors.shipping_country && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.shipping_country}</p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-4">Shipping Method</h2>
-                <div className="flex items-center mb-2">
-                  <input
-                    type="radio"
-                    id="standard"
-                    name="shipping_method"
-                    value="standard"
-                    checked={formData.shipping_method === 'standard'}
-                    onChange={handleInputChange}
-                    className="mr-2"
-                  />
-                  <label htmlFor="standard">Standard Shipping ($10.00) - 5-7 business days</label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="express"
-                    name="shipping_method"
-                    value="express"
-                    checked={formData.shipping_method === 'express'}
-                    onChange={handleInputChange}
-                    className="mr-2"
-                  />
-                  <label htmlFor="express">Express Shipping ($20.00) - 2-3 business days</label>
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <label className="flex items-center text-gray-700">
-                  <input
-                    type="checkbox"
-                    name="same_as_shipping"
-                    checked={formData.same_as_shipping}
-                    onChange={handleCheckboxChange}
-                    className="mr-2"
-                  />
-                  Billing address same as shipping
-                </label>
-              </div>
-              
-              {!formData.same_as_shipping && (
-                <>
-                  <h2 className="text-xl font-semibold mb-4">Billing Address</h2>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Card sx={{ borderRadius: 2, height: '100%' }}>
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ position: 'relative', display: 'inline-block', mb: 4 }}>
+                <Typography variant="h4" sx={{ mb: 0.5 }}>
+                  Checkout
+                </Typography>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: -6,
+                    left: 0,
+                    height: '3px',
+                    width: '50px',
+                    bgcolor: 'primary.main',
+                    borderRadius: 2,
+                  }}
+                />
+              </Box>
+              <Box component="form" onSubmit={handleSubmit}>
+                {isGuestCheckout && (
+                  <Box mb={4}>
+                    <SectionTitle variant="h6">
+                      <PersonIcon /> Contact Information
+                    </SectionTitle>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField
+                          fullWidth
+                          label="Email"
+                          name="email"
+                          value={orderData.email}
+                          onChange={handleInputChange}
+                          error={!!validationErrors.email}
+                          helperText={validationErrors.email}
+                          variant="outlined"
+                          slotProps={{
+                            input: {
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <EmailIcon color="action" />
+                                </InputAdornment>
+                              ),
+                            }
+                          }}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                        <TextField
+                          fullWidth
+                          label="First Name"
+                          name="first_name"
+                          value={orderData.first_name}
+                          onChange={handleInputChange}
+                          error={!!validationErrors.first_name}
+                          helperText={validationErrors.first_name}
+                          variant="outlined"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                        <TextField
+                          fullWidth
+                          label="Last Name"
+                          name="last_name"
+                          value={orderData.last_name}
+                          onChange={handleInputChange}
+                          error={!!validationErrors.last_name}
+                          helperText={validationErrors.last_name}
+                          variant="outlined"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                        <TextField
+                          select
+                          fullWidth
+                          label="Country Code"
+                          name="country_code"
+                          value={orderData.country_code}
+                          onChange={handleInputChange}
+                          variant="outlined"
+                          error={!!validationErrors.country_code}
+                          helperText={validationErrors.country_code}
+                        >
+                          {countries.map((country) => (
+                            <MenuItem key={country.name} value={country.code}>
+                              {country.name}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 12, md: 6 }}>
+                        <TextField
+                          fullWidth
+                          label="Phone Number"
+                          name="phone_number"
+                          value={orderData.phone_number}
+                          onChange={handleInputChange}
+                          error={!!validationErrors.phone_number}
+                          helperText={validationErrors.phone_number}
+                          variant="outlined"
+                          slotProps={{
+                            input: {
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <PhoneIcon color="action" />
+                                </InputAdornment>
+                              ),
+                            }
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+                <Box mb={4}>
+                  <SectionTitle variant="h6">
+                    <HomeIcon /> Shipping Address
+                  </SectionTitle>
                   {user && (
-                    <div className="mb-4">
-                      <button
-                        type="button"
-                        onClick={() => setShowBillingAddressList(true)}
-                        className="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded transition"
+                    <Box mb={4}>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<LocationCityIcon />}
+                        onClick={() => setShowShippingAddressList(true)}
                       >
                         Select from Saved Addresses
-                      </button>
-                    </div>
+                      </Button>
+                    </Box>
                   )}
-                  
-                  {showBillingAddressList && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+                  <Modal 
+                    sx = {{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    open={showShippingAddressList}
+                    onClose={() => setShowShippingAddressList(false)}
+                    closeAfterTransition
+                    slotProps = {{
+                      backdrop: {
+                        timeout: 500
+                      }
+                    }}
+                  >
+                    <Fade in={showShippingAddressList}>
                         <SelectAddress 
-                            title="Select Billing Address"
-                            addresses={addresses}
-                            onSelect={(address) => handleAddressSelection('billing', address)}
-                            onClose={() => setShowBillingAddressList(false)}
-                            addressType="billing"
+                          title="Select Shipping Address"
+                          addresses={addresses}
+                          onSelect={(address) => handleAddressSelection('shipping', address)}
+                          onClose={() => setShowShippingAddressList(false)}
+                          addressType="shipping"
                         />
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div className="col-span-2">
-                      <label className="block text-gray-700 mb-1">Street Address</label>
-                      <input
-                        type="text"
-                        name="billing_line_1"
-                        value={formData.billing_line_1}
+                    </Fade>
+                  </Modal>
+                  <Grid container spacing={3}>
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        fullWidth
+                        label="Address Line 1"
+                        name="shipping_line_1"
+                        value={orderData.shipping_line_1}
                         onChange={handleInputChange}
-                        className={`w-full p-2 border rounded ${validationErrors.billing_line_1 ? 'border-red-500' : 'border-gray-300'}`}
+                        error={!!validationErrors.shipping_line_1}
+                        helperText={validationErrors.shipping_line_1}
+                        variant="outlined"
                       />
-                      {validationErrors.billing_line_1 && (
-                        <p className="text-red-500 text-sm mt-1">{validationErrors.billing_line_1}</p>
-                      )}
-                    </div>
-                    
-                    <div className="col-span-2">
-                      <label className="block text-gray-700 mb-1">Apartment, suite, etc. (optional)</label>
-                      <input
-                        type="text"
-                        name="billing_line_2"
-                        value={formData.billing_line_2}
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        fullWidth
+                        label="Address Line 2"
+                        name="shipping_line_2"
+                        value={orderData.shipping_line_2}
                         onChange={handleInputChange}
-                        className="w-full p-2 border rounded border-gray-300"
+                        variant="outlined"
                       />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-gray-700 mb-1">City</label>
-                      <input
-                        type="text"
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label="City"
+                        name="shipping_city"
+                        value={orderData.shipping_city}
+                        onChange={handleInputChange}
+                        error={!!validationErrors.shipping_city}
+                        helperText={validationErrors.shipping_city}
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label="ZIP Code"
+                        name="shipping_zip_code"
+                        value={orderData.shipping_zip_code}
+                        onChange={handleInputChange}
+                        error={!!validationErrors.shipping_zip_code}
+                        helperText={validationErrors.shipping_zip_code}
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                          select
+                          fullWidth
+                          label="Country"
+                          name="shipping_country"
+                          value={orderData.shipping_country}
+                          onChange={handleInputChange}
+                          variant="outlined"
+                          error={!!validationErrors.shipping_country}
+                          helperText={validationErrors.shipping_country}
+                        >
+                          {countries.map((country) => (
+                            <MenuItem key={country.name} value={country.name.replace(/\s*\(.*\)/, '')}>
+                              {country.name.replace(/\s*\(.*\)/, '')}
+                            </MenuItem>
+                          ))}
+                      </TextField>
+                    </Grid>
+                  </Grid>
+                </Box>
+                <Box mb={4}>
+                  <SectionTitle variant="h6">
+                    <LocalShippingIcon /> Shipping Method
+                  </SectionTitle>
+                  <FormControl component="fieldset" sx={{  width: '100%', }}>
+                    <RadioGroup
+                      name="shipping_method"
+                      value={orderData.shipping_method}
+                      onChange={handleInputChange}
+                    >
+                      <Paper variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2 }}>
+                        <FormControlLabel
+                          value="standard"
+                          control={<Radio color="primary" />}
+                          label={
+                            <Box>
+                              <Typography variant="body1" sx={{ fontWeight: 500 }}>Standard Shipping</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                $10.00 - Delivery in 5 - 7 business days
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </Paper>
+                      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                        <FormControlLabel
+                          value="express"
+                          control={<Radio color="primary" />}
+                          label={
+                            <Box>
+                              <Typography variant="body1" sx={{ fontWeight: 500 }}>Express Shipping</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                $20.00 - Delivery in 2 - 3 business days
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </Paper>
+                    </RadioGroup>
+                  </FormControl>
+                </Box>
+                <Box mb={4}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={orderData.same_as_shipping}
+                        onChange={handleCheckboxChange}
+                        name="same_as_shipping"
+                        color="primary"
+                      />
+                    }
+                    label="Billing Address same as Shipping Address"
+                  />
+                </Box>
+                {!orderData.same_as_shipping && (
+                  <Box mb={4}>
+                    <SectionTitle variant="h6">
+                      <HomeIcon /> Billing Address
+                    </SectionTitle>
+                    {user && (
+                      <Box mb={4}>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<LocationCityIcon />}
+                          onClick={() => setShowBillingAddressList(true)}
+                        >
+                          Select from Saved Addresses
+                        </Button>
+                      </Box>
+                    )}
+                    <Modal
+                      sx = {{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      open={showBillingAddressList}
+                      onClose={() => setShowBillingAddressList(false)}
+                      closeAfterTransition
+                      slotProps = {{
+                        backdrop: {
+                          timeout: 500
+                        }
+                      }}
+                    >
+                      <Fade in={showBillingAddressList}>
+                        <SelectAddress 
+                          title="Select Billing Address"
+                          addresses={addresses}
+                          onSelect={(address) => handleAddressSelection('billing', address)}
+                          onClose={() => setShowBillingAddressList(false)}
+                          addressType="billing"
+                        />
+                      </Fade>
+                    </Modal>
+                    <Grid container spacing={3}>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField
+                          fullWidth
+                          label="Address Line 1"
+                          name="billing_line_1"
+                          value={orderData.billing_line_1}
+                          onChange={handleInputChange}
+                          error={!!validationErrors.billing_line_1}
+                          helperText={validationErrors.billing_line_1}
+                          variant="outlined"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField
+                          fullWidth
+                          label="Address Line 2"
+                          name="billing_line_2"
+                          value={orderData.billing_line_2}
+                          onChange={handleInputChange}
+                          error={!!validationErrors.billing_line_2}
+                          helperText={validationErrors.billing_line_2}
+                          variant="outlined"
+                        />
+                      </Grid>    
+                      <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label="City"
                         name="billing_city"
-                        value={formData.billing_city}
+                        value={orderData.billing_city}
                         onChange={handleInputChange}
-                        className={`w-full p-2 border rounded ${validationErrors.billing_city ? 'border-red-500' : 'border-gray-300'}`}
+                        error={!!validationErrors.billing_city}
+                        helperText={validationErrors.billing_city}
+                        variant="outlined"
                       />
-                      {validationErrors.billing_city && (
-                        <p className="text-red-500 text-sm mt-1">{validationErrors.billing_city}</p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-gray-700 mb-1">Postal/ZIP Code</label>
-                      <input
-                        type="text"
-                        name="billing_zip_code"
-                        value={formData.billing_zip_code}
-                        onChange={handleInputChange}
-                        className={`w-full p-2 border rounded ${validationErrors.billing_zip_code ? 'border-red-500' : 'border-gray-300'}`}
-                      />
-                      {validationErrors.billing_zip_code && (
-                        <p className="text-red-500 text-sm mt-1">{validationErrors.billing_zip_code}</p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-gray-700 mb-1">Country</label>
-                      <input
-                        type="text"
-                        name="billing_country"
-                        value={formData.billing_country}
-                        onChange={handleInputChange}
-                        className={`w-full p-2 border rounded ${validationErrors.billing_country ? 'border-red-500' : 'border-gray-300'}`}
-                      />
-                      {validationErrors.billing_country && (
-                        <p className="text-red-500 text-sm mt-1">{validationErrors.billing_country}</p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-              
-              <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
-              <div className="mb-6">
-                <div className="flex items-center mb-2">
-                  <input
-                    type="radio"
-                    id="credit_card"
-                    name="payment_method"
-                    value="credit_card"
-                    checked={formData.payment_method === 'credit_card'}
-                    onChange={handleInputChange}
-                    className="mr-2"
-                  />
-                  <label htmlFor="credit_card">Credit Card</label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="paypal"
-                    name="payment_method"
-                    value="paypal"
-                    checked={formData.payment_method === 'paypal'}
-                    onChange={handleInputChange}
-                    className="mr-2"
-                  />
-                  <label htmlFor="paypal">PayPal</label>
-                </div>
-              </div>
-              
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded hover:bg-blue-700 transition flex items-center justify-center"
-              >
-                {loading ? (
-                  <>
-                    <FaSpinner className="animate-spin mr-2" />
-                    Processing...
-                  </>
-                ) : (
-                  'Place Order'
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <TextField
+                          fullWidth
+                          label="ZIP Code"
+                          name="billing_zip_code"
+                          value={orderData.billing_zip_code}
+                          onChange={handleInputChange}
+                          error={!!validationErrors.billing_zip_code}
+                          helperText={validationErrors.billing_zip_code}
+                          variant="outlined"
+                        />
+                      </Grid>   
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <TextField
+                            select
+                            fullWidth
+                            label="Country"
+                            name="billing_country"
+                            value={orderData.billing_country}
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            error={!!validationErrors.billing_country}
+                            helperText={validationErrors.billing_country}
+                          >
+                            {countries.map((country) => (
+                              <MenuItem key={country.name} value={country.name.replace(/\s*\(.*\)/, '')}>
+                                {country.name.replace(/\s*\(.*\)/, '')}
+                              </MenuItem>
+                            ))}
+                        </TextField>
+                      </Grid>               
+                    </Grid>
+                  </Box>
                 )}
-              </button>
-            </form>
-          </div>
-        </div>
-        
-        <div className="md:col-span-1">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-            
-            <div className="border-b border-gray-200 pb-4 mb-4">
-              {cart?.items?.map((item) => (
-                <div key={item.id} className="flex justify-between mb-2">
-                  <div className="flex-1">
-                    <div className="font-medium">{item.product?.name || "Product"}</div>
-                    <div className="text-sm text-gray-500">Qty: {item.quantity}</div>
-                  </div>
-                  <div className="text-right">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>${cart.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tax</span>
-                <span>${calculateTax().toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Shipping</span>
-                <span>${calculateShipping().toFixed(2)}</span>
-              </div>
-            </div>
-            <div className="border-t border-gray-200 pt-4">
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total</span>
-                <span>${calculateTotal().toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                <Box mb={4}>
+                  <SectionTitle variant="h6">
+                    <PaymentIcon /> Payment Method
+                  </SectionTitle>
+                  <FormControl component="fieldset">
+                    <RadioGroup
+                      name="payment_method"
+                      value={orderData.payment_method}
+                      onChange={handleInputChange}
+                    >
+                      <Paper variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2 }}>
+                        <FormControlLabel
+                          value="credit_card"
+                          control={<Radio color="primary" />}
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <CreditCardIcon sx={{ mr: 1 }} />
+                              <Typography variant="body1">Credit Card</Typography>
+                            </Box>
+                          }
+                        />
+                      </Paper>
+                      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                        <FormControlLabel
+                          value="paypal"
+                          control={<Radio color="primary" />}
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Box component="img" src="/path-to-paypal-logo.png" alt="PayPal" sx={{ width: 20, height: 20, mr: 1 }} />
+                              <Typography variant="body1">PayPal</Typography>
+                            </Box>
+                          }
+                        />
+                      </Paper>
+                    </RadioGroup>
+                  </FormControl>
+                </Box>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={loading}
+                  size="large"
+                >
+                  {loading ? (
+                    <>
+                      <CircularProgress size={24} color="inherit" sx={{ mr: 1 }} />
+                      Processing...
+                    </>
+                  ) : (
+                    'Complete Purchase'
+                  )}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card>
+            <CardContent sx={{ p: 4 }}>
+              <SectionTitle variant="h6">
+                <LocalMallIcon /> Order Summary
+              </SectionTitle>
+              <Box mb={3}>
+                {cart?.items?.map((item) => (
+                  <OrderItem key={item.id}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {item.product?.name || "Product"}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Quantity: {item.quantity}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </Typography>
+                  </OrderItem>
+                ))}
+              </Box>
+              <Divider sx={{ my: 3 }} />
+              <Stack spacing={2} sx={{ mb: 3 }}>
+                <Box display="flex" justifyContent="space-between">
+                  <Typography variant="body1" color="text.secondary">Subtotal</Typography>
+                  <Typography variant="body1">${cart.subtotal.toFixed(2)}</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between">
+                  <Typography variant="body1" color="text.secondary">Tax</Typography>
+                  <Typography variant="body1">${calculateTax().toFixed(2)}</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between">
+                  <Typography variant="body1" color="text.secondary">Shipping</Typography>
+                  <Typography variant="body1">${calculateShipping().toFixed(2)}</Typography>
+                </Box>
+              </Stack>
+              <Divider sx={{ my: 3 }} />
+              <Box display="flex" justifyContent="space-between" sx={{ mt: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Total</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>${calculateTotal().toFixed(2)}</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+    </Grid>
+  </Box>
   );
 };
 

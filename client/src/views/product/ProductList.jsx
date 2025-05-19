@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Star as StarIcon,Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { Select, FormControl, Switch, IconButton, InputAdornment, Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, TextField, FormControlLabel, MenuItem, Pagination, Alert, Chip, Stack, Grid, LinearProgress } from '@mui/material';
 
@@ -177,8 +177,8 @@ const ProductList = () => {
             </TableRow>
           </TableHead>
           {loading ? (
-             <TableRow>
-              <TableCell colSpan={6} sx={{ p: 0 }}>
+            <TableRow>
+              <TableCell colSpan={6} sx={{ p: 0, pb: 2 }}>
                 <LinearProgress />
               </TableCell>
             </TableRow>

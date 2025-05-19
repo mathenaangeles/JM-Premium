@@ -105,6 +105,15 @@ const theme = createTheme({
         }
       },
     },
+     MuiInput: {
+      styleOverrides: {
+        underline: {
+          '&:before': {
+            borderBottomWidth: '1.5px',
+          },
+        },
+      },
+    },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {

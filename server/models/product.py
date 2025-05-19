@@ -76,36 +76,47 @@ class Product(Base, TimestampMixin):
             ],
             else_=func.coalesce(cls.stock, 0)
         )
-        
+
     @hybrid_property
     def display_price(self) -> float:
-        if self.variants:
-            return self.variants[0].price
-        if self.sale_price > 0:
+        if self.variants and len(self.variants) > 0:
+            variant = self.variants[0]
+            if variant.sale_price is not None and variant.sale_price > 0:
+                return variant.sale_price
+            return variant.base_price or 0
+        if self.sale_price is not None and self.sale_price > 0:
             return self.sale_price 
         return self.base_price or 0
 
     @display_price.expression
     def display_price(cls):
-        lowest_variant_price = (
-            select(func.min(
-                func.coalesce(ProductVariant.sale_price, ProductVariant.base_price)
-            ))
+        first_variant_price = (
+            select(
+                func.coalesce(
+                    case(
+                        (ProductVariant.sale_price.isnot(None) & (ProductVariant.sale_price > 0), 
+                        ProductVariant.sale_price),
+                        else_=func.coalesce(ProductVariant.base_price, 0)
+                    ),
+                    0
+                )
+            )
+            .where(ProductVariant.product_id == cls.id)
+            .order_by(ProductVariant.id)
+            .limit(1)
+            .correlate(cls)
+            .scalar_subquery()
+        )
+        variant_count = (
+            select(func.count(ProductVariant.id))
             .where(ProductVariant.product_id == cls.id)
             .correlate(cls)
             .scalar_subquery()
         )
         return case(
-            [
-                (
-                    select(func.count(ProductVariant.id))
-                    .where(ProductVariant.product_id == cls.id)
-                    .correlate(cls)
-                    .scalar_subquery() > 0,
-                    lowest_variant_price
-                )
-            ],
-            else_=func.coalesce(cls.sale_price, cls.base_price, 0)
+            (variant_count > 0, first_variant_price),
+            (cls.sale_price.isnot(None) & (cls.sale_price > 0), cls.sale_price),
+            else_=func.coalesce(cls.base_price, 0)
         )
     
     def get_product_options(self) -> Dict[str, List[str]]:

@@ -1,4 +1,5 @@
-import React from 'react';
+import { Box, Typography, IconButton, Paper, Divider, List, ListItem, Chip, Stack, Grid } from '@mui/material';
+import { Close as CloseIcon, LocationOn as LocationOnIcon, Home as HomeIcon, LocalShipping as LocalShippingIcon } from '@mui/icons-material';
 
 const SelectAddress = ({ 
   title = 'Select Address',
@@ -7,62 +8,132 @@ const SelectAddress = ({
   onClose,
   addressType = 'shipping'
 }) => {
+  const getAddressIcon = (type) => {
+    switch (type) {
+      case 'shipping':
+        return <LocalShippingIcon color="primary" />;
+      case 'billing':
+        return <HomeIcon color="primary" />;
+      default:
+        return <LocationOnIcon color="primary" />;
+    }
+  };
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <button 
-            type="button"
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            &times;
-          </button>
-        </div>
-        
-        <div className="space-y-4">
-          {addresses && addresses.length > 0 ? (
-            <>
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Addresses</h3>
-              </div>
-              
-              {addresses.map((address) => (
-                <div 
-                  key={address.id} 
-                  className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer"
-                  onClick={() => {
-                    onSelect(address);
-                    onClose();
-                  }}
-                >
-                  <div className="flex justify-between mb-2">
-                    <div className="font-medium">Type: {address.type || addressType}</div>
-                  </div>
-                  <div>Street: {address.line_1}</div>
-                  {address.line_2 && <div>Street 2: {address.line_2}</div>}
-                  <div>City: {address.city}</div>
-                  <div>Country: {address.country}</div>
-                  <div>Zip Code: {address.zip_code}</div>
+    <Paper 
+      elevation={6}
+      sx={{
+        width: '100%',
+        maxWidth: 500,
+        borderRadius: 2,
+        p: 3,
+        outline: 'none',
+      }}
+    >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h6" component="h2" fontWeight="medium">
+          {title}
+        </Typography>
+        <IconButton 
+          size="small" 
+          onClick={onClose}
+          aria-label="close"
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+      
+      <Divider sx={{ mb: 2 }} />
+      
+      {addresses && addresses.length > 0 ? (
+        <List disablePadding>
+          {addresses.map((address) => (
+            <ListItem 
+              key={address.id}
+              onClick={() => {
+                onSelect(address);
+                onClose();
+              }}
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                mb: 2,
+                p: 2,
+                transition: 'all 0.2s',
+                cursor: 'pointer',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'action.hover',
+                }
+              }}
+            >
+              <Box width="100%">
+                <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                  {getAddressIcon(address.type || addressType)}
+                  <Typography variant="subtitle1" fontWeight="medium">
+                    {address.type || addressType}
+                  </Typography>
                   {address.is_default && (
-                    <div className="mt-2">
-                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
-                        Default
-                      </span>
-                    </div>
+                    <Chip 
+                      label="Default" 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined"
+                      sx={{ ml: 'auto' }}
+                    />
                   )}
-                </div>
-              ))}
-            </>
-          ) : (
-            <div className="text-gray-500 p-4 text-center">
-              No saved addresses found.
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                </Stack>
+                
+                <Grid container spacing={1} sx={{ mt: 1 }}>
+                  <Grid item xs={12}>
+                    <Typography variant="body2">
+                      <Box component="span" fontWeight="medium">Street:</Box> {address.line_1}
+                    </Typography>
+                  </Grid>
+                  
+                  {address.line_2 && (
+                    <Grid item xs={12}>
+                      <Typography variant="body2">
+                        <Box component="span" fontWeight="medium">Street 2:</Box> {address.line_2}
+                      </Typography>
+                    </Grid>
+                  )}
+                  
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      <Box component="span" fontWeight="medium">City:</Box> {address.city}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={6}>
+                    <Typography variant="body2">
+                      <Box component="span" fontWeight="medium">Zip Code:</Box> {address.zip_code}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Typography variant="body2">
+                      <Box component="span" fontWeight="medium">Country:</Box> {address.country}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            </ListItem>
+          ))}
+        </List>
+      ) : (
+        <Box 
+          sx={{ 
+            py: 4, 
+            textAlign: 'center', 
+            color: 'text.secondary' 
+          }}
+        >
+          <LocationOnIcon sx={{ fontSize: 40, color: 'action.disabled', mb: 1 }} />
+          <Typography>No saved addresses found.</Typography>
+        </Box>
+      )}
+    </Paper>
   );
 };
 

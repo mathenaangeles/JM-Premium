@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 export const getProducts = createAsyncThunk(
   '/getProducts',
-  async ({ page = 1, perPage = 10, search, categoryIds = [], isFeatured, isActive = true }, { rejectWithValue }) => {
+  async ({ page = 1, perPage = 10, search, categoryIds = [], isFeatured, isActive = true, sort }, { rejectWithValue }) => {
     try {
       let url = `/products/?page=${page}&per_page=${perPage}`;
       if (search) url += `&search=${search}`;
@@ -12,6 +12,7 @@ export const getProducts = createAsyncThunk(
       }
       if (isFeatured !== undefined) url += `&is_featured=${isFeatured}`;
       if (isActive !== undefined) url += `&is_active=${isActive}`;
+      if (sort) url += `&sort=${sort}`;
       const { data } = await Axios.get(url);
       return data;
     } catch (err) {

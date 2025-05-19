@@ -117,6 +117,10 @@ const orderSlice = createSlice({
     resetCurrentPage: (state) => {
       state.currentPage = 1;
     },
+    clearOrderMessages: (state) => {
+      state.success = null;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -258,5 +262,5 @@ const orderSlice = createSlice({
   },
 });
 
-export const { resetCurrentPage } = orderSlice.actions;
+export const { resetCurrentPage, clearOrderMessages } = orderSlice.actions;
 export default orderSlice.reducer;

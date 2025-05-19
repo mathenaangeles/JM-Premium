@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Pagination, Card, CardContent, LinearProgress, Chip, Box, Breadcrumbs, Button, Alert, CardMedia, Container, Collapse, Grid, Snackbar, Typography, IconButton } from '@mui/material';
-import { ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, Inventory2Outlined as Inventory2OutlinedIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
+import { ShoppingBagOutlined as ShoppingBagOutlinedIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, Inventory2Outlined as Inventory2OutlinedIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 
 import ProductCard from '../product/ProductCard';
 import { getProducts } from '../../slices/productSlice';
@@ -345,12 +345,13 @@ const CategoryDetail = () => {
               sx={{
                 textAlign: 'center',
                 py: { xs: 4, sm: 8 },
-                px: { xs: 2, sm: 2 },
+                px: { xs: 2, sm: 4 },
                 backgroundColor: 'grey.100',
                 borderRadius: 2,
                 border: '1px dashed #CCCCCC',
               }}
             >
+              <ShoppingBagOutlinedIcon sx={{ fontSize: 40, color: 'text.secondary' }} />
               <Typography variant="h6" color="text.secondary">
                 No Products Found
               </Typography>
@@ -384,8 +385,8 @@ const CategoryDetail = () => {
               >
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   {count > 0 ? 
-                    `Showing ${startItem}-${endItem} of ${count} products` : 
-                    'No results found'}
+                    `Showing ${startItem} - ${endItem} of ${count} products` : 
+                    'No products found'}
                 </Typography>
               </Box>
               <Pagination 

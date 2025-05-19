@@ -298,7 +298,7 @@ const ProductForm = () => {
         </Snackbar>
       ) : null}
       <Paper component="form" onSubmit={handleSubmit} elevation={3} sx={{ p: 4, my: 3 }}>
-         <Box sx={{ position: 'relative', display: 'inline-block', mb: 4 }}>
+        <Box sx={{ position: 'relative', display: 'inline-block', mb: 4 }}>
           <Typography variant="h4" gutterBottom sx={{ mb: 0.5 }}>
             Product Information
           </Typography>

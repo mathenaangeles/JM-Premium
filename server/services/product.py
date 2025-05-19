@@ -1,4 +1,4 @@
-from sqlalchemy import or_
+from sqlalchemy import or_, asc, desc
 from typing import Dict, List, Optional, Any, Tuple
 
 from app import db
@@ -12,7 +12,7 @@ class ProductService:
     def get_product_by_slug(self, slug: str) -> Optional[Product]:
         return db.session.query(Product).filter(Product.slug == slug).first()
     
-    def get_all_products(self, page: int = 1, per_page: int = 10, category_ids: Optional[List[int]] = [], filters: Optional[Dict[str, Any]] = None, search: Optional[str] = None) -> Tuple[List[Product], int, int]:
+    def get_all_products(self, page: int = 1, per_page: int = 10, category_ids: Optional[List[int]] = [], filters: Optional[Dict[str, Any]] = None, search: Optional[str] = None, sort: Optional[str] = None) -> Tuple[List[Product], int, int]:
         product_query = db.session.query(Product)
         if len(category_ids) > 0:
             product_query = product_query.filter(Product.category_id.in_(category_ids))
@@ -28,9 +28,17 @@ class ProductService:
                     Product.description.ilike(search_term)
                 )
             )
+        if sort == 'price_low':
+            product_query = product_query.order_by(asc(Product.display_price))
+        elif sort == 'price_high':
+            product_query = product_query.order_by(desc(Product.display_price))
+        elif sort == 'oldest':
+            product_query = product_query.order_by(asc(Product.created_at))
+        else:
+            product_query = product_query.order_by(desc(Product.created_at))
         count = product_query.count()
         total_pages = (count + per_page - 1) // per_page
-        products = product_query.order_by(Product.name).offset((page - 1) * per_page).limit(per_page).all()
+        products = product_query.offset((page - 1) * per_page).limit(per_page).all()
         return products, count, total_pages
     
     def create_product(self, data: Dict[str, Any]) -> Product:

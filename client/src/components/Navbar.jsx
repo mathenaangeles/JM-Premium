@@ -635,8 +635,6 @@ const Navbar = () => {
         elevation={0} 
         sx={{
           px: 3,
-          borderBottom: '2px solid', 
-          borderColor: 'common.black',
           backgroundColor: 'common.white',
           color: 'common.black',
         }}

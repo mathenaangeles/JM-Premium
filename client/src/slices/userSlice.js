@@ -138,6 +138,7 @@ const userSlice = createSlice({
   },
   reducers: {
     clearMessages: (state) => {
+      // state.loading = false;
       state.success = null;
       state.error = null;
     },
