@@ -97,7 +97,7 @@ class OrderItem(Base, TimestampMixin):
             "variant_id": self.variant_id,
             "quantity": self.quantity,
             "price": float(self.price),
-            "subtotal": self.subtotal,
+            "subtotal": float(self.subtotal),
             "product": self.product.to_dict() if self.product else None,
             "variant": self.variant.to_dict() if self.variant else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,

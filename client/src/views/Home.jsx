@@ -382,7 +382,7 @@ const ServiceSection = () => {
                   Fast Delivery
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Free shipping on orders over $50
+                  Free shipping on orders over ₱50
                 </Typography>
               </Box>
             </Box>
@@ -502,7 +502,7 @@ const FeaturedProductsSection = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
-                    ${product.price.toFixed(2)}
+                    ₱{product.price.toFixed(2)}
                   </Typography>
                 </CardContent>
                 <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
@@ -708,7 +708,7 @@ const BestsellerSection = () => {
                     </Typography>
                   </Box>
                   <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
-                    ${product.price.toFixed(2)}
+                    ₱{product.price.toFixed(2)}
                   </Typography>
                 </CardContent>
                 <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>

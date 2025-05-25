@@ -74,7 +74,7 @@ class OrderService:
                 shipping_method=shipping_method,
                 shipping_address_id=shipping_address.id,
                 billing_address_id=billing_address.id,
-                status='pending',
+                status='awaiting_payment',
                 total=0,
                 subtotal=0,
                 tax=data.get('tax'),
@@ -125,7 +125,7 @@ class OrderService:
         if not order:
             return None
         order.payment_id = payment_id
-        order.status = 'paid'
+        order.status = 'processing'
         db.session.commit()
         return order
         

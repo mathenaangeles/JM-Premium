@@ -21,10 +21,13 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const variantId =
-      product.variants && product.variants.length > 0
-        ? product.variants[0].id
-        : null;
+    let variantId;
+    if (product.variants && product.variants.length > 0) {
+      const firstInStockVariant = product.variants?.find(v => v.stock > 0);
+      variantId = firstInStockVariant ? firstInStockVariant.id : null;
+    } else {
+      variantId = null;
+    }
     dispatch(addToCart({
       product_id: product.id,
       variant_id: variantId,
@@ -167,20 +170,20 @@ const ProductCard = ({ product, onAddToCartSuccess = null }) => {
                 color: 'common.grey',
               }}
             >
-              ${parseFloat(finalBasePrice).toFixed(2)}
+              ₱{parseFloat(finalBasePrice).toFixed(2)}
             </Typography>
           )}
           <Typography variant="h6">
-            ${parseFloat(product.display_price).toFixed(2)}
+            ₱{parseFloat(product.display_price).toFixed(2)}
           {finalSalePrice > 0 && (
             <Chip
               label={`${Math.round(discount)}% OFF`}
               size="small"
               sx={{
                 ml: 1,
-                bgcolor: 'red',
+                bgcolor: 'primary.main',
                 color: 'white',
-                fontWeight: 500,
+                fontWeight: 600,
               }}
             />
           )}

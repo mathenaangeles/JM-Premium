@@ -317,7 +317,7 @@ const Navbar = () => {
       >
         <StoreIcon fontSize="small" />
         <Typography variant="body2" sx={{ fontWeight: 600, ml: 1 }}>
-          Browse All Categories
+          Shop All Categories
         </Typography>
       </MenuItem>
     </Menu>
@@ -668,9 +668,6 @@ const Navbar = () => {
                 sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
                 onMouseEnter={handleCategoryMouseEnter}
                 onMouseLeave={handleCategoryMouseLeave}
-                onClick={() => {
-                  navigate('/shop');
-                }}
               >
                 <Button
                   ref={categoryButtonRef}

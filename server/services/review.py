@@ -23,12 +23,16 @@ class ReviewService:
             Review.user_id == user_id
         ).first()
     
-    def get_reviews(self, page: int = 1, per_page: int = 10, user_id: Optional[int]=None, product_id:  Optional[int]=None) -> Tuple[List[Review], int, int]:
+    def get_reviews(self, page: int = 1, per_page: int = 10, user_id: Optional[int]=None, product_id:  Optional[int]=None, approved: Optional[bool] = None, verified: Optional[bool] = None) -> Tuple[List[Review], int, int]:
         review_query = db.session.query(Review).join(Product, Product.id == Review.product_id)
         if product_id:
             review_query = review_query.filter(Review.product_id == product_id)
         if user_id:
             review_query = review_query.filter(Review.user_id == user_id)
+        if approved is not None:
+            review_query = review_query.filter(Review.is_approved == approved)
+        if verified is not None:
+            review_query = review_query.filter(Review.is_verified == verified)
         count = review_query.count()
         total_pages = (count + per_page - 1) // per_page
         reviews = review_query.order_by(Review.rating.desc()).offset((page - 1) * per_page).limit(per_page).all()

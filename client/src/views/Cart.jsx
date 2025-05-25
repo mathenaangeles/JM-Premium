@@ -144,7 +144,7 @@ const Cart = () => {
                           {item.product?.name || "Product"}
                         </Typography>
                         <Typography variant="body2" sx={{ ml: 1 }}>
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ₱{(item.price * item.quantity).toFixed(2)}
                         </Typography>
                       </Box>
                       {item.variant?.name && (
@@ -189,7 +189,7 @@ const Cart = () => {
             <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="body1" fontWeight="bold">Total</Typography>
-                <Typography variant="body1" fontWeight="bold">${(cart.subtotal).toFixed(2)}</Typography>
+                <Typography variant="body1" fontWeight="bold">₱{(cart.subtotal).toFixed(2)}</Typography>
               </Box>
               <Button
                 component={Link}

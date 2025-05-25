@@ -422,7 +422,7 @@ const ProductForm = () => {
                   min: "0"
                 },
                 input: {
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>
+                  startAdornment: <InputAdornment position="start">₱</InputAdornment>
                 }
               }}
             />
@@ -450,7 +450,7 @@ const ProductForm = () => {
                   min: "0"
                 },
                 input: {
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>
+                  startAdornment: <InputAdornment position="start">₱</InputAdornment>
                 }
               }}
             />
@@ -845,7 +845,7 @@ const ProductForm = () => {
                     min: "0"
                   },
                   input: {
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>
+                    startAdornment: <InputAdornment position="start">₱</InputAdornment>
                   }
                 }}
               />
@@ -866,7 +866,7 @@ const ProductForm = () => {
                     min: "0"
                   },
                   input: {
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>
+                    startAdornment: <InputAdornment position="start">₱</InputAdornment>
                   }
                 }}
               />

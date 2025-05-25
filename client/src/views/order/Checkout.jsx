@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { MenuItem, Fade, Modal, styled, Box, Button, Card, CardContent, Checkbox, CircularProgress, Divider, FormControl, FormControlLabel, Grid, InputAdornment, Paper, Radio, RadioGroup, Stack, TextField, Typography, Alert } from '@mui/material';
+import { LinearProgress, MenuItem, Fade, Modal, styled, Box, Button, Card, CardContent, Checkbox, CircularProgress, Divider, FormControl, FormControlLabel, Grid, InputAdornment, Paper, Radio, RadioGroup, Stack, TextField, Typography, Alert } from '@mui/material';
 import { LocalMall as LocalMallIcon, Phone as PhoneIcon, Email as EmailIcon, Person as PersonIcon, Storefront as StorefrontIcon, ShoppingBagOutlined as ShoppingBagOutlinedIcon, Payment as PaymentIcon, LocalShipping as LocalShippingIcon, Home as HomeIcon, LocationCity as LocationCityIcon, CreditCard as CreditCardIcon } from '@mui/icons-material';
 
 import { getCart } from '../../slices/cartSlice';
@@ -35,9 +35,9 @@ const Checkout = () => {
   const navigate = useNavigate();
   
   const { user } = useSelector((state) => state.user);
-  const { cart } = useSelector((state) => state.cart);
+  const { cart, loading: cartLoading } = useSelector((state) => state.cart);
   const { addresses } = useSelector((state) => state.address);
-  const { loading, error, success, order } = useSelector((state) => state.order);
+  const { loading: orderLoading, error, success, order } = useSelector((state) => state.order);
   
   const [orderData, setOrderData] = useState({
     email: '',
@@ -190,7 +190,7 @@ const Checkout = () => {
   };
   
   const calculateTax = () => {
-    return cart.subtotal * 0.1; // TO DO: Change for production.
+    return cart.subtotal * 0.03;
   };
   
   const calculateShipping = () => {
@@ -206,7 +206,7 @@ const Checkout = () => {
     if (!validateForm()) {
       return;
     }
-    const orderData = {
+    const formattedData = {
       shipping_address_id: orderData.shipping_address_id || null,
       billing_address_id: orderData.same_as_shipping 
         ? orderData.shipping_address_id 
@@ -230,22 +230,46 @@ const Checkout = () => {
       tax: calculateTax(),
       shipping_cost: calculateShipping(),
     };
-    const orderResult =  await dispatch(createOrder(orderData));
-    const paymentResult = await dispatch(processPayment({ // TO DO: Change for production.
+    try {
+      const orderResult =  await dispatch(createOrder(formattedData));
+      if (orderResult.error) {
+        return;
+      }
+      const orderId = orderResult.payload?.order?.id;
+      if (!orderId) {
+        return;
+      }
+      const paymentResult = await dispatch(processPayment({ // TO DO: Change for production.
         user_id: user?.id || null,
         currency: 'PHP',
         amount: calculateTotal(),
         status: 'fulfilled',
         transaction_id: 'T123',
         payment_method: orderData.payment_method
-    }));
-    dispatch(payOrder({
-        orderId: orderResult?.payload?.order?.id,
+      }));
+      if (paymentResult.error) {
+        return;
+      }
+      const paymentId = paymentResult.payload?.payment?.id;
+      if (!paymentId) {
+        return;
+      }
+      await dispatch(payOrder({
+        orderId: orderId,
         orderData: {
-            payment_id: paymentResult?.payload?.payment?.id,
+            payment_id: paymentId,
         }
-    }));
+      }));
+    } catch (error) {
+      console.log(error);
+      return; 
+    }
   };
+
+  if (cartLoading || !cart) {
+    return (<LinearProgress/>);
+  }
+  
   
   if (cart?.items?.length === 0) {
     return (
@@ -429,6 +453,7 @@ const Checkout = () => {
                     }}
                   >
                     <Fade in={showShippingAddressList}>
+                      <Box>
                         <SelectAddress 
                           title="Select Shipping Address"
                           addresses={addresses}
@@ -436,6 +461,7 @@ const Checkout = () => {
                           onClose={() => setShowShippingAddressList(false)}
                           addressType="shipping"
                         />
+                      </Box>
                     </Fade>
                   </Modal>
                   <Grid container spacing={3}>
@@ -524,7 +550,7 @@ const Checkout = () => {
                             <Box>
                               <Typography variant="body1" sx={{ fontWeight: 500 }}>Standard Shipping</Typography>
                               <Typography variant="body2" color="text.secondary">
-                                $10.00 - Delivery in 5 - 7 business days
+                                ₱10.00 - Delivery in 5 - 7 business days
                               </Typography>
                             </Box>
                           }
@@ -538,7 +564,7 @@ const Checkout = () => {
                             <Box>
                               <Typography variant="body1" sx={{ fontWeight: 500 }}>Express Shipping</Typography>
                               <Typography variant="body2" color="text.secondary">
-                                $20.00 - Delivery in 2 - 3 business days
+                                ₱20.00 - Delivery in 2 - 3 business days
                               </Typography>
                             </Box>
                           }
@@ -593,13 +619,15 @@ const Checkout = () => {
                       }}
                     >
                       <Fade in={showBillingAddressList}>
-                        <SelectAddress 
-                          title="Select Billing Address"
-                          addresses={addresses}
-                          onSelect={(address) => handleAddressSelection('billing', address)}
-                          onClose={() => setShowBillingAddressList(false)}
-                          addressType="billing"
-                        />
+                        <Box>
+                          <SelectAddress 
+                            title="Select Billing Address"
+                            addresses={addresses}
+                            onSelect={(address) => handleAddressSelection('billing', address)}
+                            onClose={() => setShowBillingAddressList(false)}
+                            addressType="billing"
+                          />
+                        </Box>
                       </Fade>
                     </Modal>
                     <Grid container spacing={3}>
@@ -714,10 +742,10 @@ const Checkout = () => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={loading}
+                  disabled={orderLoading}
                   size="large"
                 >
-                  {loading ? (
+                  {orderLoading ? (
                     <>
                       <CircularProgress size={24} color="inherit" sx={{ mr: 1 }} />
                       Processing...
@@ -748,7 +776,7 @@ const Checkout = () => {
                       </Typography>
                     </Box>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ₱{(item.price * item.quantity).toFixed(2)}
                     </Typography>
                   </OrderItem>
                 ))}
@@ -757,21 +785,21 @@ const Checkout = () => {
               <Stack spacing={2} sx={{ mb: 3 }}>
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body1" color="text.secondary">Subtotal</Typography>
-                  <Typography variant="body1">${cart.subtotal.toFixed(2)}</Typography>
+                  <Typography variant="body1">₱{cart.subtotal.toFixed(2)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body1" color="text.secondary">Tax</Typography>
-                  <Typography variant="body1">${calculateTax().toFixed(2)}</Typography>
+                  <Typography variant="body1">₱{calculateTax().toFixed(2)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body1" color="text.secondary">Shipping</Typography>
-                  <Typography variant="body1">${calculateShipping().toFixed(2)}</Typography>
+                  <Typography variant="body1">₱{calculateShipping().toFixed(2)}</Typography>
                 </Box>
               </Stack>
               <Divider sx={{ my: 3 }} />
               <Box display="flex" justifyContent="space-between" sx={{ mt: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>Total</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>${calculateTotal().toFixed(2)}</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>₱{calculateTotal().toFixed(2)}</Typography>
               </Box>
             </CardContent>
           </Card>

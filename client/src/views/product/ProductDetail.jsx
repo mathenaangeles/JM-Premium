@@ -68,8 +68,9 @@ const ProductDetail = () => {
   }, [dispatch, product]);
 
   useEffect(() => {
-    if (product && product.variants && product.variants.length > 0) {
-      setSelectedVariant(product.variants[0]);
+     if (product && product.variants && product.variants.length > 0) {
+      const firstInStockVariant = product.variants.find(v => v.stock > 0);
+      setSelectedVariant(firstInStockVariant || product.variants[0]);
     } else {
       setSelectedVariant(null);
     }
@@ -382,7 +383,7 @@ const ProductDetail = () => {
                 color: 'common.grey'
                 }}
             >
-              ${parseFloat(compareAtPrice).toFixed(2)}
+              ₱{parseFloat(compareAtPrice).toFixed(2)}
             </Typography>
             )}
             <Typography 
@@ -394,7 +395,7 @@ const ProductDetail = () => {
                 fontSize: '1.2rem'
               }}
             >
-              ${parseFloat(currentPrice).toFixed(2)}
+              ₱{parseFloat(currentPrice).toFixed(2)}
             </Typography>
             {compareAtPrice && (
               <Chip
@@ -402,9 +403,9 @@ const ProductDetail = () => {
                 size="small"
                 sx={{
                   ml: 1,
-                  bgcolor: 'red',
+                  bgcolor: 'primary.main',
                   color: 'white',
-                  fontWeight: 500,
+                  fontWeight: 600,
               }}/>
             )}
           </Box>

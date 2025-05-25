@@ -14,13 +14,17 @@ def get_reviews():
     product_id = request.args.get('product_id', type=int)
     user_id = request.args.get('user_id', type=int)
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)    
+    per_page = request.args.get('per_page', 10, type=int)  
+    approved = request.args.get('approved', type=lambda v: v.lower() == 'true' if v else None)
+    verified = request.args.get('verified', type=lambda v: v.lower() == 'true' if v else None)  
     try:
         reviews, count, total_pages = review_service.get_reviews(
             product_id=product_id, 
             user_id=user_id,
             page=page, 
-            per_page=per_page)
+            per_page=per_page,
+            approved=approved,
+            verified=verified)
         return jsonify({
             'reviews': [review_service.serialize_review(review) for review in reviews],
             'count': count,

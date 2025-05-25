@@ -1,8 +1,8 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { LocalShippingOutlined as LocalShippingOutlinedIcon, Storefront as StorefrontIcon, Refresh as RefreshIcon} from '@mui/icons-material';
-import { Select, FormControl, InputLabel, InputAdornment, Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, MenuItem, Pagination, Alert, Chip, Grid, LinearProgress } from '@mui/material';
+import { Storefront as StorefrontIcon, Refresh as RefreshIcon} from '@mui/icons-material';
+import { Select, FormControl, InputLabel, Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, MenuItem, Pagination, Alert, Chip, Grid, LinearProgress } from '@mui/material';
 
 import { getUserOrders, getOrders, resetCurrentPage, clearOrderMessages } from '../../slices/orderSlice';
 
@@ -59,7 +59,7 @@ const OrderList = () => {
         </Alert>
       )}
       <Typography variant="h4" fontWeight={600} mb={3}>
-        {isAdmin ? 'Manage Orders' : 'My Orders'}
+        {userId ? 'My Orders' : isAdmin ? 'Manage Orders' : 'My Orders'}
       </Typography>
        <Grid container spacing={1} justifyContent="space-between" alignItems="center" sx={{ my: 3 }}>
         <Grid size={{ xs: 12, md: 6 }}>
@@ -67,8 +67,7 @@ const OrderList = () => {
             variant="outlined" 
             size="small" 
             sx={{ 
-              width: { xs: '100%', sm: 'auto' },
-              minWidth: { sm: 180 },
+              minWidth: { sm: 200 },
               }}
           >
             <InputLabel id="sort-select-label">Status Filter</InputLabel>
@@ -78,11 +77,6 @@ const OrderList = () => {
               value={statusFilter}
               onChange={handleFilterChange}
               label="Status Filter"
-              startAdornment={
-                <InputAdornment position="start">
-                  <LocalShippingOutlinedIcon fontSize="small" />
-                </InputAdornment>
-              }
             >
               <MenuItem value="processing">Processing</MenuItem>
               <MenuItem value="shipped">Shipped</MenuItem>
@@ -138,22 +132,23 @@ const OrderList = () => {
                       variant="body2"
                       fontWeight={600}
                       color="inherit"
-                      sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                      sx={{ '&:hover': { textDecoration: 'underline' } }}
                     >
                       {order.id}
-                    </Typography>
+                  </Typography>
                 </TableCell>
                 <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>${order.total.toFixed(2)}</TableCell>
+                <TableCell>₱{order.total.toFixed(2)}</TableCell>
                 <TableCell>
                   <Chip
-                    label={user.status}
+                    label={order.status}
                     size="small"
                     sx={{
                       backgroundColor: 'primary.light',
                       color: 'secondary.main',
                       fontWeight: 600,
                       p: 1,
+                      textTransform: 'capitalize',
                     }}
                   />
                 </TableCell>

@@ -155,7 +155,7 @@ const AddressList = () => {
                 </Box>
                 <Grid container spacing={4} sx={{ my: 1 }}>
                   <Grid size={{ xs: 12, sm: 6, md : 3 }}>
-                    <Typography variant="subtitle2" color="secondary.main" fontWeight={600}>
+                    <Typography variant="body2" color="secondary.main" fontWeight={600}>
                       Street
                     </Typography>
                     <Typography variant="body2">
@@ -164,19 +164,19 @@ const AddressList = () => {
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Typography variant="subtitle2" color="secondary.main" fontWeight={600}>
+                    <Typography variant="body2" color="secondary.main" fontWeight={600}>
                       City
                     </Typography>
                     <Typography variant="body2">{address.city}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Typography variant="subtitle2" color="secondary.main" fontWeight={600}>
+                    <Typography variant="body2" color="secondary.main" fontWeight={600}>
                       Country
                     </Typography>
                     <Typography variant="body2">{address.country}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Typography variant="subtitle2" color="secondary.main" fontWeight={600}>
+                    <Typography variant="body2" color="secondary.main" fontWeight={600}>
                       Zip Code
                     </Typography>
                     <Typography variant="body2">{address.zip_code}</Typography>

@@ -54,6 +54,12 @@ const paymentSlice = createSlice({
     success: null,
     error: null,
   },
+  reducers: {
+    clearPaymentMessages: (state) => {
+      state.success = null;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getPayments.pending, (state) => {
@@ -105,4 +111,5 @@ const paymentSlice = createSlice({
   },
 });
 
+export const { clearPaymentMessages } = paymentSlice.actions;
 export default paymentSlice.reducer;

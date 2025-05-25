@@ -139,6 +139,23 @@ const theme = createTheme({
         },
       },
     },
+    MuiStepIcon: {
+      styleOverrides: {
+        root: {
+          color: '#726E69',
+          '&.Mui-active': {
+            color: '#97A763',
+          },
+          '&.Mui-completed': {
+            color: '#607049',
+          },
+        },
+        text: {
+          fill: '#FAF9F6',
+          fontWeight: 600,
+        },
+      },
+    },
   },
 });
 

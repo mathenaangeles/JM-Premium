@@ -3,11 +3,13 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 export const getReviews = createAsyncThunk(
   '/getReviews',
-  async ({ productId = null, userId = null, page = 1, perPage = 10 }, { rejectWithValue }) => {
+  async ({ productId = null, userId = null, page = 1, perPage = 10, approved = null, verified = null }, { rejectWithValue }) => {
     try {
       let url = `/reviews/?page=${page}&per_page=${perPage}`;
       if (productId) url += `&product_id=${productId}`;
       if (userId) url += `&user_id=${userId}`;
+      if (approved !== null) url += `&approved=${approved}`;
+      if (verified !== null) url += `&verified=${verified}`;
       const { data } = await Axios.get(url);
       return data;
     } catch (err) {
