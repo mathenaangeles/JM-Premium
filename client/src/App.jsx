@@ -51,7 +51,7 @@ function App() {
           <Route path="/orders/all/:userId?" element={<PrivateRoute><OrderList/></PrivateRoute>}/>
           <Route path="/reviews/all/:userId?" element={<PrivateRoute><ReviewList/></PrivateRoute>}/>
           <Route path="/reviews/:reviewId?" element={<PrivateRoute><ReviewDetail /></PrivateRoute>}/>
-          
+
           <Route path="/manage/users" element={<AdminRoute><UserList /></AdminRoute>} />
           <Route path="/manage/payments" element={<AdminRoute><PaymentList /></AdminRoute>} />
           <Route path="/manage/products" element={<AdminRoute><ProductList /></AdminRoute>} />

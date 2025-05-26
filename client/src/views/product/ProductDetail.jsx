@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import React, { useEffect, useState, useRef } from 'react';
-import { styled, LinearProgress, List, ListItem, Collapse, ListItemText, Grid, Typography, Box, Button, Breadcrumbs, IconButton, Paper, Rating, Chip, TextField, Card, CardContent, Tabs, Tab } from '@mui/material';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Accordion, AccordionSummary, AccordionDetails, LinearProgress, List, ListItem, Collapse, ListItemText, Grid, Typography, Box, Button, Breadcrumbs, IconButton, Paper, Rating, Chip, TextField, Card, CardContent, Tabs, Tab } from '@mui/material';
 import { AddShoppingCartOutlined as AddShoppingCartOutlinedIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon, Add as AddIcon, Remove as RemoveIcon, Star as StarIcon, ExpandLess as ExpandLessIcon, ExpandMore as ExpandMoreIcon, NavigateNext as NavigateNextIcon, CheckCircle as CheckCircleIcon, Loop as LoopIcon, VerifiedUser as VerifiedUserIcon, LocalShipping as LocalShippingIcon, Share as ShareIcon, Favorite as FavoriteIcon } from '@mui/icons-material';
 
 import ReviewForm from '../review/ReviewForm';
@@ -10,37 +10,10 @@ import { addToCart } from '../../slices/cartSlice';
 import { getReviews } from '../../slices/reviewSlice';
 import { getProductBySlug } from '../../slices/productSlice';
 
-const StyledListItem = styled(ListItem)(({ theme }) => ({
-  paddingTop: theme.spacing(2),
-  paddingBottom: theme.spacing(2),
-  paddingLeft: theme.spacing(2),
-  paddingRight: theme.spacing(2),
-  backgroundColor: theme.palette.secondary.main,
-  borderBottom: '1px solid',
-  borderColor: theme.palette.common.white,
-  '&:hover': {
-    backgroundColor: theme.palette.primary.main,
-  },
-  '&:first-of-type': {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-  },
-  '&:last-of-type': {
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-  },
-}));
-
-const StyledListItemText = styled(ListItemText)(({ theme }) => ({
-  '& .MuiListItemText-primary': {
-    fontWeight: 600,
-    color: theme.palette.common.white,
-  },
-}));
-
 const ProductDetail = () => {
   const { productSlug } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { reviews } = useSelector((state) => state.review);
   const { product, loading } = useSelector((state) => state.product);
@@ -156,6 +129,12 @@ const ProductDetail = () => {
       </Box>
     );
   }
+
+  const sections = [
+    { id: 'benefits', label: 'Benefits', content: product.benefits },
+    { id: 'instructions', label: 'Instructions', content: product.instructions },
+    { id: 'ingredients', label: 'Ingredients', content: product.ingredients },
+  ];
 
   const reviewCount = reviews ? reviews.length : 0;  
   const isInStock = selectedVariant 
@@ -680,51 +659,34 @@ const ProductDetail = () => {
           </Grid>
         </Grid>
       </Grid>
-
-      <List sx={{ py: 0, my: 4 }}>
-        {product.benefits && (<>
-          <StyledListItem button onClick={() => toggleSection('benefits')}>
-            <StyledListItemText primary="Benefits" />
-              {expandedSection === 'benefits' ? <ExpandLessIcon sx={{ color: 'common.white' }} /> : <ExpandMoreIcon sx={{ color: 'common.white' }} />}
-          </StyledListItem>
-          <Collapse in={expandedSection === 'benefits'}  sx={{ px: 2 }}>
-            <Typography
-              variant="body1"
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(product.benefits),
-              }}
-            />
-          </Collapse>
-        </>)}
-        {product.instructions && (<>
-          <StyledListItem button onClick={() => toggleSection('instructions')}>
-            <StyledListItemText primary="Instructions" />
-              {expandedSection === 'instructions' ? <ExpandLessIcon sx={{ color: 'common.white' }}  /> : <ExpandMoreIcon sx={{ color: 'common.white' }}  />}
-          </StyledListItem>
-          <Collapse in={expandedSection === 'instructions'} sx={{ px: 2 }}>
-            <Typography
-              variant="body1"
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(product.instructions),
-              }}
-            />
-          </Collapse>
-        </>)}
-        {product.ingredients && (<>
-          <StyledListItem button onClick={() => toggleSection('ingredients')}>
-            <StyledListItemText primary="Ingredients" />
-              {expandedSection === 'ingredients' ? <ExpandLessIcon sx={{ color: 'common.white' }} /> : <ExpandMoreIcon sx={{ color: 'common.white' }} />}
-          </StyledListItem>
-          <Collapse in={expandedSection === 'ingredients'}  sx={{ px: 2 }}>
-            <Typography
-              variant="body1"
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(product.ingredients),
-              }}
-            />
-          </Collapse>
-        </>)}
-      </List>
+      <Box my={4}>
+        {sections.map(
+          ({ id, label, content }) =>
+            content && (
+              <Accordion
+                key={id}
+                expanded={expandedSection === id}
+                onChange={() => toggleSection(id)}
+                elevation={0}
+                sx={{ 
+                  my: 2, 
+                }}
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'common.black' }} />}>
+                  <Typography variant="h5">{label}</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography
+                    variant="body1"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(content),
+                    }}
+                  />
+                </AccordionDetails>
+              </Accordion>
+            )
+        )}
+      </Box>
 
       <Box ref={reviewsRef} sx={{ display: 'inline-block', position: 'relative', mb: 5 }}>
         <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
@@ -742,8 +704,7 @@ const ProductDetail = () => {
           }}
         />
       </Box>
-
-      {/* <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {reviewCount > 0 ? (
           <Box sx={{ mb: 4 }}>
             <Grid container spacing={3} alignItems="center">
@@ -816,16 +777,36 @@ const ProductDetail = () => {
             </Grid>
           </Box>
         ) : (
-          <Box sx={{ mb: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary" variant="body1" sx={{ mb: 2 }}>
-              This product doesn't have any reviews yet.
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: { xs: 4, sm: 5 },
+              px: { xs: 2, sm: 3 },
+              backgroundColor: 'grey.100',
+              borderRadius: 3,
+              boxShadow: 1,
+              border: '1px dashed #CCCCCC',
+            }}
+          >
+            <Typography variant="h6" color="text.secondary">
+              This product has no reviews yet.
             </Typography>
-            <Typography color="text.secondary" variant="body2" sx={{ mb: 3 }}>
-              Share your thoughts and be the first to review this product!
+            <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
+              If you have purchased this product, click the button below to submit a review.
             </Typography>
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              sx={{ mt: 2 }}
+              disableElevation
+              disabled={!isInStock}
+              onClick={()=> {}}
+            >
+              Write a Review
+            </Button>
           </Box>
         )}
-        {reviews && reviews.length > 0 ? (
+        {reviews && reviews.length > 0 && (
           <>
             <Typography 
               variant="h6" 
@@ -890,9 +871,8 @@ const ProductDetail = () => {
               </Card>
             ))}
           </>
-        ) : null}
-      </Box> */}
-
+        )}
+      </Box>
     </Box>
   );
 };
