@@ -265,7 +265,7 @@ const OrderDetails = () => {
                         <TableCell>
                           <Typography
                               component={Link}
-                              to={`/product/${item.product.slug}`}
+                              to={`/products/${item.product.slug}`}
                               fontWeight={600}
                               color="inherit"
                               variant="body2"

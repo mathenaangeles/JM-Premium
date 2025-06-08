@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify';
+import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Accordion, AccordionSummary, AccordionDetails, LinearProgress, List, ListItem, Collapse, ListItemText, Grid, Typography, Box, Button, Breadcrumbs, IconButton, Paper, Rating, Chip, TextField, Card, CardContent, Tabs, Tab } from '@mui/material';
+import { Accordion, AccordionSummary, AccordionDetails, LinearProgress, Grid, Typography, Box, Button, Breadcrumbs, IconButton, Rating, Chip, TextField, Card, CardContent } from '@mui/material';
 import { AddShoppingCartOutlined as AddShoppingCartOutlinedIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon, Add as AddIcon, Remove as RemoveIcon, Star as StarIcon, ExpandLess as ExpandLessIcon, ExpandMore as ExpandMoreIcon, NavigateNext as NavigateNextIcon, CheckCircle as CheckCircleIcon, Loop as LoopIcon, VerifiedUser as VerifiedUserIcon, LocalShipping as LocalShippingIcon, Share as ShareIcon, Favorite as FavoriteIcon } from '@mui/icons-material';
 
 import ReviewForm from '../review/ReviewForm';
@@ -13,17 +13,18 @@ import { getProductBySlug } from '../../slices/productSlice';
 const ProductDetail = () => {
   const { productSlug } = useParams();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
+  const { user } = useSelector((state) => state.user);
   const { reviews } = useSelector((state) => state.review);
   const { product, loading } = useSelector((state) => state.product);
   
   const reviewsRef = useRef(null);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState(0);
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [expandedSection, setExpandedSection] = useState('');
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
   
   useEffect(() => {
     if (productSlug) {
@@ -88,10 +89,6 @@ const ProductDetail = () => {
     dispatch(getReviews({
       productId: product.id
     }));
-  };
-
-  const handleTabChange = (_, newValue) => {
-    setActiveTab(newValue);
   };
 
   const toggleSection = (section) => {
@@ -800,7 +797,26 @@ const ProductDetail = () => {
               sx={{ mt: 2 }}
               disableElevation
               disabled={!isInStock}
-              onClick={()=> {}}
+              onClick={() => setShowReviewModal(true)}
+            >
+              Write a Review
+            </Button>
+          </Box>
+        )}
+        {reviewCount > 0 && (
+          <Box sx={{ mb: 3, textAlign: 'center' }}>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              size="large"
+              onClick={() => setShowReviewModal(true)}
+              sx={{ 
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 4,
+                py: 1.5,
+                borderRadius: 3
+              }}
             >
               Write a Review
             </Button>
@@ -814,8 +830,7 @@ const ProductDetail = () => {
             >
               {reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}
             </Typography>
-            
-            {reviews.map((review) => (
+                        {reviews.map((review) => (
               <Card 
                 key={review.id} 
                 elevation={0}
@@ -832,11 +847,27 @@ const ProductDetail = () => {
                       {review.title}
                     </Typography>
                     
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(review.created_at).toLocaleDateString()}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </Typography>
+                      {(user?.is_admin || user?.id === review.user_id) && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            setEditingReviewId(review.id);
+                            setShowReviewModal(true);
+                          }}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                    </Box>
                   </Box>
                   
+                  {/* Rest of your existing review content... */}
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Rating value={review.rating} readOnly size="small" />
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
@@ -872,6 +903,16 @@ const ProductDetail = () => {
             ))}
           </>
         )}
+        <ReviewForm 
+          reviewId={editingReviewId}
+          productId={product.id}
+          open={showReviewModal}
+          onClose={() => {
+            setShowReviewModal(false);
+            setEditingReviewId(null);
+          }}
+          onReviewSubmit={handleReviewSubmit}
+        />
       </Box>
     </Box>
   );
