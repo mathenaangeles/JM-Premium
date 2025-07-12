@@ -1,8 +1,6 @@
 from typing import Dict, List, Optional, Any, Tuple
 
 from app import db
-from models.cart import Cart
-
 from services.cart import CartService
 from models.order import Order, OrderItem
 from services.address import AddressService

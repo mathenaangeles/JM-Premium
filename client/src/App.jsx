@@ -25,7 +25,6 @@ import Navbar from './components/Navbar';
 import NotFound from './components/NotFound';
 import AdminRoute from './components/AdminRouter';
 import PrivateRoute from './components/PrivateRouter';
-import ReviewDetail from './views/review/ReviewDetail';
 
 function App() {
   const loading = useSelector((state) =>
@@ -50,7 +49,6 @@ function App() {
 
           <Route path="/orders/all/:userId?" element={<PrivateRoute><OrderList/></PrivateRoute>}/>
           <Route path="/reviews/all/:userId?" element={<PrivateRoute><ReviewList/></PrivateRoute>}/>
-          <Route path="/reviews/:reviewId?" element={<PrivateRoute><ReviewDetail /></PrivateRoute>}/>
 
           <Route path="/manage/users" element={<AdminRoute><UserList /></AdminRoute>} />
           <Route path="/manage/payments" element={<AdminRoute><PaymentList /></AdminRoute>} />

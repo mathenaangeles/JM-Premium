@@ -18,7 +18,7 @@ def get_reviews():
     approved = request.args.get('approved', type=lambda v: v.lower() == 'true' if v else None)
     verified = request.args.get('verified', type=lambda v: v.lower() == 'true' if v else None)  
     try:
-        reviews, count, total_pages = review_service.get_reviews(
+        reviews, count, total_pages, rating_counts = review_service.get_reviews(
             product_id=product_id, 
             user_id=user_id,
             page=page, 
@@ -30,7 +30,8 @@ def get_reviews():
             'count': count,
             'total_pages': total_pages,
             'page': page,
-            'per_page': per_page
+            'per_page': per_page,
+            'rating_counts': rating_counts,
         }), 200
     except Exception as e:
         print(e)

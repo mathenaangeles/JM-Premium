@@ -15,7 +15,7 @@ const ProductDetail = () => {
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.user);
-  const { reviews } = useSelector((state) => state.review);
+  const { reviews, count, ratingCounts } = useSelector((state) => state.review);
   const { product, loading } = useSelector((state) => state.product);
   
   const reviewsRef = useRef(null);
@@ -24,7 +24,7 @@ const ProductDetail = () => {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [expandedSection, setExpandedSection] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editingReview, setEditingReview] = useState(null);
   
   useEffect(() => {
     if (productSlug) {
@@ -133,7 +133,7 @@ const ProductDetail = () => {
     { id: 'ingredients', label: 'Ingredients', content: product.ingredients },
   ];
 
-  const reviewCount = reviews ? reviews.length : 0;  
+  const reviewCount = reviews ? count : 0;  
   const isInStock = selectedVariant 
     ? selectedVariant.stock > 0 
     : (product.stock > 0 || product.total_stock > 0);
@@ -684,7 +684,6 @@ const ProductDetail = () => {
             )
         )}
       </Box>
-
       <Box ref={reviewsRef} sx={{ display: 'inline-block', position: 'relative', mb: 5 }}>
         <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
           Customer Reviews
@@ -701,78 +700,92 @@ const ProductDetail = () => {
           }}
         />
       </Box>
-      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box>
         {reviewCount > 0 ? (
           <Box sx={{ mb: 4 }}>
-            <Grid container spacing={3} alignItems="center">
-              <Grid item xs={12} sm={4} md={3}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'center', sm: 'flex-start' },
+                justifyContent: 'space-between',
+                gap: 4,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
                   alignItems: { xs: 'center', sm: 'flex-start' },
-                  mb: { xs: 2, sm: 0 }
-                }}>
-                  <Typography variant="h3" color="primary.main" sx={{ fontWeight: 600 }}>
-                    {product.average_rating.toFixed(1)}
-                  </Typography>
-                  
-                  <Rating 
-                    value={product.average_rating} 
-                    precision={0.5} 
-                    readOnly 
-                    size="medium"
-                    sx={{ mb: 1 }}
-                  />
-                  
-                  <Typography color="text.secondary" variant="body2">
-                    Based on {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
-                  </Typography>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} sm={8} md={9}>
-                <Box>
-                  {[5, 4, 3, 2, 1].map((star) => (
-                    <Box 
-                      key={star} 
-                      sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        mb: 0.5 
+                  textAlign: { xs: 'center', sm: 'left' },
+                }}
+              >
+                <Typography variant="h3" color="primary.main" sx={{ fontWeight: 600 }}>
+                  {product.average_rating.toFixed(1)}
+                </Typography>
+                <Rating
+                  value={product.average_rating}
+                  precision={0.5}
+                  readOnly
+                  size="medium"
+                  sx={{ mb: 1 }}
+                />
+                <Typography color="text.secondary" variant="body2">
+                  Based on {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: 1, minWidth: '250px' }}>
+              {(() =>
+                [5, 4, 3, 2, 1].map((star) => {
+                  const count = ratingCounts[star] || 0;
+                  const percentage = reviewCount ? (count / reviewCount) * 100 : 0;
+
+                  return (
+                    <Box
+                      key={star}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        mb: 0.5,
                       }}
                     >
                       <Typography variant="body2" sx={{ width: 15, mr: 1 }}>
                         {star}
                       </Typography>
-                      <StarIcon sx={{ color: 'warning.main', fontSize: 18, mr: 1 }} />
-                      <Box 
-                        sx={{ 
-                          flexGrow: 1, 
-                          height: 8, 
+                      <StarIcon sx={{ color: '#FFA41C', fontSize: 18, mr: 1 }} />
+                      <Box
+                        sx={{
+                          flexGrow: 1,
+                          height: 8,
                           backgroundColor: 'grey.100',
                           borderRadius: 1,
                           position: 'relative',
-                          overflow: 'hidden'
+                          overflow: 'hidden',
                         }}
                       >
-                        <Box 
-                          sx={{ 
-                            width: `${star * 20}%`, 
-                            height: '100%', 
-                            backgroundColor: 'warning.main',
+                        <Box
+                          sx={{
+                            width: `${percentage}%`,
+                            height: '100%',
+                            backgroundColor: '#FFA41C',
                             borderRadius: 1,
                           }}
                         />
                       </Box>
-                      <Typography variant="body2" sx={{ width: 30, ml: 1, color: 'text.secondary' }}>
-                        {Math.round(reviewCount * (star / 15))}
+                      <Typography
+                        variant="body2"
+                        sx={{ width: 30, ml: 1, color: 'text.secondary' }}
+                      >
+                        {count}
                       </Typography>
                     </Box>
-                  ))}
-                </Box>
-              </Grid>
-            </Grid>
+                  );
+                })
+              )()}
+            </Box>
+            </Box>
           </Box>
+
         ) : (
           <Box
             sx={{
@@ -796,27 +809,7 @@ const ProductDetail = () => {
               color="secondary" 
               sx={{ mt: 2 }}
               disableElevation
-              disabled={!isInStock}
               onClick={() => setShowReviewModal(true)}
-            >
-              Write a Review
-            </Button>
-          </Box>
-        )}
-        {reviewCount > 0 && (
-          <Box sx={{ mb: 3, textAlign: 'center' }}>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              size="large"
-              onClick={() => setShowReviewModal(true)}
-              sx={{ 
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 4,
-                py: 1.5,
-                borderRadius: 3
-              }}
             >
               Write a Review
             </Button>
@@ -824,13 +817,11 @@ const ProductDetail = () => {
         )}
         {reviews && reviews.length > 0 && (
           <>
-            <Typography 
-              variant="h6" 
-              sx={{ mb: 2, fontWeight: 600 }}
-            >
-              {reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}
-            </Typography>
-                        {reviews.map((review) => (
+            <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>{reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}</Typography>
+              <Button variant="contained" color="secondary" disableElevation onClick={() => setShowReviewModal(true)}>Write a Review</Button>
+            </Box>
+            {reviews.map((review) => (
               <Card 
                 key={review.id} 
                 elevation={0}
@@ -856,7 +847,7 @@ const ProductDetail = () => {
                           size="small"
                           variant="outlined"
                           onClick={() => {
-                            setEditingReviewId(review.id);
+                            setEditingReview(review);
                             setShowReviewModal(true);
                           }}
                           sx={{ textTransform: 'none' }}
@@ -866,50 +857,25 @@ const ProductDetail = () => {
                       )}
                     </Box>
                   </Box>
-                  
-                  {/* Rest of your existing review content... */}
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Rating value={review.rating} readOnly size="small" />
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
                       Verified Purchase
                     </Typography>
                   </Box>
-                  
                   <Typography variant="body2">{review.content}</Typography>
-                  
-                  {review.images && review.images.length > 0 && (
-                    <Box sx={{ display: 'flex', mt: 2, gap: 1 }}>
-                      {review.images.map((image, index) => (
-                        <Box
-                          key={index}
-                          sx={{
-                            width: 60,
-                            height: 60,
-                            borderRadius: 1,
-                            overflow: 'hidden'
-                          }}
-                        >
-                          <img 
-                            src={image.url} 
-                            alt={`Review ${index + 1}`}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
                 </CardContent>
               </Card>
             ))}
           </>
         )}
         <ReviewForm 
-          reviewId={editingReviewId}
           productId={product.id}
+          review={editingReview}
           open={showReviewModal}
           onClose={() => {
             setShowReviewModal(false);
-            setEditingReviewId(null);
+            setEditingReview(null);
           }}
           onReviewSubmit={handleReviewSubmit}
         />

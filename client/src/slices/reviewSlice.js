@@ -74,6 +74,7 @@ const reviewSlice = createSlice({
     count: 0,
     totalPages: 0,
     currentPage: 1,
+    ratingCounts: {},
     loading: false,
     success: null,
     error: null,
@@ -94,6 +95,7 @@ const reviewSlice = createSlice({
       .addCase(getReviews.fulfilled, (state, action) => {
         state.reviews = action.payload.reviews;
         state.count = action.payload.count;
+        state.ratingCounts = action.payload.rating_counts || {};
         state.totalPages = action.payload.total_pages;
         state.currentPage = action.payload.page;
         state.loading = false;

@@ -18,6 +18,11 @@ class Payment(Base, TimestampMixin):
     transaction_id: Mapped[str] = mapped_column(String(255), nullable=False)
     payment_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    external_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    xendit_invoice_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    invoice_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
     user: Mapped["User"] = relationship()
     
     def __repr__(self) -> str:
@@ -36,4 +41,8 @@ class Payment(Base, TimestampMixin):
             "payment_date": self.payment_date.isoformat() if self.payment_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "external_id": self.external_id,
+            "xendit_invoice_id": self.xendit_invoice_id,
+            "invoice_url": self.invoice_url,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
         }

@@ -1,10 +1,12 @@
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
-import { RateReview as ReviewIcon, Refresh as RefreshIcon, CheckCircle as ApprovedIcon, Cancel as NotApprovedIcon, Verified as VerifiedIcon, Close as NotVerifiedIcon } from '@mui/icons-material';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Alert, Chip, Grid, LinearProgress, Pagination, FormControl, Select, MenuItem, Rating, Avatar } from '@mui/material';
+import { Delete as DeleteIcon, RateReview as ReviewIcon, Refresh as RefreshIcon, CheckCircle as CheckCircleIcon, Cancel as CancelIcon, Verified as VerifiedIcon } from '@mui/icons-material';
+import { FormControlLabel, Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Alert, Chip, Grid, LinearProgress, Pagination, FormControl, Select, MenuItem, Rating, Switch, IconButton } from '@mui/material';
 
-import { getReviews, clearReviewMessages } from '../../slices/reviewSlice'; 
+import ReviewForm from './ReviewForm';
+import DeleteConfirmationModal from '../../components/DeleteConfirmation';
+import { getReviews, clearReviewMessages, deleteReview } from '../../slices/reviewSlice'; 
 
 const ReviewList = () => {
   const dispatch = useDispatch();
@@ -16,8 +18,12 @@ const ReviewList = () => {
   const [perPage, setPerPage] = useState(25);
   const [approvalFilter, setApprovalFilter] = useState('');
   const [verificationFilter, setVerificationFilter] = useState('');
-  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedReviewId, setSelectedReviewId] = useState(null);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+
   const isAdmin = user?.is_admin;
+  const editingReview = reviews.find((r) => r.id === editingReviewId);
 
   const loadReviews = useCallback((page, perPage, userId) => {
     const params = { 
@@ -47,12 +53,21 @@ const ReviewList = () => {
     loadReviews(1, e.target.value, userId || (isAdmin ? null : user?.id));
   };
 
-  const handleApprovalFilterChange = (e) => {
-    setApprovalFilter(e.target.value);
+  const openDeleteModal = (reviewId) => {
+    setSelectedReviewId(reviewId);
+    setIsModalOpen(true);
   };
 
-  const handleVerificationFilterChange = (e) => {
-    setVerificationFilter(e.target.value);
+  const closeDeleteModal = () => {
+    setIsModalOpen(false);
+    setSelectedReviewId(null);
+  };
+
+  const handleDelete = () => {
+    dispatch(deleteReview(selectedReviewId)).then(() => {
+      closeDeleteModal();
+      loadReviews(page, perPage, userId || (isAdmin ? null : user?.id));
+    });
   };
 
   const resetFilters = () => {
@@ -62,12 +77,12 @@ const ReviewList = () => {
     loadReviews(1, perPage, userId || (isAdmin ? null : user?.id));
   };
 
-  const getStatusColor = (isApproved) => {
-    return isApproved ? 'success' : 'warning';
+  const handleOpenEdit = (id) => {
+    setEditingReviewId(id);
   };
 
-  const getVerificationColor = (isVerified) => {
-    return isVerified ? 'primary' : 'default';
+  const handleCloseEdit = () => {
+    setEditingReviewId(null);
   };
 
   return (
@@ -84,38 +99,28 @@ const ReviewList = () => {
         <Grid container spacing={1} justifyContent="space-between" alignItems="center" sx={{ my: 3 }}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <FormControl 
-                variant="outlined" 
-                size="small" 
-                sx={{ minWidth: 200 }}
-              >
-                <Select
-                  value={approvalFilter}
-                  onChange={handleApprovalFilterChange}
-                  displayEmpty
-                  placeholder="Approval Status"
-                >
-                  <MenuItem value="">All Reviews</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="pending">Pending Approval</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl 
-                variant="outlined" 
-                size="small" 
-                sx={{ minWidth: 200 }}
-              >
-                <Select
-                  value={verificationFilter}
-                  onChange={handleVerificationFilterChange}
-                  displayEmpty
-                  placeholder="Verification Status"
-                >
-                  <MenuItem value="">All Reviews</MenuItem>
-                  <MenuItem value="verified">Verified</MenuItem>
-                  <MenuItem value="unverified">Unverified</MenuItem>
-                </Select>
-              </FormControl>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={approvalFilter === 'true'}
+                    onChange={(e) => setApprovalFilter(e.target.checked ? 'true' : '')}
+                    color="primary"
+                  />
+                }
+                label="Show Approved Only"
+                sx={{ m: 0 }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={verificationFilter === 'true'}
+                    onChange={(e) => setVerificationFilter(e.target.checked ? 'true' : '')}
+                    color="primary"
+                  />
+                }
+                label="Show Verified Only"
+                sx={{ m: 0 }}
+              />
             </Box>
           </Grid>
           <Grid size={{ xs: 12, md: 3 }} sx={{
@@ -147,12 +152,13 @@ const ReviewList = () => {
               {isAdmin && (<TableCell>Status</TableCell>)}
               {isAdmin && (<TableCell>Verification</TableCell>)}
               {isAdmin && (<TableCell>User</TableCell>)}
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} sx={{ p: 0, pb: 2 }}>
+                <TableCell colSpan={8} sx={{ p: 0, pb: 2 }}>
                   <LinearProgress />
                 </TableCell>
               </TableRow>
@@ -160,21 +166,26 @@ const ReviewList = () => {
               reviews.map((review) => (
                 <TableRow key={review.id} hover>
                   <TableCell>
-                    <Typography
-                      component={Link}
-                      to={`/reviews/${review.id}`}
-                      variant="body2"
-                      fontWeight={600}
-                      color="inherit"
-                      sx={{ '&:hover': { textDecoration: 'underline' } }}
-                    >
-                      {review.id}
-                    </Typography>
+                      <Typography
+                        component="button"
+                        onClick={() => handleOpenEdit(review.id)}
+                        fontWeight={600}
+                        sx={{
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          font: 'inherit',
+                        }}
+                      >
+                        {review.id}
+                      </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography
                       component={Link}
-                      to={`/reviews/${review.product?.slug}`}
+                      to={`/products/${review.product?.slug}`}
                       variant="body2"
                       fontWeight={600}
                       color="inherit"
@@ -203,24 +214,32 @@ const ReviewList = () => {
                   {isAdmin && (
                     <TableCell>
                       <Chip
-                        icon={review.is_approved ? <ApprovedIcon /> : <NotApprovedIcon />}
                         label={review.is_approved ? 'Approved' : 'Pending'}
                         size="small"
-                        color={getStatusColor(review.is_approved)}
                         variant={review.is_approved ? 'filled' : 'outlined'}
-                        sx={{ fontWeight: 500 }}
+                        color={review.is_approved ? 'default' : 'error'}
+                        sx={{
+                          backgroundColor: review.is_approved ? 'primary.light' : 'transparent',
+                          color: review.is_approved ? 'secondary.main' : 'error.main',
+                          borderColor: !review.is_approved ? 'error.main' : 'transparent',
+                          fontWeight: 600,
+                          p: 1,
+                        }}
                       />
                     </TableCell>
                   )}
                   {isAdmin && (
                     <TableCell>
                       <Chip
-                        icon={review.is_verified ? <VerifiedIcon /> : <NotVerifiedIcon />}
+                        icon={review.is_verified ? <VerifiedIcon /> : <></>}
                         label={review.is_verified ? 'Verified' : 'Unverified'}
                         size="small"
-                        color={getVerificationColor(review.is_verified)}
-                        variant={review.is_verified ? 'filled' : 'outlined'}
-                        sx={{ fontWeight: 500 }}
+                        sx={{
+                          backgroundColor: review.is_verified ? 'primary.light' : 'grey.100',
+                          color: review.is_verified ? 'secondary.main' : 'common.grey',
+                          fontWeight: 600,
+                          p: 1,
+                        }}
                       />
                     </TableCell>
                   )}
@@ -230,12 +249,21 @@ const ReviewList = () => {
                         {review.user?.email || 'N/A'}
                       </Typography>
                     </TableCell>
-                  )}                  
+                  )}
+                  <TableCell>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => openDeleteModal(review.id)}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>                
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6, bgcolor: 'grey.50' }}>
+                <TableCell colSpan={8} align="center" sx={{ py: 6, bgcolor: 'grey.50' }}>
                   <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
                     <ReviewIcon sx={{ fontSize: 48, color: 'grey.400', mb: 1 }} />
                     <Typography variant="h6" color="text.primary" fontWeight={500}>
@@ -280,6 +308,24 @@ const ReviewList = () => {
           showLastButton
         />
       </Box>
+      <DeleteConfirmationModal
+        open={isModalOpen}
+        onCancel={closeDeleteModal}
+        onConfirm={handleDelete}
+        message="Are you sure you want to delete this review? This action cannot be undone."
+      />
+      {editingReview && (
+        <ReviewForm
+          open={!!editingReviewId}
+          reviewId={editingReviewId}
+          review={editingReview}
+          onClose={handleCloseEdit}
+          onReviewSubmit={() => {
+            handleCloseEdit();
+            loadReviews(page, perPage, userId || (isAdmin ? null : user?.id));
+          }}
+        />
+      )}
     </Box>
   );
 };

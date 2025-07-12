@@ -4,11 +4,10 @@ import { Star as StarIcon, AdminPanelSettings as AdminIcon, Close as CloseIcon }
 import { Box, Typography, TextField, Button, Rating, FormControlLabel, Checkbox, Paper, Divider, Stack, useTheme, Dialog, DialogTitle, DialogContent, IconButton, DialogActions, FormHelperText, FormGroup } from '@mui/material';
 
 import { createReview, updateReview } from '../../slices/reviewSlice';
-const ReviewForm = ({  reviewId = null, productId, onReviewSubmit, open = false, onClose }) => {
+const ReviewForm = ({  productId, review, onReviewSubmit, open = false, onClose }) => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
-  const { review } = useSelector((state) => state.review);
 
   const [reviewData, setReviewData] = useState({
     title: '',
@@ -33,7 +32,7 @@ const ReviewForm = ({  reviewId = null, productId, onReviewSubmit, open = false,
   }, [open]);
 
   useEffect(() => {
-    if (reviewId && review && open) {
+    if (review && open) {
       const canEdit = user?.is_admin || user?.id === review.user_id;
       if (canEdit) {
         setIsEditing(true);
@@ -46,7 +45,7 @@ const ReviewForm = ({  reviewId = null, productId, onReviewSubmit, open = false,
         });
       }
     }
-  }, [reviewId, review, user, open]);
+  }, [review, user, open]);
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
@@ -67,9 +66,9 @@ const ReviewForm = ({  reviewId = null, productId, onReviewSubmit, open = false,
     }
     setIsSubmitting(true);
     try {
-      if (isEditing && reviewId) {
+      if (isEditing && review) {
         await dispatch(updateReview({ 
-          reviewId, 
+          reviewId: review.id,
           reviewData 
         })).unwrap();
       } else {

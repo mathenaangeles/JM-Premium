@@ -1,4 +1,4 @@
-from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 from typing import Dict, List, Optional, Any, Tuple
 
 from app import db
@@ -33,10 +33,12 @@ class ReviewService:
             review_query = review_query.filter(Review.is_approved == approved)
         if verified is not None:
             review_query = review_query.filter(Review.is_verified == verified)
+        rating_counts_query = review_query.with_entities(Review.rating, func.count().label('count')).group_by(Review.rating).all()
+        rating_counts = {rating: count for rating, count in rating_counts_query}
         count = review_query.count()
         total_pages = (count + per_page - 1) // per_page
         reviews = review_query.order_by(Review.rating.desc()).offset((page - 1) * per_page).limit(per_page).all()
-        return reviews, count, total_pages
+        return reviews, count, total_pages, rating_counts
 
     def create_review(self, user_id: int, product_id: int, data: Dict[str, Any]) -> Optional[Review]:
         product = self.product_service.get_product_by_id(product_id)
@@ -80,5 +82,6 @@ class ReviewService:
         if review.product:
             serialized_review['product'] = {
                 'name': review.product.name,
+                'slug': review.product.slug
             }
         return serialized_review

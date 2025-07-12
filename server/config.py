@@ -18,4 +18,8 @@ class Configuration(object):
     JWT_ACCESS_COOKIE_NAME = os.getenv('JWT_ACCESS_COOKIE_NAME')
     JWT_REFRESH_COOKIE_NAME = os.getenv('JWT_REFRESH_COOKIE_NAME')
     JWT_COOKIE_CSRF_PROTECT = os.getenv('JWT_COOKIE_CSRF_PROTECT')
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    XENDIT_API_KEY = os.getenv("XENDIT_API_KEY")
+    XENDIT_WEBHOOK_TOKEN = os.getenv("XENDIT_WEBHOOK_TOKEN")
+    XENDIT_BASE_URL = os.getenv("XENDIT_BASE_URL", "https://api.xendit.co")
     
