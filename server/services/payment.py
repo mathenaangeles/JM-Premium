@@ -1,17 +1,23 @@
-from datetime import datetime
+import uuid
 from flask import current_app
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 
 from app import db
 from models.user import User
 from models.payment import Payment
-from xendit_config import XenditConfig, XenditClient, XenditError, PaymentStatus
+from xendit import XenditConfig, XenditClient, XenditError, PaymentStatus, PaymentMethod
 
 
 class PaymentService:
     def __init__(self):
-        self.xendit_config = XenditConfig.from_flask_config(current_app.config)
-        self.xendit_client = XenditClient(self.xendit_config)
+        self._xendit_client = None
+
+    def _get_client(self) -> XenditClient:
+        if not self._xendit_client:
+            config = XenditConfig.from_flask_config(current_app.config)
+            self._xendit_client = XenditClient(config)
+        return self._xendit_client
 
     def get_payment_by_id(self, payment_id: int) -> Optional[Payment]:
         return db.session.get(Payment, payment_id)
@@ -27,30 +33,40 @@ class PaymentService:
         payments = payment_query.order_by(Payment.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
         return payments, count, total_pages
 
-    def create_xendit_invoice(self, user_id: int, amount: float, currency: str = "PHP", description: str = "Order Payment", payment_methods: List[str] = None) -> Dict[str, Any]:
+    def create_xendit_invoice(
+        self,
+        amount: float,
+        currency: str = "PHP",
+        description: str = "Order Payment",
+        payment_methods: List[str] = None,
+        user_id: Optional[int] = None,
+        customer_email: Optional[str] = None,
+        customer_name: Optional[str] = None
+    ) -> Dict[str, Any]:
         try:
-            user = db.session.get(User, user_id)
-            if not user:
-                raise ValueError(f"User {user_id} not found.")
-            external_id = f"invoice_{user_id}_{int(datetime.now().timestamp())}"
+            client = self._get_client()
+            user = db.session.get(User, user_id) if user_id else None
+            external_id = f"invoice_{user_id or 'guest'}_{uuid.uuid4().hex[:8]}_{int(datetime.now().timestamp())}"
             if not payment_methods:
-                payment_methods = ["BANK_TRANSFER", "CREDIT_CARD", "EWALLET"]
+                payment_methods = [method.value for method in PaymentMethod]
             frontend_url = current_app.config["FRONTEND_URL"]
+            customer_data = {
+                "given_names": (f"{user.first_name} {user.last_name}".strip() if user else customer_name or "Guest Customer"),
+                "email": user.email if user else customer_email or "guest@example.com"
+            }
             invoice_data = {
                 "external_id": external_id,
                 "amount": amount,
                 "currency": currency,
                 "description": description,
-                "invoice_duration": 86400,  # 24 hours
+                "invoice_duration": 86400,
                 "payment_methods": payment_methods,
                 "success_redirect_url": f"{frontend_url}/payment/success",
                 "failure_redirect_url": f"{frontend_url}/payment/failed",
-                "customer": {
-                    "given_names": (user.first_name + " " + user.last_name) or user_id,
-                    "email": user.email,
-                }
+                "customer": customer_data
             }
-            xendit_response = self.xendit_client.create_invoice(invoice_data)
+            print(invoice_data)
+            xendit_response = client.create_invoice(invoice_data)
             payment = Payment(
                 user_id=user_id,
                 amount=amount,
@@ -62,19 +78,16 @@ class PaymentService:
                 external_id=external_id,
                 xendit_invoice_id=xendit_response.get('id'),
                 invoice_url=xendit_response.get('invoice_url'),
-                expires_at=xendit_response.get('expiry_date')
+                expires_at=datetime.fromisoformat(xendit_response.get('expiry_date').replace("Z", "+00:00"))
             )
             db.session.add(payment)
             db.session.commit()
             return {
                 "success": True,
-                "payment_id": payment.id,
-                "xendit_invoice_id": payment.xendit_invoice_id,
-                "invoice_url": payment.invoice_url,
-                "external_id": external_id,
-                "expires_at": payment.expires_at
+                "payment": payment,
             }
         except XenditError as e:
+            print(f"Xendit Error: {e.message} (Code: {e.code})")
             db.session.rollback()
             return {
                 "success": False,
@@ -85,22 +98,34 @@ class PaymentService:
             db.session.rollback()
             return {
                 "success": False,
-                "error": f"Unexpected Error: {str(e)}"
+                "error": f"Payment Processing Failed: {str(e)}"
             }
-    
-    def create_virtual_account_payment(self, user_id: int, amount: float, bank_code: str = "BCA", currency: str = "PHP") -> Dict[str, Any]:
+
+    def create_virtual_account_payment(
+        self,
+        amount: float,
+        bank_code: str = "BDO",
+        currency: str = "PHP",
+        user_id: Optional[int] = None,
+        customer_name: Optional[str] = None
+    ) -> Dict[str, Any]:
         try:
-            external_id = f"virtual_account_{user_id}_{int(datetime.now().timestamp())}"
+            client = self._get_client()
+            external_id = f"invoice_{user_id or 'guest'}_{uuid.uuid4().hex[:8]}_{int(datetime.now().timestamp())}"
+            account_name = customer_name or f"User {user_id}" if user_id else "Guest Customer"
+
             virtual_account_data = {
                 "external_id": external_id,
                 "bank_code": bank_code,
-                "name": user_id,
+                "name": account_name,
                 "expected_amount": amount,
                 "currency": currency,
                 "is_closed": True,
-                "expiration_date": datetime.now().isoformat() + "Z"
+                "expiration_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat().replace("+00:00", "Z")
             }
-            xendit_response = self.xendit_client.create_virtual_account(virtual_account_data)
+
+            xendit_response = client.create_virtual_account(virtual_account_data)
+
             payment = Payment(
                 user_id=user_id,
                 amount=amount,
@@ -108,18 +133,21 @@ class PaymentService:
                 status=PaymentStatus.PENDING.value,
                 payment_method=f"virtual_account_{bank_code}",
                 transaction_id=xendit_response['id'],
-                payment_date=None
+                payment_date=None,
+                external_id=external_id,
+                expires_at=datetime.fromisoformat(xendit_response['expiration_date'].replace("Z", "+00:00"))
             )
+
             db.session.add(payment)
             db.session.commit()
+
             return {
                 "success": True,
-                "payment_id": payment.id,
+                "payment": payment,
                 "account_number": xendit_response['account_number'],
                 "bank_code": bank_code,
-                "external_id": external_id,
-                "expires_at": xendit_response['expiration_date']
             }
+
         except XenditError as e:
             db.session.rollback()
             return {
@@ -127,108 +155,93 @@ class PaymentService:
                 "error": f"Xendit Error: {e.message}",
                 "error_code": e.code
             }
+
         except Exception as e:
             db.session.rollback()
             return {
                 "success": False,
-                "error": f"Unexpected Error: {str(e)}"
+                "error": f"Payment Processing Failed: {str(e)}"
             }
-    
-    def handle_xendit_webhook(self, webhook_data: Dict) -> Dict[str, Any]:
+
+    def handle_xendit_webhook(self, webhook_data: Dict, headers: Dict[str, str]) -> Dict[str, Any]:
         try:
-            # Verify webhook token (you should implement proper verification)
-            webhook_token = webhook_data.get('webhook_token')
-            if webhook_token != self.xendit_config.webhook_token:
-                return {"success": False, "error": "Invalid webhook token"}
-            
-            # Get payment by transaction ID
+            expected_token = self._get_client().config.webhook_token
+            received_token = headers.get('x-callback-token')
+
+            if received_token != expected_token:
+                return {"success": False, "error": "Invalid Webhook Token", "status_code": 403}
+
             transaction_id = webhook_data.get('id')
-            payment = db.session.query(Payment).filter_by(transaction_id=transaction_id).first()
-            
+            status = webhook_data.get('status')
+            external_id = webhook_data.get('external_id')
+
+            if not transaction_id or not external_id:
+                return {"success": False, "error": "Missing Invoice Identifiers", "status_code": 400}
+
+            payment = db.session.query(Payment).filter_by(
+                transaction_id=transaction_id,
+                external_id=external_id
+            ).first()
+
             if not payment:
-                return {"success": False, "error": "Payment not found"}
-            
-            # Update payment status based on webhook event
-            event_type = webhook_data.get('status')
-            
-            if event_type == 'PAID':
-                payment.status = PaymentStatus.COMPLETED.value
-                payment.payment_date = datetime.now()
-            elif event_type == 'EXPIRED':
+                return {"success": False, "error": "Payment Not Found", "status_code": 404}
+
+            if status == "PAID":
+                payment.status = PaymentStatus.PAID.value
+                payment.payment_date = datetime.now(timezone.utc)
+            elif status == "EXPIRED":
                 payment.status = PaymentStatus.EXPIRED.value
-            elif event_type == 'FAILED':
+            elif status == "FAILED":
                 payment.status = PaymentStatus.FAILED.value
-            
-            db.session.commit()
-            
-            return {
-                "success": True,
-                "payment_id": payment.id,
-                "status": payment.status
-            }
-            
-        except Exception as e:
-            db.session.rollback()
-            return {
-                "success": False,
-                "error": f"Webhook processing failed: {str(e)}"
-            }
-    
-    def check_payment_status(self, payment_id: int) -> Dict[str, Any]:
-        """Check payment status with Xendit API"""
-        try:
-            payment = self.get_payment_by_id(payment_id)
-            if not payment:
-                return {"success": False, "error": "Payment not found"}
-            
-            # Check with Xendit API
-            if payment.payment_method == "xendit_invoice":
-                xendit_response = self.xendit_client.get_invoice(payment.transaction_id)
             else:
-                # For other payment methods, you might need different API calls
-                return {"success": True, "status": payment.status}
-            
-            # Update local payment status if needed
-            xendit_status = xendit_response.get('status')
-            if xendit_status == 'PAID' and payment.status != PaymentStatus.COMPLETED.value:
-                payment.status = PaymentStatus.COMPLETED.value
-                payment.payment_date = datetime.now()
-                db.session.commit()
-            elif xendit_status == 'EXPIRED' and payment.status != PaymentStatus.EXPIRED.value:
-                payment.status = PaymentStatus.EXPIRED.value
-                db.session.commit()
-            
+                return {"success": False, "error": f"Unhandled Status: {status}", "status_code": 422}
+
+            db.session.commit()
+
             return {
                 "success": True,
                 "payment_id": payment.id,
                 "status": payment.status,
-                "xendit_status": xendit_status
-            }
-            
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Status check failed: {str(e)}"
+                "status_code": 200
             }
 
-    def process_payment(self, user_id: int, data: Dict[str, Any]) -> Optional[Payment]:
-        try:
-            status = data.get('status', 'pending')
-            payment = Payment(
-                user_id=user_id,
-                amount=data.get('amount'),
-                currency=data.get('currency'),
-                status=status,
-                payment_method=data.get('payment_method'),
-                transaction_id=data.get('transaction_id'),
-                payment_date=datetime.now() if status == 'completed' else None
-            )
-            db.session.add(payment)
-            db.session.commit()
-            return payment
-        except Exception:
+        except Exception as e:
             db.session.rollback()
-            return None
+            return {
+                "success": False,
+                "error": f"Webhook Processing Failed: {str(e)}",
+                "status_code": 500
+            }
+
+    def check_payment_status(self, payment_id: int) -> Dict[str, Any]:
+        try:
+            payment = self.get_payment_by_id(payment_id)
+            if not payment:
+                return {"success": False, "error": "Payment Not Found"}
+
+            if payment.payment_method == "xendit_invoice":
+                response = self._get_client().get_invoice(payment.transaction_id)
+                status = response.get('status')
+
+                if status == "PAID" and payment.status != PaymentStatus.PAID.value:
+                    payment.status = PaymentStatus.PAID.value
+                    payment.payment_date = datetime.now(timezone.utc)
+                    db.session.commit()
+                elif status == "EXPIRED" and payment.status != PaymentStatus.EXPIRED.value:
+                    payment.status = PaymentStatus.EXPIRED.value
+                    db.session.commit()
+
+            return {
+                "success": True,
+                "payment": payment
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "success": False,
+                "error": f"Status Check Failed: {str(e)}"
+            }
 
     def serialize_payment(self, payment: Payment) -> Dict[str, Any]:
         return payment.to_dict()

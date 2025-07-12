@@ -29,11 +29,14 @@ export const getPayment = createAsyncThunk(
   }
 );
 
-export const processPayment = createAsyncThunk(
-  '/processPayment',
-  async (paymentData, { rejectWithValue }) => {
+export const getUserPayments = createAsyncThunk(
+  'payment/getUserPayments',
+  async ({ page = 1, perPage = 10, status = null, paymentMethod = null }, { rejectWithValue }) => {
     try {
-      const { data } = await Axios.post(`/payments/`, paymentData);
+      let url = `/payments/my-payments?page=${page}&per_page=${perPage}`;
+      if (status) url += `&status=${status}`;
+      if (paymentMethod) url += `&payment_method=${paymentMethod}`;
+      const { data } = await Axios.get(url);
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -41,6 +44,41 @@ export const processPayment = createAsyncThunk(
   }
 );
 
+export const createInvoice = createAsyncThunk(
+  'payment/createInvoice',
+  async (invoiceData, { rejectWithValue }) => {
+    try {
+      const { data } = await Axios.post('/payments/create-invoice', invoiceData);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const createVirtualAccount = createAsyncThunk(
+  'payment/createVirtualAccount',
+  async (virtualAccountData, { rejectWithValue }) => {
+    try {
+      const { data } = await Axios.post('/payments/create-virtual-account', virtualAccountData);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const checkPaymentStatus = createAsyncThunk(
+  'payment/checkPaymentStatus',
+  async (paymentId, { rejectWithValue }) => {
+    try {
+      const { data } = await Axios.get(`/payments/status/${paymentId}`);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
 
 const paymentSlice = createSlice({
   name: 'payment',
@@ -53,6 +91,8 @@ const paymentSlice = createSlice({
     loading: false,
     success: null,
     error: null,
+    invoice: null,
+    virtualAccount: null,
   },
   reducers: {
     clearPaymentMessages: (state) => {
@@ -92,20 +132,76 @@ const paymentSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-
-      .addCase(processPayment.pending, (state) => {
+      .addCase(getUserPayments.pending, (state) => {
         state.loading = true;
         state.error = null;
         state.success = null;
       })
-      .addCase(processPayment.fulfilled, (state, action) => {
+      .addCase(getUserPayments.fulfilled, (state, action) => {
+        state.userPayments = action.payload.payments;
+        state.userPaymentsCount = action.payload.count;
+        state.userPaymentsTotalPages = action.payload.total_pages;
+        state.userPaymentsCurrentPage = action.payload.page;
+        state.loading = false;
+      })
+      .addCase(getUserPayments.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createInvoice.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = null;
+        state.invoice = null;
+      })
+      .addCase(createInvoice.fulfilled, (state, action) => {
+        state.payment = action.payload.payment;
+        state.invoice = action.payload.payment.invoice_url;
+        state.loading = false;
+        state.success = action.payload.message;
+        if (state.payments.length > 0) {
+          state.payments.unshift(action.payload.payment);
+        }
+      })
+      .addCase(createInvoice.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createVirtualAccount.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = null;
+        state.virtualAccount = null;
+      })
+      .addCase(createVirtualAccount.fulfilled, (state, action) => {
+        state.payment = action.payload.payment;
+        state.virtualAccount = {
+          accountNumber: action.payload.account_number,
+          bankCode: action.payload.bank_code,
+        };
+        state.loading = false;
+        state.success = action.payload.message;
+      })
+      .addCase(createVirtualAccount.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(checkPaymentStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = null;
+      })
+      .addCase(checkPaymentStatus.fulfilled, (state, action) => {
         state.payment = action.payload.payment;
         state.loading = false;
         state.success = action.payload.message;
-        state.payments.push(action.payload.payment);
+        const index = state.payments.findIndex(payment => payment.id === action.payload.payment.id);
+        if (index !== -1) {
+          state.payments[index] = action.payload.payment;
+        };
       })
-      .addCase(processPayment.rejected, (state, action) => {
-        state.loading = false;
+      .addCase(checkPaymentStatus.rejected, (state, action) => {
+        state.checking = false;
         state.error = action.payload;
       })
   },

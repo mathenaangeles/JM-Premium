@@ -30,6 +30,7 @@ services:
       - ./server/gcp-key.json:/secrets/key.json 
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/key.json
+      - PYTHONUNBUFFERED=1
     networks:
       - jm-premium-network
 

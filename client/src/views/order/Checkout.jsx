@@ -7,8 +7,8 @@ import { LocalMall as LocalMallIcon, Phone as PhoneIcon, Email as EmailIcon, Per
 import { getCart } from '../../slices/cartSlice';
 import countries from '../../constants/countries';
 import SelectAddress from '../address/SelectAddress';
-import { processPayment } from '../../slices/paymentSlice';
 import { getUserAddresses } from '../../slices/addressSlice';
+import { createInvoice, createVirtualAccount } from '../../slices/paymentSlice';
 import { createOrder, payOrder, clearOrderMessages } from '../../slices/orderSlice';
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
@@ -58,7 +58,7 @@ const Checkout = () => {
     billing_zip_code: '',
     billing_country: '',
     shipping_method: 'standard',
-    payment_method: 'credit_card',
+    payment_method: 'xendit_invoice',
     same_as_shipping: true,
   });
   const [validationErrors, setValidationErrors] = useState({});
@@ -110,15 +110,17 @@ const Checkout = () => {
     orderData.shipping_country,
     orderData.same_as_shipping
   ]);
-  
+
   useEffect(() => {
     if (success && order) {
-        if (!user && orderData.email) {
-            localStorage.setItem('guestEmail', orderData.email);
-        }
+      if (!user && orderData.email) {
+        localStorage.setItem('guestEmail', orderData.email);
+      }
+      if (orderData.payment_method.startsWith('virtual_account_')) {
         navigate(`/orders/${order.id}`);
+      }
     }
-  }, [success, order, navigate, orderData.email, user]);
+  }, [success, order, navigate, orderData.email, orderData.payment_method, user]);
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -239,14 +241,24 @@ const Checkout = () => {
       if (!orderId) {
         return;
       }
-      const paymentResult = await dispatch(processPayment({ // TO DO: Change for production.
-        user_id: user?.id || null,
-        currency: 'PHP',
+      const paymentData = {
         amount: calculateTotal(),
-        status: 'fulfilled',
-        transaction_id: 'T123',
-        payment_method: orderData.payment_method
-      }));
+        currency: 'PHP',
+        description: `Order #${orderId} Payment`,
+        user_id: user?.id || null,
+        customer_email: orderData.email || user?.email,
+        customer_name: `${orderData.first_name || user?.first_name || ''} ${orderData.last_name || user?.last_name || ''}`.trim()
+      };
+      let paymentResult;
+      if (orderData.payment_method === 'xendit_invoice') {
+        paymentResult = await dispatch(createInvoice(paymentData));
+      } else if (orderData.payment_method.startsWith('virtual_account_')) {
+        const bankCode = orderData.payment_method.split('_')[2];
+        paymentResult = await dispatch(createVirtualAccount({
+          ...paymentData,
+          bank_code: bankCode
+        }));
+      }
       if (paymentResult.error) {
         return;
       }
@@ -257,9 +269,12 @@ const Checkout = () => {
       await dispatch(payOrder({
         orderId: orderId,
         orderData: {
-            payment_id: paymentId,
+          payment_id: paymentId,
         }
       }));
+      if (orderData.payment_method === 'xendit_invoice' && paymentResult.payload?.payment?.invoice_url) {
+        window.location.href = paymentResult.payload.payment.invoice_url;
+      }
     } catch (error) {
       console.log(error);
       return; 
@@ -713,24 +728,34 @@ const Checkout = () => {
                     >
                       <Paper variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2 }}>
                         <FormControlLabel
-                          value="credit_card"
+                          value="xendit_invoice"
                           control={<Radio color="primary" />}
                           label={
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                               <CreditCardIcon sx={{ mr: 1 }} />
-                              <Typography variant="body1">Credit Card</Typography>
+                              <Box>
+                                <Typography variant="body1">Online Payment</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Credit Card, E-Wallet, Bank Transfer
+                                </Typography>
+                              </Box>
                             </Box>
                           }
                         />
                       </Paper>
                       <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                         <FormControlLabel
-                          value="paypal"
+                          value="virtual_account_BDO"
                           control={<Radio color="primary" />}
                           label={
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Box component="img" src="/path-to-paypal-logo.png" alt="PayPal" sx={{ width: 20, height: 20, mr: 1 }} />
-                              <Typography variant="body1">PayPal</Typography>
+                              <PaymentIcon sx={{ mr: 1 }} />
+                              <Box>
+                                <Typography variant="body1">Bank Transfer (BDO)</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Pay via BDO Virtual Account
+                                </Typography>
+                              </Box>
                             </Box>
                           }
                         />
