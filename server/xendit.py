@@ -1,9 +1,10 @@
 import base64
 import requests
 from enum import Enum
-from typing import Dict
+from typing import Dict, Optional
 from flask import current_app
 from dataclasses import dataclass
+
 
 class PaymentMethod(Enum):
     BANK_TRANSFER = "BANK_TRANSFER"
@@ -11,6 +12,13 @@ class PaymentMethod(Enum):
     EWALLET = "EWALLET"
     RETAIL_OUTLET = "RETAIL_OUTLET"
     QR_CODE = "QR_CODE"
+
+
+class EWalletType(Enum):
+    GCASH = "GCASH"
+    PAYMAYA = "PAYMAYA"
+    GRABPAY = "GRABPAY"
+    SHOPEEPAY = "SHOPEEPAY"
 
 
 class PaymentStatus(Enum):
@@ -41,7 +49,7 @@ class XenditConfig:
 
 
 class XenditError(Exception):
-    def __init__(self, message: str, code: str = None, status_code: int = None):
+    def __init__(self, message: str, code: Optional[str] = None, status_code: Optional[int] = None):
         self.message = message
         self.code = code
         self.status_code = status_code
@@ -49,8 +57,13 @@ class XenditError(Exception):
 
 
 class XenditClient:
-    def __init__(self, config: XenditConfig):
-        self.config = config
+    def __init__(self, secret_key: str, webhook_token: Optional[str] = None, base_url: str = "https://api.xendit.co"):
+        self.config = XenditConfig(
+            api_key=secret_key,
+            webhook_token=webhook_token or "",
+            base_url=base_url
+        )
+        self.timeout = 30
         self.headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Basic {self._encode_api_key()}'
@@ -62,40 +75,27 @@ class XenditClient:
 
     def _make_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
         url = f"{self.config.base_url}{endpoint}"
-
         try:
             response = requests.request(
                 method=method,
                 url=url,
                 headers=self.headers,
                 json=data,
-                timeout=30
+                timeout=self.timeout
             )
-
             if response.status_code >= 400:
                 error_data = response.json() if response.content else {}
                 raise XenditError(
-                    message=error_data.get('message', 'Unknown error'),
+                    message=error_data.get('message', 'Unknown Error'),
                     code=error_data.get('error_code'),
                     status_code=response.status_code
                 )
-
             return response.json()
-
         except requests.exceptions.RequestException as e:
-            raise XenditError(f"Request failed: {str(e)}")
-
-    def create_invoice(self, invoice_data: Dict) -> Dict:
-        return self._make_request('POST', '/v2/invoices', invoice_data)
-
-    def get_invoice(self, invoice_id: str) -> Dict:
-        return self._make_request('GET', f'/v2/invoices/{invoice_id}')
+            raise XenditError(f"Request Failed: {str(e)}")
 
     def create_payment_request(self, payment_data: Dict) -> Dict:
-        return self._make_request('POST', '/payment_requests', payment_data)
+        return self._make_request('POST', '/v3/payment_requests', payment_data)
 
     def get_payment_request(self, payment_request_id: str) -> Dict:
-        return self._make_request('GET', f'/payment_requests/{payment_request_id}')
-
-    def create_virtual_account(self, va_data: Dict) -> Dict:
-        return self._make_request('POST', '/callback_virtual_accounts', va_data)
+        return self._make_request('GET', f'/v3/payment_requests/{payment_request_id}')

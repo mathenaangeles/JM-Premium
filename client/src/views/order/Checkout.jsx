@@ -8,8 +8,8 @@ import { getCart } from '../../slices/cartSlice';
 import countries from '../../constants/countries';
 import SelectAddress from '../address/SelectAddress';
 import { getUserAddresses } from '../../slices/addressSlice';
-import { createInvoice, createVirtualAccount } from '../../slices/paymentSlice';
 import { createOrder, payOrder, clearOrderMessages } from '../../slices/orderSlice';
+import { createPaymentRequest, clearPaymentMessages } from '../../slices/paymentSlice';
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(3),
@@ -38,6 +38,7 @@ const Checkout = () => {
   const { cart, loading: cartLoading } = useSelector((state) => state.cart);
   const { addresses } = useSelector((state) => state.address);
   const { loading: orderLoading, error, success, order } = useSelector((state) => state.order);
+  const { loading: paymentLoading, error: paymentError, success: paymentSuccess, payment, actions, xenditStatus, xenditResponse } = useSelector((state) => state.payment);
   
   const [orderData, setOrderData] = useState({
     email: '',
@@ -58,7 +59,7 @@ const Checkout = () => {
     billing_zip_code: '',
     billing_country: '',
     shipping_method: 'standard',
-    payment_method: 'xendit_invoice',
+    payment_method: 'gcash',
     same_as_shipping: true,
   });
   const [validationErrors, setValidationErrors] = useState({});
@@ -112,15 +113,13 @@ const Checkout = () => {
   ]);
 
   useEffect(() => {
-    if (success && order) {
-      if (!user && orderData.email) {
-        localStorage.setItem('guestEmail', orderData.email);
-      }
-      if (orderData.payment_method.startsWith('virtual_account_')) {
-        navigate(`/orders/${order.id}`);
-      }
+  if (success && order) {
+    if (!user && orderData.email) {
+      localStorage.setItem('guestEmail', orderData.email);
     }
-  }, [success, order, navigate, orderData.email, orderData.payment_method, user]);
+    navigate(`/orders/${order.id}`);
+  }
+}, [success, order, navigate, orderData.email, user]);
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -232,8 +231,9 @@ const Checkout = () => {
       tax: calculateTax(),
       shipping_cost: calculateShipping(),
     };
+    
     try {
-      const orderResult =  await dispatch(createOrder(formattedData));
+      const orderResult = await dispatch(createOrder(formattedData));
       if (orderResult.error) {
         return;
       }
@@ -246,19 +246,20 @@ const Checkout = () => {
         currency: 'PHP',
         description: `Order #${orderId} Payment`,
         user_id: user?.id || null,
-        customer_email: orderData.email || user?.email,
-        customer_name: `${orderData.first_name || user?.first_name || ''} ${orderData.last_name || user?.last_name || ''}`.trim()
+        payment_method: orderData.payment_method === 'card' ? 'CREDIT_CARD' : 'EWALLET',
+        ewallet_type: orderData.payment_method === 'card' ? undefined : orderData.payment_method,
+        order_id: orderId,
+        ...(orderData.payment_method === 'card' && {
+          card_number: orderData.card_number,
+          expiry_month: orderData.expiry_month,
+          expiry_year: orderData.expiry_year,
+          cvn: orderData.cvn,
+          cardholder_name: orderData.cardholder_name,
+          cardholder_email: orderData.cardholder_email || orderData.email || user?.email,
+          skip_three_ds: orderData.skip_three_ds,
+        })
       };
-      let paymentResult;
-      if (orderData.payment_method === 'xendit_invoice') {
-        paymentResult = await dispatch(createInvoice(paymentData));
-      } else if (orderData.payment_method.startsWith('virtual_account_')) {
-        const bankCode = orderData.payment_method.split('_')[2];
-        paymentResult = await dispatch(createVirtualAccount({
-          ...paymentData,
-          bank_code: bankCode
-        }));
-      }
+      const paymentResult = await dispatch(createPaymentRequest(paymentData));
       if (paymentResult.error) {
         return;
       }
@@ -272,8 +273,11 @@ const Checkout = () => {
           payment_id: paymentId,
         }
       }));
-      if (orderData.payment_method === 'xendit_invoice' && paymentResult.payload?.payment?.invoice_url) {
-        window.location.href = paymentResult.payload.payment.invoice_url;
+      const checkoutUrl = paymentResult.payload?.actions?.find(action => action.url_type === 'CHECKOUT')?.url;
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        navigate(`/orders/${orderId}`);
       }
     } catch (error) {
       console.log(error);
@@ -316,9 +320,9 @@ const Checkout = () => {
   
   return (
     <Box sx={{  p: 4, minHeight: '100vh', backgroundColor: 'primary.main' }}>
-      {error && (
+      {(error || paymentError) && (
         <Alert severity="error" onClose={() => dispatch(clearOrderMessages())} sx={{ mb: 3 }}>
-          {error}
+          {error || paymentError}
         </Alert>
       )}
       <Grid container spacing={4}>
@@ -728,37 +732,154 @@ const Checkout = () => {
                     >
                       <Paper variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2 }}>
                         <FormControlLabel
-                          value="xendit_invoice"
+                          value="gcash"
                           control={<Radio color="primary" />}
                           label={
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <CreditCardIcon sx={{ mr: 1 }} />
+                              <PaymentIcon sx={{ mr: 1, color: '#007BC7' }} />
                               <Box>
-                                <Typography variant="body1">Online Payment</Typography>
+                                <Typography variant="body1">GCash</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  Credit Card, E-Wallet, Bank Transfer
+                                  Pay using your GCash wallet
                                 </Typography>
                               </Box>
                             </Box>
                           }
                         />
                       </Paper>
-                      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+
+                      <Paper variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2 }}>
                         <FormControlLabel
-                          value="virtual_account_BDO"
+                          value="paymaya"
                           control={<Radio color="primary" />}
                           label={
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <PaymentIcon sx={{ mr: 1 }} />
+                              <PaymentIcon sx={{ mr: 1, color: '#00A8E6' }} />
                               <Box>
-                                <Typography variant="body1">Bank Transfer (BDO)</Typography>
+                                <Typography variant="body1">PayMaya</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  Pay via BDO Virtual Account
+                                  Pay using your PayMaya wallet
                                 </Typography>
                               </Box>
                             </Box>
                           }
                         />
+                      </Paper>
+                      
+                      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                        <FormControlLabel
+                          value="card"
+                          control={<Radio color="primary" />}
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <CreditCardIcon sx={{ mr: 1 }} />
+                              <Box>
+                                <Typography variant="body1">Credit/Debit Card</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Visa, Mastercard, JCB, American Express
+                                </Typography>
+                              </Box>
+                            </Box>
+                          }
+                        />
+                        
+                        {/* Card Form - Show only when card is selected */}
+                        {orderData.payment_method === 'card' && (
+                          <Box sx={{ mt: 2, pl: 4 }}>
+                            <Grid container spacing={2}>
+                              <Grid item xs={12}>
+                                <TextField
+                                  fullWidth
+                                  label="Card Number"
+                                  name="card_number"
+                                  value={orderData.card_number}
+                                  onChange={handleInputChange}
+                                  error={!!validationErrors.card_number}
+                                  helperText={validationErrors.card_number}
+                                  placeholder="1234 5678 9012 3456"
+                                />
+                              </Grid>
+                              <Grid item xs={6}>
+                                <TextField
+                                  fullWidth
+                                  label="Expiry Month"
+                                  name="expiry_month"
+                                  type="number"
+                                  value={orderData.expiry_month}
+                                  onChange={handleInputChange}
+                                  error={!!validationErrors.expiry_month}
+                                  helperText={validationErrors.expiry_month}
+                                  placeholder="MM"
+                                  inputProps={{ min: 1, max: 12 }}
+                                />
+                              </Grid>
+                              <Grid item xs={6}>
+                                <TextField
+                                  fullWidth
+                                  label="Expiry Year"
+                                  name="expiry_year"
+                                  type="number"
+                                  value={orderData.expiry_year}
+                                  onChange={handleInputChange}
+                                  error={!!validationErrors.expiry_year}
+                                  helperText={validationErrors.expiry_year}
+                                  placeholder="YYYY"
+                                  inputProps={{ min: new Date().getFullYear() }}
+                                />
+                              </Grid>
+                              <Grid item xs={6}>
+                                <TextField
+                                  fullWidth
+                                  label="CVV"
+                                  name="cvn"
+                                  value={orderData.cvn}
+                                  onChange={handleInputChange}
+                                  error={!!validationErrors.cvn}
+                                  helperText={validationErrors.cvn}
+                                  placeholder="123"
+                                  inputProps={{ maxLength: 4 }}
+                                />
+                              </Grid>
+                              <Grid item xs={6}>
+                                <TextField
+                                  fullWidth
+                                  label="Cardholder Name"
+                                  name="cardholder_name"
+                                  value={orderData.cardholder_name}
+                                  onChange={handleInputChange}
+                                  error={!!validationErrors.cardholder_name}
+                                  helperText={validationErrors.cardholder_name}
+                                  placeholder="John Doe"
+                                />
+                              </Grid>
+                              <Grid item xs={12}>
+                                <TextField
+                                  fullWidth
+                                  label="Cardholder Email"
+                                  name="cardholder_email"
+                                  type="email"
+                                  value={orderData.cardholder_email}
+                                  onChange={handleInputChange}
+                                  error={!!validationErrors.cardholder_email}
+                                  helperText={validationErrors.cardholder_email}
+                                  placeholder="john@example.com"
+                                />
+                              </Grid>
+                              <Grid item xs={12}>
+                                <FormControlLabel
+                                  control={
+                                    <Checkbox
+                                      checked={orderData.skip_three_ds}
+                                      onChange={handleCheckboxChange}
+                                      name="skip_three_ds"
+                                    />
+                                  }
+                                  label="Skip 3D Secure (not recommended)"
+                                />
+                              </Grid>
+                            </Grid>
+                          </Box>
+                        )}
                       </Paper>
                     </RadioGroup>
                   </FormControl>
@@ -766,17 +887,20 @@ const Checkout = () => {
                 <Button
                   type="submit"
                   variant="contained"
-                  color="primary"
-                  disabled={orderLoading}
                   size="large"
+                  fullWidth
+                  disabled={orderLoading || paymentLoading || !cart?.items?.length}
+                  sx={{
+                    mt: 3,
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                  }}
                 >
-                  {orderLoading ? (
-                    <>
-                      <CircularProgress size={24} color="inherit" sx={{ mr: 1 }} />
-                      Processing...
-                    </>
+                  {orderLoading || paymentLoading ? (
+                    <CircularProgress size={24} color="inherit" />
                   ) : (
-                    'Complete Purchase'
+                    `Complete Order`
                   )}
                 </Button>
               </Box>

@@ -30,7 +30,7 @@ export const getPayment = createAsyncThunk(
 );
 
 export const getUserPayments = createAsyncThunk(
-  'payment/getUserPayments',
+  '/getUserPayments',
   async ({ page = 1, perPage = 10, status = null, paymentMethod = null }, { rejectWithValue }) => {
     try {
       let url = `/payments/my-payments?page=${page}&per_page=${perPage}`;
@@ -44,23 +44,11 @@ export const getUserPayments = createAsyncThunk(
   }
 );
 
-export const createInvoice = createAsyncThunk(
-  'payment/createInvoice',
-  async (invoiceData, { rejectWithValue }) => {
+export const createPaymentRequest = createAsyncThunk(
+  '/createPaymentRequest',
+  async (paymentData, { rejectWithValue }) => {
     try {
-      const { data } = await Axios.post('/payments/create-invoice', invoiceData);
-      return data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || err.message);
-    }
-  }
-);
-
-export const createVirtualAccount = createAsyncThunk(
-  'payment/createVirtualAccount',
-  async (virtualAccountData, { rejectWithValue }) => {
-    try {
-      const { data } = await Axios.post('/payments/create-virtual-account', virtualAccountData);
+      const { data } = await Axios.post('/payments/create-payment-request', paymentData);
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -69,7 +57,7 @@ export const createVirtualAccount = createAsyncThunk(
 );
 
 export const checkPaymentStatus = createAsyncThunk(
-  'payment/checkPaymentStatus',
+  '/checkPaymentStatus',
   async (paymentId, { rejectWithValue }) => {
     try {
       const { data } = await Axios.get(`/payments/status/${paymentId}`);
@@ -88,16 +76,22 @@ const paymentSlice = createSlice({
     count: 0,
     totalPages: 0,
     currentPage: 1,
+    actions: null,
+    xenditStatus: null,
+    xenditResponse: null,
     loading: false,
     success: null,
     error: null,
-    invoice: null,
-    virtualAccount: null,
   },
   reducers: {
     clearPaymentMessages: (state) => {
       state.success = null;
       state.error = null;
+    },
+    clearPaymentActions: (state) => {
+      state.actions = null;
+      state.xenditStatus = null;
+      state.xenditResponse = null;
     },
   },
   extraReducers: (builder) => {
@@ -138,51 +132,36 @@ const paymentSlice = createSlice({
         state.success = null;
       })
       .addCase(getUserPayments.fulfilled, (state, action) => {
-        state.userPayments = action.payload.payments;
-        state.userPaymentsCount = action.payload.count;
-        state.userPaymentsTotalPages = action.payload.total_pages;
-        state.userPaymentsCurrentPage = action.payload.page;
+        state.payments = action.payload.payments;
+        state.count = action.payload.count;
+        state.totalPages = action.payload.total_pages;
+        state.currentPage = action.payload.page;
         state.loading = false;
       })
       .addCase(getUserPayments.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(createInvoice.pending, (state) => {
+      .addCase(createPaymentRequest.pending, (state) => {
         state.loading = true;
         state.error = null;
         state.success = null;
-        state.invoice = null;
+        state.actions = null;
+        state.xenditStatus = null;
+        state.xenditResponse = null;
       })
-      .addCase(createInvoice.fulfilled, (state, action) => {
-        state.payment = action.payload.payment;
-        state.invoice = action.payload.payment.invoice_url;
+      .addCase(createPaymentRequest.fulfilled, (state, action) => {
         state.loading = false;
+        state.payment = action.payload.payment;
+        state.actions = action.payload.actions;
+        state.xenditStatus = action.payload.xendit_status;
+        state.xenditResponse = action.payload.xendit_response;
         state.success = action.payload.message;
         if (state.payments.length > 0) {
           state.payments.unshift(action.payload.payment);
         }
       })
-      .addCase(createInvoice.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(createVirtualAccount.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.success = null;
-        state.virtualAccount = null;
-      })
-      .addCase(createVirtualAccount.fulfilled, (state, action) => {
-        state.payment = action.payload.payment;
-        state.virtualAccount = {
-          accountNumber: action.payload.account_number,
-          bankCode: action.payload.bank_code,
-        };
-        state.loading = false;
-        state.success = action.payload.message;
-      })
-      .addCase(createVirtualAccount.rejected, (state, action) => {
+      .addCase(createPaymentRequest.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -193,19 +172,20 @@ const paymentSlice = createSlice({
       })
       .addCase(checkPaymentStatus.fulfilled, (state, action) => {
         state.payment = action.payload.payment;
+        state.xenditStatus = action.payload.xendit_status;
         state.loading = false;
         state.success = action.payload.message;
         const index = state.payments.findIndex(payment => payment.id === action.payload.payment.id);
         if (index !== -1) {
           state.payments[index] = action.payload.payment;
-        };
+        }
       })
       .addCase(checkPaymentStatus.rejected, (state, action) => {
-        state.checking = false;
+        state.loading = false;
         state.error = action.payload;
-      })
+      });
   },
 });
 
-export const { clearPaymentMessages } = paymentSlice.actions;
+export const { clearPaymentMessages, clearPaymentActions } = paymentSlice.actions;
 export default paymentSlice.reducer;
