@@ -289,7 +289,6 @@ const Checkout = () => {
     return (<LinearProgress/>);
   }
   
-  
   if (cart?.items?.length === 0) {
     return (
       <Box sx={{ minHeight: '100vh', p: 3, backgroundColor: 'primary.main' }}>
@@ -764,8 +763,7 @@ const Checkout = () => {
                             </Box>
                           }
                         />
-                      </Paper>
-                      
+                      </Paper>                
                       <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                         <FormControlLabel
                           value="card"
@@ -776,18 +774,16 @@ const Checkout = () => {
                               <Box>
                                 <Typography variant="body1">Credit/Debit Card</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  Visa, Mastercard, JCB, American Express
+                                  Visa, Mastercard, JCB
                                 </Typography>
                               </Box>
                             </Box>
                           }
                         />
-                        
-                        {/* Card Form - Show only when card is selected */}
                         {orderData.payment_method === 'card' && (
                           <Box sx={{ mt: 2, pl: 4 }}>
                             <Grid container spacing={2}>
-                              <Grid item xs={12}>
+                              <Grid size={{ xs: 12 }}>
                                 <TextField
                                   fullWidth
                                   label="Card Number"
@@ -799,7 +795,7 @@ const Checkout = () => {
                                   placeholder="1234 5678 9012 3456"
                                 />
                               </Grid>
-                              <Grid item xs={6}>
+                              <Grid size={{ xs: 4 }}>
                                 <TextField
                                   fullWidth
                                   label="Expiry Month"
@@ -810,10 +806,15 @@ const Checkout = () => {
                                   error={!!validationErrors.expiry_month}
                                   helperText={validationErrors.expiry_month}
                                   placeholder="MM"
-                                  inputProps={{ min: 1, max: 12 }}
+                                  slotProps={{
+                                    htmlInput: {
+                                      min: 1,
+                                      max: 12
+                                    }
+                                  }}
                                 />
                               </Grid>
-                              <Grid item xs={6}>
+                              <Grid size={{ xs: 4 }}>
                                 <TextField
                                   fullWidth
                                   label="Expiry Year"
@@ -824,10 +825,14 @@ const Checkout = () => {
                                   error={!!validationErrors.expiry_year}
                                   helperText={validationErrors.expiry_year}
                                   placeholder="YYYY"
-                                  inputProps={{ min: new Date().getFullYear() }}
+                                  slotProps={{
+                                    htmlInput: {
+                                      min: new Date().getFullYear()
+                                    }
+                                  }}
                                 />
                               </Grid>
-                              <Grid item xs={6}>
+                              <Grid size={{ xs: 4 }}>
                                 <TextField
                                   fullWidth
                                   label="CVV"
@@ -840,7 +845,7 @@ const Checkout = () => {
                                   inputProps={{ maxLength: 4 }}
                                 />
                               </Grid>
-                              <Grid item xs={6}>
+                              <Grid size={{ xs: 12 }}>
                                 <TextField
                                   fullWidth
                                   label="Cardholder Name"
@@ -852,7 +857,7 @@ const Checkout = () => {
                                   placeholder="John Doe"
                                 />
                               </Grid>
-                              <Grid item xs={12}>
+                              <Grid size={{ xs: 12 }}>
                                 <TextField
                                   fullWidth
                                   label="Cardholder Email"
@@ -863,18 +868,6 @@ const Checkout = () => {
                                   error={!!validationErrors.cardholder_email}
                                   helperText={validationErrors.cardholder_email}
                                   placeholder="john@example.com"
-                                />
-                              </Grid>
-                              <Grid item xs={12}>
-                                <FormControlLabel
-                                  control={
-                                    <Checkbox
-                                      checked={orderData.skip_three_ds}
-                                      onChange={handleCheckboxChange}
-                                      name="skip_three_ds"
-                                    />
-                                  }
-                                  label="Skip 3D Secure (not recommended)"
                                 />
                               </Grid>
                             </Grid>

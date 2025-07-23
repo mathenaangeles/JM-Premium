@@ -22,4 +22,8 @@ class Configuration(object):
     XENDIT_API_KEY = os.getenv("XENDIT_API_KEY")
     XENDIT_WEBHOOK_TOKEN = os.getenv("XENDIT_WEBHOOK_TOKEN")
     XENDIT_BASE_URL = os.getenv("XENDIT_BASE_URL", "https://api.xendit.co")
+    NINJAVAN_BASE_URL = os.getenv("NINJAVAN_BASE_URL")
+    NINJAVAN_CLIENT_ID = os.getenv("NINJAVAN_CLIENT_ID")
+    NINJAVAN_CLIENT_SECRET = os.getenv("NINJAVAN_CLIENT_SECRET")
+    NINJAVAN_WEBHOOK_SECRET = os.getenv("NINJAVAN_WEBHOOK_SECRET")
     

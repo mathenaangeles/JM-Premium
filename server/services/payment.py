@@ -7,7 +7,6 @@ from app import db
 from models.payment import Payment
 from xendit import XenditClient, XenditError, PaymentStatus, PaymentMethod, EWalletType
 
-
 class PaymentService:
     def __init__(self):
         self._xendit_client = None
@@ -15,7 +14,7 @@ class PaymentService:
     def _get_client(self):
         if self._xendit_client is None:
             self._xendit_client = XenditClient(
-                secret_key=current_app.config.get("XENDIT_SECRET_KEY"),
+                secret_key = current_app.config.get("XENDIT_SECRET_KEY"),
             )
         return self._xendit_client
 
