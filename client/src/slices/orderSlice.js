@@ -77,18 +77,6 @@ export const cancelOrder = createAsyncThunk(
   }
 );
 
-export const payOrder = createAsyncThunk(
-    '/payOrder',
-    async ({ orderId, orderData }, { rejectWithValue }) => {
-      try {
-        const { data } = await Axios.put(`/orders/${orderId}/pay`, orderData);
-        return data;
-      } catch (err) {
-        return rejectWithValue(err.response?.data?.message || err.message);
-      }
-    }
-  );
-
 export const updateOrder = createAsyncThunk(
   '/updateOrder',
   async ({ orderId, orderData }, { rejectWithValue }) => {
@@ -218,25 +206,6 @@ const orderSlice = createSlice({
         }
       })
       .addCase(cancelOrder.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      .addCase(payOrder.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.success = null;
-      })
-      .addCase(payOrder.fulfilled, (state, action) => {
-        state.order = action.payload.order;
-        state.loading = false;
-        state.success = action.payload.message;
-        const index = state.orders.findIndex(order => order.id === action.payload.order.id);
-        if (index !== -1) {
-          state.orders[index] = action.payload.order;
-        }
-      })
-      .addCase(payOrder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

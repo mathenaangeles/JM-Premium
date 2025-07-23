@@ -8,8 +8,8 @@ import { getCart } from '../../slices/cartSlice';
 import countries from '../../constants/countries';
 import SelectAddress from '../address/SelectAddress';
 import { getUserAddresses } from '../../slices/addressSlice';
-import { createOrder, payOrder, clearOrderMessages } from '../../slices/orderSlice';
-import { createPaymentRequest, clearPaymentMessages } from '../../slices/paymentSlice';
+import { setPaymentFromOrder } from '../../slices/paymentSlice';
+import { createOrder, clearOrderMessages } from '../../slices/orderSlice';
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(3),
@@ -37,8 +37,7 @@ const Checkout = () => {
   const { user } = useSelector((state) => state.user);
   const { cart, loading: cartLoading } = useSelector((state) => state.cart);
   const { addresses } = useSelector((state) => state.address);
-  const { loading: orderLoading, error, success, order } = useSelector((state) => state.order);
-  const { loading: paymentLoading, error: paymentError, success: paymentSuccess, payment, actions, xenditStatus, xenditResponse } = useSelector((state) => state.payment);
+  const { loading: orderLoading, error } = useSelector((state) => state.order);
   
   const [orderData, setOrderData] = useState({
     email: '',
@@ -111,15 +110,6 @@ const Checkout = () => {
     orderData.shipping_country,
     orderData.same_as_shipping
   ]);
-
-  useEffect(() => {
-  if (success && order) {
-    if (!user && orderData.email) {
-      localStorage.setItem('guestEmail', orderData.email);
-    }
-    navigate(`/orders/${order.id}`);
-  }
-}, [success, order, navigate, orderData.email, user]);
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -230,58 +220,28 @@ const Checkout = () => {
       shipping_method: orderData.shipping_method,
       tax: calculateTax(),
       shipping_cost: calculateShipping(),
+      payment_method: orderData.payment_method,
+      amount: calculateTotal(),
     };
-    
     try {
       const orderResult = await dispatch(createOrder(formattedData));
       if (orderResult.error) {
         return;
       }
-      const orderId = orderResult.payload?.order?.id;
-      if (!orderId) {
-        return;
+      const { order, payment, checkout_url } = orderResult.payload;
+      if (payment) {
+        dispatch(setPaymentFromOrder({ payment, checkout_url }));
       }
-      const paymentData = {
-        amount: calculateTotal(),
-        currency: 'PHP',
-        description: `Order #${orderId} Payment`,
-        user_id: user?.id || null,
-        payment_method: orderData.payment_method === 'card' ? 'CREDIT_CARD' : 'EWALLET',
-        ewallet_type: orderData.payment_method === 'card' ? undefined : orderData.payment_method,
-        order_id: orderId,
-        ...(orderData.payment_method === 'card' && {
-          card_number: orderData.card_number,
-          expiry_month: orderData.expiry_month,
-          expiry_year: orderData.expiry_year,
-          cvn: orderData.cvn,
-          cardholder_name: orderData.cardholder_name,
-          cardholder_email: orderData.cardholder_email || orderData.email || user?.email,
-          skip_three_ds: orderData.skip_three_ds,
-        })
-      };
-      const paymentResult = await dispatch(createPaymentRequest(paymentData));
-      if (paymentResult.error) {
-        return;
+      if (!user && formattedData.email) {
+        localStorage.setItem('guestEmail', formattedData.email);
       }
-      const paymentId = paymentResult.payload?.payment?.id;
-      if (!paymentId) {
-        return;
-      }
-      await dispatch(payOrder({
-        orderId: orderId,
-        orderData: {
-          payment_id: paymentId,
-        }
-      }));
-      const checkoutUrl = paymentResult.payload?.actions?.find(action => action.url_type === 'CHECKOUT')?.url;
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
-      } else {
-        navigate(`/orders/${orderId}`);
+      if (checkout_url) {
+        window.location.href = checkout_url;
+      } else if (order?.id) {
+        navigate(`/orders/${order.id}`);
       }
     } catch (error) {
-      console.log(error);
-      return; 
+      console.error(error);
     }
   };
 
@@ -319,9 +279,9 @@ const Checkout = () => {
   
   return (
     <Box sx={{  p: 4, minHeight: '100vh', backgroundColor: 'primary.main' }}>
-      {(error || paymentError) && (
+      {(error) && (
         <Alert severity="error" onClose={() => dispatch(clearOrderMessages())} sx={{ mb: 3 }}>
-          {error || paymentError}
+          {error}
         </Alert>
       )}
       <Grid container spacing={4}>
@@ -882,7 +842,7 @@ const Checkout = () => {
                   variant="contained"
                   size="large"
                   fullWidth
-                  disabled={orderLoading || paymentLoading || !cart?.items?.length}
+                  disabled={orderLoading || !cart?.items?.length}
                   sx={{
                     mt: 3,
                     py: 1.5,
@@ -890,7 +850,7 @@ const Checkout = () => {
                     fontWeight: 'bold',
                   }}
                 >
-                  {orderLoading || paymentLoading ? (
+                  {orderLoading ? (
                     <CircularProgress size={24} color="inherit" />
                   ) : (
                     `Complete Order`

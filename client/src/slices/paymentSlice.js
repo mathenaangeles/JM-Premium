@@ -93,6 +93,11 @@ const paymentSlice = createSlice({
       state.xenditStatus = null;
       state.xenditResponse = null;
     },
+    setPaymentFromOrder: (state, action) => {
+      const { payment, checkout_url } = action.payload;
+      state.payment = payment;
+      state.xenditResponse = { checkout_url };
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -187,5 +192,5 @@ const paymentSlice = createSlice({
   },
 });
 
-export const { clearPaymentMessages, clearPaymentActions } = paymentSlice.actions;
+export const { clearPaymentMessages, clearPaymentActions, setPaymentFromOrder } = paymentSlice.actions;
 export default paymentSlice.reducer;

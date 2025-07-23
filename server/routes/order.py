@@ -3,11 +3,13 @@ from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
 from services.user import UserService
 from services.order import OrderService
+from services.payment import PaymentService
 from middlewares.user import auth_required, admin_required
 
 order_blueprint = Blueprint('order', __name__, url_prefix='/orders')
 order_service = OrderService()
 user_service = UserService()
+payment_service = PaymentService()
 
 @order_blueprint.route('/', methods=['GET'])
 @auth_required
@@ -86,32 +88,23 @@ def create_order():
     session_id = request.cookies.get('cart_session')
     data = request.get_json()
     try:
-        order = order_service.create_order_from_cart(data, user_id, session_id)
-        if not order:
-            return jsonify({'message': f'Order could not be created.'}), 500
-        return jsonify({
+        result = order_service.create_order_from_cart(data, user_id, session_id)
+        if not result or not result.get("success"):
+            return jsonify({'message': 'Order could not be created.'}), 500
+        order = result.get("order")
+        payment = result.get("payment")
+        checkout_url = result.get("checkout_url")
+        response = {
             'message': 'Order was created successfully.',
-            'order': order_service.serialize_order(order)
-        }), 201
+            'order': order_service.serialize_order(order),
+        }
+        if payment:
+            response['payment'] = payment_service.serialize_payment(payment)
+        if checkout_url:
+            response['checkout_url'] = checkout_url
+        return jsonify(response), 201
     except Exception as e:
         return jsonify({'message': f'Order Creation Failed: {str(e)}'}), 500
-    
-@order_blueprint.route('/<int:order_id>/pay', methods=['PUT'])
-def pay_order(order_id):
-    data = request.get_json()
-    try:
-        paid_order = order_service.pay_order(
-            order_id = order_id,
-            payment_id = data.get('payment_id'),
-        )
-        if not paid_order:
-            return jsonify({'message': f'Order could not be paid.'}), 500  
-        return jsonify({
-            'message': 'Order was paid successfully.',
-            'order': order_service.serialize_order(paid_order),
-        }), 200      
-    except Exception as e:
-        return jsonify({'message': f'Order Update Failed: {str(e)}'}), 500  
 
 @order_blueprint.route('/<int:order_id>/cancel', methods=['POST'])
 @auth_required
