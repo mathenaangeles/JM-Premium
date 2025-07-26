@@ -104,7 +104,7 @@ class OrderService:
             self.cart_service.clear_cart(user_id, session_id)
             order.set_totals()
             payment_result = self.payment_service.create_payment_request(
-                amount=order.total,
+                amount=float(order.total),
                 currency="PHP",
                 user_id=user_id,
                 order_id=order.id,
@@ -134,6 +134,7 @@ class OrderService:
                 )
             }
         except Exception as e:
+            print(e)
             db.session.rollback()
             return {
                 "success": False,

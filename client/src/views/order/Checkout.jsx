@@ -11,6 +11,12 @@ import { getUserAddresses } from '../../slices/addressSlice';
 import { setPaymentFromOrder } from '../../slices/paymentSlice';
 import { createOrder, clearOrderMessages } from '../../slices/orderSlice';
 
+import jcbLogo from '../../assets/jcb.png'
+import mayaLogo from '../../assets/maya.png'
+import visaLogo from '../../assets/visa.png'
+import gcashLogo from '../../assets/gcash.png'
+import mastercardLogo from '../../assets/mastercard.png'
+
 const SectionTitle = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(3),
   fontWeight: 500,
@@ -58,7 +64,8 @@ const Checkout = () => {
     billing_zip_code: '',
     billing_country: '',
     shipping_method: 'standard',
-    payment_method: 'gcash',
+    payment_method: 'ewallet',
+    ewallet_type: 'gcash',
     same_as_shipping: true,
   });
   const [validationErrors, setValidationErrors] = useState({});
@@ -197,6 +204,21 @@ const Checkout = () => {
     if (!validateForm()) {
       return;
     }
+    let payment_method = null;
+    let ewallet_type = null;
+    if (orderData.payment_method === 'gcash') {
+      payment_method = 'ewallet';
+      ewallet_type = 'GCASH';
+    } else if (orderData.payment_method === 'paymaya') {
+      payment_method = 'ewallet';
+      ewallet_type = 'PAYMAYA';
+    } else if (orderData.payment_method === 'card') {
+      payment_method = 'card';
+    } else {
+      console.error("Unsupported payment method selected");
+      return;
+    }
+
     const formattedData = {
       shipping_address_id: orderData.shipping_address_id || null,
       billing_address_id: orderData.same_as_shipping 
@@ -212,16 +234,23 @@ const Checkout = () => {
       billing_city: !orderData.same_as_shipping ? orderData.billing_city : null,
       billing_zip_code: !orderData.same_as_shipping ? orderData.billing_zip_code : null,
       billing_country: !orderData.same_as_shipping ? orderData.billing_country : null,
-      email: orderData.email || (user?.email || ''),
-      first_name: orderData.first_name || (user?.first_name || ''),
-      last_name: orderData.last_name || (user?.last_name || ''),
-      country_code: orderData.country_code || (user?.country_code || ''),
-      phone_number: orderData.phone_number || (user?.phone_number || ''),
+      email: orderData.email || user?.email || '',
+      first_name: orderData.first_name || user?.first_name || '',
+      last_name: orderData.last_name || user?.last_name || '',
+      country_code: orderData.country_code || user?.country_code || '',
+      phone_number: orderData.phone_number || user?.phone_number || '',
       shipping_method: orderData.shipping_method,
       tax: calculateTax(),
       shipping_cost: calculateShipping(),
-      payment_method: orderData.payment_method,
       amount: calculateTotal(),
+      payment_method,
+      ewallet_type,
+      card_number: orderData.card_number || undefined,
+      expiry_month: orderData.expiry_month || undefined,
+      expiry_year: orderData.expiry_year || undefined,
+      cvn: orderData.cvn || undefined,
+      cardholder_name: orderData.cardholder_name || undefined,
+      cardholder_email: orderData.cardholder_email || undefined,
     };
     try {
       const orderResult = await dispatch(createOrder(formattedData));
@@ -241,7 +270,7 @@ const Checkout = () => {
         navigate(`/orders/${order.id}`);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Order submission failed:", error);
     }
   };
 
@@ -683,7 +712,7 @@ const Checkout = () => {
                   <SectionTitle variant="h6">
                     <PaymentIcon /> Payment Method
                   </SectionTitle>
-                  <FormControl component="fieldset">
+                  <FormControl component="fieldset" sx={{  width: '100%', }}>
                     <RadioGroup
                       name="payment_method"
                       value={orderData.payment_method}
@@ -694,33 +723,36 @@ const Checkout = () => {
                           value="gcash"
                           control={<Radio color="primary" />}
                           label={
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <PaymentIcon sx={{ mr: 1, color: '#007BC7' }} />
-                              <Box>
-                                <Typography variant="body1">GCash</Typography>
+                             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                <Box
+                                  component="img"
+                                  src={gcashLogo}
+                                  alt="GCash"
+                                  sx={{ width: 90, height: 'auto' }}
+                                />
                                 <Typography variant="body2" color="text.secondary">
-                                  Pay using your GCash wallet
+                                  Pay with your GCash wallet.
                                 </Typography>
                               </Box>
-                            </Box>
                           }
                         />
                       </Paper>
-
                       <Paper variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2 }}>
                         <FormControlLabel
                           value="paymaya"
                           control={<Radio color="primary" />}
                           label={
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <PaymentIcon sx={{ mr: 1, color: '#00A8E6' }} />
-                              <Box>
-                                <Typography variant="body1">PayMaya</Typography>
+                             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                <Box
+                                  component="img"
+                                  src={mayaLogo}
+                                  alt="PayMaya"
+                                  sx={{ width: 60, height: 'auto' }}
+                                />                          
                                 <Typography variant="body2" color="text.secondary">
-                                  Pay using your PayMaya wallet
+                                  Pay with your Maya wallet.
                                 </Typography>
                               </Box>
-                            </Box>
                           }
                         />
                       </Paper>                
@@ -729,14 +761,30 @@ const Checkout = () => {
                           value="card"
                           control={<Radio color="primary" />}
                           label={
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <CreditCardIcon sx={{ mr: 1 }} />
-                              <Box>
-                                <Typography variant="body1">Credit/Debit Card</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  Visa, Mastercard, JCB
-                                </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>  
+                                <Box
+                                  component="img"
+                                  src={visaLogo}
+                                  alt="Credit/Debit"
+                                  sx={{ width: 50, height: 'auto' }}
+                                />
+                                <Box
+                                  component="img"
+                                  src={mastercardLogo}
+                                  alt="Credit/Debit"
+                                  sx={{ width: 50, height: 'auto' }}
+                                />
+                                <Box
+                                  component="img"
+                                  src={jcbLogo}
+                                  alt="Credit/Debit"
+                                  sx={{ width: 50, height: 'auto' }}
+                                />
                               </Box>
+                              <Typography variant="body2" color="text.secondary">
+                                Pay with a Visa, Mastercard, or JCB card.
+                              </Typography>
                             </Box>
                           }
                         />

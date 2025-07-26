@@ -22,6 +22,9 @@ class PaymentService:
         frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
         order_id = kwargs.get("order_id")
         return_url = f"{frontend_url}/order/{order_id}"
+
+        payment_method = payment_method.strip().upper()
+
         if payment_method == PaymentMethod.CREDIT_CARD.value:
             channel_code = "CARDS"
             channel_properties = {
@@ -37,6 +40,7 @@ class PaymentService:
                 "card_on_file_type": kwargs.get("card_on_file_type", "MERCHANT_UNSCHEDULED")
             }
             return channel_code, channel_properties
+
         elif payment_method == PaymentMethod.EWALLET.value:
             ewallet_mapping = {
                 "gcash": "GCASH",
@@ -44,16 +48,20 @@ class PaymentService:
                 "grabpay": "GRABPAY",
                 "shopeepay": "SHOPEEPAY"
             }
+
             ewallet_type = kwargs.get("ewallet_type", EWalletType.GCASH.value).strip().lower()
             if ewallet_type not in ewallet_mapping:
                 raise ValueError(f"Unsupported e-wallet type: {ewallet_type}")
+
             channel_code = ewallet_mapping[ewallet_type]
             channel_properties = {
                 "success_return_url": return_url,
                 "failure_return_url": return_url
             }
             return channel_code, channel_properties
+
         raise ValueError(f"Unsupported payment method: {payment_method}")
+
     
     def get_payment_by_id(self, payment_id: int) -> Optional[Payment]:
         return db.session.get(Payment, payment_id)
@@ -82,7 +90,6 @@ class PaymentService:
             client = self._get_client()
             reference_id = f"payment_{user_id or 'guest'}_{uuid.uuid4().hex[:8]}_{int(datetime.now().timestamp())}"
             channel_code, channel_properties = self._get_payment_method_config(payment_method, **kwargs)
-
             payment_request_data = {
                 "reference_id": reference_id,
                 "type": "PAY",
@@ -98,6 +105,7 @@ class PaymentService:
                     "order_id": kwargs.get("order_id")
                 }
             }
+            print(payment_request_data)
             xendit_response = client.create_payment_request(payment_request_data)
             payment = Payment(
                 user_id=user_id,

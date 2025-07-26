@@ -1,221 +1,168 @@
-import React from 'react';
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Button, 
-  Grid, 
-  Card, 
-  CardMedia, 
-  CardContent, 
-  CardActions,
-  Rating,
-  Divider,
-  IconButton,
-  Paper,
-  Chip
-} from '@mui/material';
-import { 
-  ArrowForward as ArrowForwardIcon,
-  FavoriteBorder as FavoriteBorderIcon,
-  ShoppingCart as ShoppingCartIcon,
-  EmojiNature as EmojiNatureIcon,
-  Spa as SpaIcon,
-  CompostOutlined as EcoOutlinedIcon,
-  LocalShipping as LocalShippingIcon,
-  Security as SecurityIcon,
-  AssignmentReturn as AssignmentReturnIcon
-} from '@mui/icons-material';
+import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { Snackbar, Alert, Box, Container, Typography, Button, Grid, Card, CardMedia, CardContent, CardActions, Rating, Divider, IconButton, Paper, Chip, TextField, InputAdornment, Stack, Fade, Grow } from '@mui/material';
+import { ArrowForward as ArrowForwardIcon, FavoriteBorder as FavoriteBorderIcon, ShoppingCart as ShoppingCartIcon, SpaOutlined as WellnessIcon, Landscape as NaturalIcon, Science as ScienceIcon, LocalShipping as LocalShippingIcon, Security as SecurityIcon, AssignmentReturn as AssignmentReturnIcon, Email as EmailIcon, Star as StarIcon } from '@mui/icons-material';
 
-// Mock featured products
-const featuredProducts = [
-  {
-    id: 1,
-    name: 'Healthy Eye Oil',
-    price: 34.99,
-    rating: 4.8,
-    image: '/api/placeholder/400/400',
-    category: 'Skincare'
-  },
-  {
-    id: 2,
-    name: 'Healthy Cream',
-    price: 29.99,
-    rating: 4.7,
-    image: '/api/placeholder/400/400',
-    category: 'Skincare'
-  },
-  {
-    id: 3,
-    name: 'Healthy Skin Cream',
-    price: 39.99,
-    rating: 4.9,
-    image: '/api/placeholder/400/400',
-    category: 'Skincare'
-  }
-];
+import ProductCard from './product/ProductCard';
+import { getProducts } from '../slices/productSlice';
 
-// Mock bestseller products
-const bestsellerProducts = [
-  {
-    id: 4,
-    name: 'Bae Lactic Acid',
-    price: 44.99,
-    rating: 4.9,
-    image: '/api/placeholder/400/400',
-    category: 'Skincare'
-  },
-  {
-    id: 5,
-    name: 'Summer in Zanzibar Radiant Collagen Boost Moisturizer',
-    price: 48.00,
-    rating: 4.7,
-    image: '/api/placeholder/400/400',
-    category: 'Moisturizer'
-  },
-  {
-    id: 6, 
-    name: 'Sun Spray Lotion',
-    price: 27.99,
-    rating: 4.6,
-    image: '/api/placeholder/400/400',
-    category: 'Body Care'
-  },
-  {
-    id: 7,
-    name: 'Vegan Lip Balm',
-    price: 12.99,
-    rating: 4.8,
-    image: '/api/placeholder/400/400',
-    category: 'Lip Care'
-  }
-];
-
-// Mock testimonials
 const testimonials = [
   {
     id: 1,
-    text: "Beauty Essence completely transformed my skin! Within a few weeks, my skin felt smoother, brighter and healthier.",
-    author: "Emily T."
+    text: "JM Premium transformed not just my skin, but my entire wellness routine. The combination of their skincare and wellness products has given me a glow I never thought possible.",
+    author: "Sarah Chen",
+    location: "Manila",
+    rating: 5
   },
   {
     id: 2,
-    text: "I've tried dozens of skincare brands, but nothing compares to the quality and results I get from Beauty Essence products.",
-    author: "Michael R."
+    text: "The science behind their formulations is impressive, but what I love most is how natural and gentle everything feels. My sensitive skin has never looked better.",
+    author: "Maria Santos",
+    location: "Cebu",
+    rating: 5
   },
   {
     id: 3,
-    text: "Their commitment to sustainability and clean beauty is what initially drew me in, but the amazing products are why I'm a loyal customer now.",
-    author: "Sophia L."
+    text: "Finally, a brand that understands holistic beauty. Their approach to combining inner wellness with outer care is exactly what I was looking for.",
+    author: "Jennifer Lim",
+    location: "Davao",
+    rating: 5
   }
 ];
 
 const HeroSection = () => {
-//   const theme = useTheme();
-//   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
   return (
     <Box
       sx={{
         position: 'relative',
-        height: { xs: '80vh', md: '90vh' },
-        overflow: 'hidden',
+        minHeight: { xs: '85vh', md: '90vh' },
+        background: `linear-gradient(135deg, 
+          ${props => props.theme?.palette?.common?.white || '#FAF9F6'} 0%, 
+          ${props => props.theme?.palette?.primary?.light || '#F1F6E9'} 50%, 
+          ${props => props.theme?.palette?.common?.creme || '#ECE4CE'} 100%)`,
         display: 'flex',
         alignItems: 'center',
-        backgroundColor: '#f8f5f2',
-        mb: 8
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '60%',
+          height: '100%',
+          background: `url('/api/placeholder/800/900') center/cover`,
+          opacity: 0.1,
+          zIndex: 0
+        }
       }}
     >
-      <Container maxWidth="xl">
-        <Grid container spacing={4} alignItems="center">
-          <Grid item xs={12} md={6} sx={{ zIndex: 1 }}>
-            <Typography 
-              variant="overline" 
-              component="div" 
-              sx={{ 
-                mb: 1, 
-                color: 'text.secondary',
-                letterSpacing: 3
-              }}
-            >
-              PREMIUM PRODUCTS
-            </Typography>
-            <Typography 
-              variant="h1" 
-              component="h1" 
-              sx={{ 
-                fontFamily: 'serif',
-                fontWeight: 300,
-                fontSize: { xs: '3rem', md: '4rem', lg: '5rem' },
-                lineHeight: 1.1,
-                mb: 2
-              }}
-            >
-              Premium Skincare for Maximum Results
-            </Typography>
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                mb: 4, 
-                fontSize: '1.1rem',
-                maxWidth: '80%'
-              }}
-            >
-              Discover our range of clean, sustainable beauty products designed to enhance your natural beauty and promote healthy skin.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button 
-                variant="contained" 
-                size="large" 
-                component={RouterLink}
-                to="/shop"
-                endIcon={<ArrowForwardIcon />}
-                sx={{ 
-                  px: 4, 
-                  py: 1.5, 
-                  borderRadius: 0,
-                  backgroundColor: 'black',
-                  '&:hover': {
-                    backgroundColor: '#333'
-                  }
-                }}
-              >
-                Shop Now
-              </Button>
-              <Button 
-                variant="outlined" 
-                size="large"
-                component={RouterLink}
-                to="/about"
-                sx={{ 
-                  px: 4, 
-                  py: 1.5, 
-                  borderRadius: 0,
-                  borderColor: 'black',
-                  color: 'black',
-                  '&:hover': {
-                    borderColor: '#333',
-                    backgroundColor: 'rgba(0,0,0,0.04)'
-                  }
-                }}
-              >
-                Learn More
-              </Button>
-            </Box>
+      <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
+        <Grid container spacing={6} alignItems="center">
+          <Grid size={{ xs: 12, md: 7 }}>
+            <Fade in timeout={1000}>
+              <Box>
+                <Typography 
+                  variant="overline" 
+                  sx={{ 
+                    color: 'primary.main',
+                    fontWeight: 700,
+                    letterSpacing: 2,
+                    mb: 1,
+                    display: 'block'
+                  }}
+                >
+                  Health & Beauty
+                </Typography>
+                <Typography 
+                  variant="h1" 
+                  sx={{ 
+                    fontSize: { xs: '2.5rem', md: '3.5rem', lg: '4.5rem' },
+                    fontWeight: 400,
+                    lineHeight: 1.1,
+                    mb: 3,
+                    color: 'text.primary',
+                    maxWidth: '90%'
+                  }}
+                >
+                  True Beauty is
+                  <Box component="span" sx={{ color: 'primary.main', display: 'block' }}>
+                    Harmony Within
+                  </Box>
+                </Typography>
+                <Typography 
+                  sx={{ 
+                    mb: 4,
+                    color: 'common.grey',
+                    lineHeight: 1.6,
+                    maxWidth: '85%',
+                    fontWeight: 400,
+                    fontSize: theme => theme.typography.h6.fontSize,
+                  }}
+                >
+                  Combining natural heritage with modern science for holistic care. Discover
+                  premium products that nourish and empower your inner strength.
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  size="large" 
+                  component={RouterLink}
+                  to="/shop"
+                  endIcon={<ArrowForwardIcon />}
+                  sx={{ 
+                    px: 4, 
+                    py: 1.5,
+                    backgroundColor: 'common.black',
+                    color: 'common.white',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'text.primary',
+                      transform: 'translateY(-2px)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Shop Now
+                </Button>
+              </Box>
+            </Fade>
           </Grid>
-          <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
-            <Box 
-              component="img"
-              src="/api/placeholder/600/600"
-              alt="Beautiful skin"
-              sx={{
-                width: '100%',
-                height: 'auto',
-                objectFit: 'cover',
-                borderRadius: '50% 0 50% 50%',
-              }}
-            />
+          
+          <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Grow in timeout={1200}>
+              <Box 
+                sx={{
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '10%',
+                    left: '10%',
+                    width: '80%',
+                    height: '80%',
+                    background: 'linear-gradient(45deg, transparent 30%, rgba(151, 167, 99, 0.1) 100%)',
+                    borderRadius: '50%',
+                    zIndex: 0
+                  }
+                }}
+              >
+                <Box 
+                  component="img"
+                  src="/api/placeholder/500/600"
+                  alt="JM Premium Beauty"
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    objectFit: 'cover',
+                    borderRadius: '20px',
+                    position: 'relative',
+                    zIndex: 1,
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                  }}
+                />
+              </Box>
+            </Grow>
           </Grid>
         </Grid>
       </Container>
@@ -223,77 +170,111 @@ const HeroSection = () => {
   );
 };
 
-const TestimonialSection = () => {
+const BrandValuesSection = () => {
+  const values = [
+    {
+      icon: <NaturalIcon sx={{ fontSize: 48 }} />,
+      title: 'Natural Heritage',
+      description: 'Time-honored botanical ingredients sourced sustainably from nature\'s finest offerings'
+    },
+    {
+      icon: <ScienceIcon sx={{ fontSize: 48 }} />,
+      title: 'Modern Science',
+      description: 'Advanced formulations backed by research to deliver proven, visible results'
+    },
+    {
+      icon: <WellnessIcon sx={{ fontSize: 48 }} />,
+      title: 'Holistic Wellness',
+      description: 'Complete care that nurtures both your outer glow and inner strength'
+    }
+  ];
   return (
-    <Box sx={{ py: 8, backgroundColor: '#faf6f3' }}>
+    <Box sx={{ py: { xs: 8, md: 12 }, backgroundColor: 'common.white' }}>
       <Container maxWidth="xl">
-        <Box sx={{ mb: 6, textAlign: 'center' }}>
+        <Box sx={{ textAlign: 'center', mb: 8 }}>
           <Typography 
-            variant="h6" 
-            component="div" 
+            variant="overline" 
             sx={{ 
-              fontWeight: 400,
-              color: 'text.secondary',
-              mb: 1
+              color: 'primary.main',
+              fontWeight: 700,
+              letterSpacing: 2,
+              mb: 1,
+              display: 'block'
             }}
           >
-            TESTIMONIALS
+            OUR PHILOSOPHY
           </Typography>
           <Typography 
             variant="h2" 
-            component="h2" 
             sx={{ 
-              fontFamily: 'serif',
-              fontWeight: 300,
-              mb: 2
+              fontSize: { xs: '2rem', md: '2.5rem' },
+              fontWeight: 400,
+              mb: 3,
+              color: 'text.primary'
             }}
           >
-            What Our Customers Say
+            Where Science Meets Nature
           </Typography>
-          <Divider sx={{ width: '80px', margin: '0 auto', borderColor: 'primary.main', borderWidth: 2 }} />
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              color: 'common.grey',
+              maxWidth: '600px',
+              mx: 'auto',
+              fontSize: '1.1rem',
+              lineHeight: 1.7
+            }}
+          >
+            We believe true beauty radiates from the perfect harmony of nature's wisdom 
+            and scientific innovation, creating transformative experiences for the mind and body.
+          </Typography>
         </Box>
-        
         <Grid container spacing={4}>
-          {testimonials.map((testimonial) => (
-            <Grid item key={testimonial.id} xs={12} md={4}>
-              <Paper 
-                elevation={0}
-                sx={{ 
-                  p: 4, 
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: 'white',
-                  border: '1px solid',
-                  borderColor: 'divider'
-                }}
-              >
-                <Typography 
-                  variant="h1" 
+          {values.map((value, index) => (
+            <Grid size={{ xs: 12, md: 4 }} key={index}>
+              <Fade in timeout={1000 + index * 200}>
+                <Paper 
+                  elevation={0}
                   sx={{ 
-                    fontSize: '4rem', 
-                    color: '#ddd', 
-                    height: '40px', 
-                    mb: 2 
+                    p: 4, 
+                    textAlign: 'center',
+                    height: '100%',
+                    backgroundColor: 'transparent',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 3,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 12px 32px rgba(151, 167, 99, 0.15)'
+                    }
                   }}
                 >
-                  "
-                </Typography>
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    mb: 3, 
-                    fontStyle: 'italic',
-                    fontSize: '1.1rem',
-                    flexGrow: 1
-                  }}
-                >
-                  "{testimonial.text}"
-                </Typography>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {testimonial.author}
-                </Typography>
-              </Paper>
+                  <Box sx={{ color: 'primary.main', mb: 3 }}>
+                    {value.icon}
+                  </Box>
+                  <Typography 
+                    variant="h5" 
+                    sx={{ 
+                      mb: 2, 
+                      fontWeight: 500,
+                      color: 'text.primary'
+                    }}
+                  >
+                    {value.title}
+                  </Typography>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      color: 'common.grey',
+                      lineHeight: 1.6
+                    }}
+                  >
+                    {value.description}
+                  </Typography>
+                </Paper>
+              </Fade>
             </Grid>
           ))}
         </Grid>
@@ -302,63 +283,283 @@ const TestimonialSection = () => {
   );
 };
 
-const CTASection = () => {
+const FeaturedProductsSection = ({ onAddToCartSuccess }) => {
+  const dispatch = useDispatch();
+  const { products, loading, error } = useSelector((state) => state.product);
+
+  useEffect(() => {
+    dispatch(getProducts({ isFeatured: true, isActive: true, perPage: 8 }));
+  }, [dispatch]);
+
+  if (loading || error) { return; }
+  return (
+    <Box sx={{ py: { xs: 8, md: 12 }, backgroundColor: 'primary.light' }}>
+      <Container maxWidth="xl">
+        <Box sx={{ textAlign: 'center', mb: 8 }}>
+          <Typography 
+            variant="overline" 
+            sx={{ 
+              color: 'primary.main',
+              fontWeight: 700,
+              letterSpacing: 2,
+              mb: 1,
+              display: 'block'
+            }}
+          >
+            BESTSELLERS
+          </Typography>
+          <Typography 
+            variant="h2" 
+            sx={{ 
+              fontSize: { xs: '2rem', md: '2.5rem' },
+              fontWeight: 400,
+              mb: 3,
+              color: 'text.primary'
+            }}
+          >
+            Featured Products
+          </Typography>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              color: 'common.grey',
+              maxWidth: '600px',
+              mx: 'auto',
+              fontSize: '1.1rem',
+              lineHeight: 1.7
+            }}
+          >
+            Our most coveted formulations, crafted to reveal your natural radiance 
+            through the power of premium ingredients.
+          </Typography>
+        </Box>
+        <Grid container spacing={4}>
+          {products.map((product, index) => (
+            <Grid key={product.id} size = {{ xs: 12, sm: 6, md: 4 }}>
+              <Fade in timeout={800 + index * 200}>
+                <Box>
+                  <ProductCard product={product} onAddToCartSuccess={onAddToCartSuccess} />
+                </Box>
+              </Fade>
+            </Grid>
+          ))}
+        </Grid>
+        <Box sx={{ textAlign: 'center', mt: 6 }}>
+          <Button 
+            component={RouterLink}
+            to="/shop"
+            variant="outlined" 
+            size="large"
+            endIcon={<ArrowForwardIcon />}
+            color="secondary"
+            sx={{
+              transition: 'all 0.3s ease',
+              borderColor: 'secondary.main',
+              color: 'secondary.main',
+              '&:hover': {
+                backgroundColor: 'secondary.main',
+                color: 'common.white',
+                borderColor: 'secondary.main',
+              }
+            }}
+          >
+            Explore All Products
+          </Button>
+        </Box>
+      </Container>
+    </Box>
+  );
+};
+
+const TestimonialSection = () => {
+  return (
+    <Box sx={{ py: { xs: 8, md: 12 } }}>
+      <Container maxWidth="xl">
+        <Box sx={{ textAlign: 'center', mb: 8 }}>
+          <Typography 
+            variant="overline" 
+            sx={{ 
+              color: 'primary.main',
+              fontWeight: 700,
+              letterSpacing: 2,
+              mb: 1,
+              display: 'block'
+            }}
+          >
+            TESTIMONIALS
+          </Typography>
+          <Typography 
+            variant="h2" 
+            sx={{ 
+              fontSize: { xs: '2rem', md: '2.5rem' },
+              fontWeight: 400,
+              mb: 3,
+              color: 'text.primary'
+            }}
+          >
+            Customer Stories
+          </Typography>
+        </Box>
+        <Grid container spacing={4}>
+          {testimonials.map((testimonial, index) => (
+            <Grid size={{ xs: 12, md: 4 }} key={testimonial.id} xs={12} md={4}>
+              <Fade in timeout={1000 + index * 200}>
+                <Paper 
+                  elevation={0}
+                  sx={{
+                    p: 5,
+                    height: '100%',
+                    borderRadius: 4,
+                    backgroundColor: 'common.white',
+                    boxShadow: '0 6px 24px rgba(0, 0, 0, 0.06)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12)',
+                      transform: 'translateY(-4px)',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', mb: 2, pt: 2 }}>
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <StarIcon key={i} sx={{ color: '#FFA41C', fontSize: '1.2rem' }} />
+                    ))}
+                  </Box>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      mb: 3,
+                      fontStyle: 'italic',
+                      lineHeight: 1.6,
+                      color: 'text.primary'
+                    }}
+                  >
+                    {testimonial.text}
+                  </Typography>
+                  <Box>
+                    <Typography 
+                      variant="subtitle1" 
+                      sx={{ 
+                        fontWeight: 600,
+                        color: 'text.primary'
+                      }}
+                    >
+                      {testimonial.author}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ color: 'common.grey' }}
+                    >
+                      {testimonial.location}
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Fade>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
+  );
+};
+
+const NewsletterSection = () => {
   return (
     <Box 
       sx={{ 
-        py: 10,
-        backgroundImage: 'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("/api/placeholder/1200/600")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        color: 'white'
+        py: 8,
+        background: `linear-gradient(135deg, 
+          ${props => props.theme?.palette?.primary?.main || '#97A763'} 0%, 
+          ${props => props.theme?.palette?.secondary?.main || '#607049'} 100%)`,
+        // color: 'common.white',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `url('/api/placeholder/1200/600')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.1,
+          zIndex: 0
+        }
       }}
     >
-      <Container maxWidth="md" sx={{ textAlign: 'center' }}>
+      <Container maxWidth="md" sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <Typography 
           variant="h2" 
-          component="h2" 
           sx={{ 
-            fontFamily: 'serif',
-            fontWeight: 300,
+            fontSize: { xs: '2rem', md: '2.5rem' },
+            fontWeight: 400,
             mb: 3
           }}
         >
-          More Than Just Skin Deep
+          Join Our Beauty Community
         </Typography>
-        <Typography variant="body1" sx={{ mb: 4, fontSize: '1.1rem' }}>
-          Join our community of beauty enthusiasts who believe in the power of clean, sustainable skincare.
-          Subscribe to our newsletter for exclusive offers, skincare tips, and early access to new product launches.
-        </Typography>
-        <Box 
-          component="form" 
+        <Typography 
+          variant="body1" 
           sx={{ 
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: 2,
-            maxWidth: '500px',
-            mx: 'auto'
+            mb: 4, 
+            fontSize: '1.1rem',
+            opacity: 0.9,
+            lineHeight: 1.7
           }}
         >
-          <input
-            type="email"
-            placeholder="Enter your email"
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              fontSize: '1rem',
-              border: 'none',
-              outline: 'none',
+          Be the first to discover new launches, receive credible health and beauty tips, 
+          and enjoy special offers exclusive to our community.
+        </Typography>
+        <Box
+          component="form"
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 2,
+            maxWidth: '600px',
+            mx: 'auto',
+            width: '100%',
+            flexWrap: 'nowrap',
+          }}
+        >
+          <TextField
+            placeholder="Enter your email address"
+            variant="outlined"
+            color="primary"
+            fullWidth
+            slots={{
+              inputAdornedStart: InputAdornment,
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon sx={{ color: 'primary.main' }} />
+                  </InputAdornment>
+                ),
+                sx: {
+                  px: 1.5,
+                  borderRadius: 25,
+                  height: '56px',
+                }
+              },
+             
             }}
           />
-          <Button 
-            variant="contained" 
-            sx={{ 
-              px: 4, 
-              py: { xs: 1.5, sm: 0 },
-              backgroundColor: 'black',
-              '&:hover': {
-                backgroundColor: '#333'
-              }
+          <Button
+            variant="contained"
+            size="large"
+            color="primary"
+            sx={{
+              whiteSpace: 'nowrap',
+              height: '56px',
+              borderRadius: 25,
+              flexShrink: 0,
+              px: 4,
             }}
           >
             Subscribe
@@ -369,371 +570,34 @@ const CTASection = () => {
   );
 };
 
-const ServiceSection = () => {
-  return (
-    <Box sx={{ py: 6, borderTop: '1px solid', borderColor: 'divider' }}>
-      <Container maxWidth="xl">
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <LocalShippingIcon sx={{ fontSize: 36, mr: 2, color: 'text.secondary' }} />
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                  Fast Delivery
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Free shipping on orders over ₱50
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <SecurityIcon sx={{ fontSize: 36, mr: 2, color: 'text.secondary' }} />
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                  Secure Payment
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  100% secure payment processing
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <AssignmentReturnIcon sx={{ fontSize: 36, mr: 2, color: 'text.secondary' }} />
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                  Return Policy
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  30-day money back guarantee
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
-  );
-};
-
 const Home = () => {
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  const handleAddToCartSuccess = () => {
+    setSnackbarOpen(true);
+  };
+
   return (
     <Box>
       <HeroSection />
-      <ServiceSection />
-      <FeaturedProductsSection />
-      <ValuesSection />
-      <BestsellerSection />
+      <BrandValuesSection />
+      <FeaturedProductsSection onAddToCartSuccess={handleAddToCartSuccess} />
       <TestimonialSection />
-      <CTASection />
+      <NewsletterSection />
+       <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={5000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          disableWindowBlurListener
+        >
+          <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
+            Item was successfully added to cart.
+          </Alert>
+      </Snackbar>
     </Box>
   );
+
 };
 
 export default Home;
-
-const FeaturedProductsSection = () => {
-  return (
-    <Box sx={{ py: 8 }}>
-      <Container maxWidth="xl">
-        <Box sx={{ mb: 6, textAlign: 'center' }}>
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              fontWeight: 400,
-              color: 'text.secondary',
-              mb: 1
-            }}
-          >
-            DISCOVER OUR COLLECTION
-          </Typography>
-          <Typography 
-            variant="h2" 
-            component="h2" 
-            sx={{ 
-              fontFamily: 'serif',
-              fontWeight: 300,
-              mb: 2
-            }}
-          >
-            Featured Products
-          </Typography>
-          <Divider sx={{ width: '80px', margin: '0 auto', borderColor: 'primary.main', borderWidth: 2 }} />
-        </Box>
-        
-        <Grid container spacing={4}>
-          {featuredProducts.map((product) => (
-            <Grid item key={product.id} xs={12} sm={6} md={4}>
-              <Card 
-                elevation={0} 
-                sx={{ 
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'transform 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                  }
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height="300"
-                  image={product.image}
-                  alt={product.name}
-                />
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="overline" color="text.secondary">
-                    {product.category}
-                  </Typography>
-                  <Typography variant="h6" component="div">
-                    {product.name}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, mt: 1 }}>
-                    <Rating value={product.rating} precision={0.1} size="small" readOnly />
-                    <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
-                      ({product.rating})
-                    </Typography>
-                  </Box>
-                  <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
-                    ₱{product.price.toFixed(2)}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-                  <Button 
-                    variant="contained" 
-                    startIcon={<ShoppingCartIcon />}
-                    sx={{ 
-                      backgroundColor: 'black',
-                      '&:hover': {
-                        backgroundColor: '#333'
-                      }
-                    }}
-                  >
-                    Add to Cart
-                  </Button>
-                  <IconButton aria-label="add to favorites">
-                    <FavoriteBorderIcon />
-                  </IconButton>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-        
-        <Box sx={{ textAlign: 'center', mt: 6 }}>
-          <Button 
-            component={RouterLink}
-            to="/shop"
-            variant="outlined" 
-            endIcon={<ArrowForwardIcon />}
-            sx={{ 
-              px: 4, 
-              py: 1.5, 
-              borderRadius: 0,
-              borderColor: 'black',
-              color: 'black',
-              '&:hover': {
-                borderColor: '#333',
-                backgroundColor: 'rgba(0,0,0,0.04)'
-              }
-            }}
-          >
-            View All Products
-          </Button>
-        </Box>
-      </Container>
-    </Box>
-  );
-};
-
-const ValuesSection = () => {
-  return (
-    <Box sx={{ py: 8, backgroundColor: '#faf6f3' }}>
-      <Container maxWidth="xl">
-        <Box sx={{ mb: 6, textAlign: 'center' }}>
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              fontWeight: 400,
-              color: 'text.secondary',
-              mb: 1
-            }}
-          >
-            OUR COMMITMENT
-          </Typography>
-          <Typography 
-            variant="h2" 
-            component="h2" 
-            sx={{ 
-              fontFamily: 'serif',
-              fontWeight: 300,
-              mb: 2
-            }}
-          >
-            Clean Beauty. Clear Conscience.
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 3, maxWidth: '700px', mx: 'auto' }}>
-            From the first raw ingredient to the very last molecule, our formulas are all good.
-            We believe in beauty that doesn't compromise your health or the planet.
-          </Typography>
-          <Divider sx={{ width: '80px', margin: '0 auto', borderColor: 'primary.main', borderWidth: 2 }} />
-        </Box>
-        
-        <Grid container spacing={4} sx={{ mt: 4 }}>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ textAlign: 'center', p: 3 }}>
-              <EmojiNatureIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>
-                Natural Ingredients
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                We source the highest quality natural ingredients that are effective and safe for all skin types.
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ textAlign: 'center', p: 3 }}>
-              <SpaIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>
-                Cruelty-Free
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                All our products are cruelty-free. We never test on animals and work only with ethical suppliers.
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ textAlign: 'center', p: 3 }}>
-              <EcoOutlinedIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h5" sx={{ mb: 2, fontWeight: 500 }}>
-                Sustainable Packaging
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Our packaging is designed to minimize environmental impact, using recycled and recyclable materials.
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
-  );
-};
-
-const BestsellerSection = () => {
-  return (
-    <Box sx={{ py: 8 }}>
-      <Container maxWidth="xl">
-        <Box sx={{ mb: 6, textAlign: 'center' }}>
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              fontWeight: 400,
-              color: 'text.secondary',
-              mb: 1
-            }}
-          >
-            CUSTOMER FAVORITES
-          </Typography>
-          <Typography 
-            variant="h2" 
-            component="h2" 
-            sx={{ 
-              fontFamily: 'serif',
-              fontWeight: 300,
-              mb: 2
-            }}
-          >
-            Best Selling Products
-          </Typography>
-          <Divider sx={{ width: '80px', margin: '0 auto', borderColor: 'primary.main', borderWidth: 2 }} />
-        </Box>
-        
-        <Grid container spacing={3}>
-          {bestsellerProducts.map((product) => (
-            <Grid item key={product.id} xs={12} sm={6} md={3}>
-              <Card 
-                elevation={0} 
-                sx={{ 
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'transform 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                  }
-                }}
-              >
-                <Box sx={{ position: 'relative' }}>
-                  <CardMedia
-                    component="img"
-                    height="250"
-                    image={product.image}
-                    alt={product.name}
-                  />
-                  <Chip 
-                    label="BESTSELLER" 
-                    size="small"
-                    sx={{ 
-                      position: 'absolute', 
-                      top: 10, 
-                      left: 10, 
-                      backgroundColor: 'black',
-                      color: 'white',
-                      fontWeight: 'bold'
-                    }}
-                  />
-                </Box>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="overline" color="text.secondary">
-                    {product.category}
-                  </Typography>
-                  <Typography variant="h6" component="div" sx={{ fontSize: '1rem' }}>
-                    {product.name}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, mt: 1 }}>
-                    <Rating value={product.rating} precision={0.1} size="small" readOnly />
-                    <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
-                      ({product.rating})
-                    </Typography>
-                  </Box>
-                  <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
-                    ₱{product.price.toFixed(2)}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-                  <Button 
-                    variant="contained" 
-                    size="small"
-                    startIcon={<ShoppingCartIcon />}
-                    sx={{ 
-                      backgroundColor: 'black',
-                      '&:hover': {
-                        backgroundColor: '#333'
-                      }
-                    }}
-                  >
-                    Add to Cart
-                  </Button>
-                  <IconButton aria-label="add to favorites" size="small">
-                    <FavoriteBorderIcon />
-                  </IconButton>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    </Box>
-  );
-}
