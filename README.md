@@ -42,3 +42,48 @@ FLASK_DEBUG = True
 
 ### Deployment
 A GitHub Actions workflow is triggered upon pushing to `main`.
+
+- To test the client, run the following in the client directory:
+```
+# Build the image
+docker build -t test-client -f Dockerfile.prod .
+
+# Run it locally
+docker run -d -p 8080:80 --name test-client test-client
+
+# Check if it is running
+docker ps
+
+# Check logs
+docker logs test-client
+
+# Test the endpoint
+curl http://localhost:8080
+curl http://localhost:8080/health
+
+# Clean up
+docker stop test-client
+docker rm test-client
+```
+
+- To test the client, run the following in the server directory:
+```
+# Build the image
+docker build -t test-server -f Dockerfile.prod .
+
+# Run it locally
+docker run -p 8080:8080 -e PORT=8080 test-server
+
+# Check if it is running
+docker ps
+
+# Check logs
+docker logs test-server
+
+# Test the endpoint
+curl http://localhost:8080/
+
+# Clean up
+docker stop test-server
+docker rm test-server
+```

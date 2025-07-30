@@ -91,7 +91,9 @@ jobs:
           --cpu 1 \
           --concurrency 100 \
           --max-instances 5 \
-          --timeout 300 \
+          --timeout 900 \
+          --cpu-boost \
+          --execution-environment gen2 \
           --service-account github-actions@$PROJECT_ID.iam.gserviceaccount.com
   
     - name: Update server CORS settings
