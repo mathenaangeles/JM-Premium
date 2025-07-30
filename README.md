@@ -40,4 +40,5 @@ FLASK_DEBUG = True
 - To undo the last migration, run `flask db downgrade`.
 - To edit `app.db` use the sqlite3 CLI by running `sqlite3 server/instance/app.db`.
 
-
+### Deployment
+A GitHub Actions workflow is triggered upon pushing to main.
