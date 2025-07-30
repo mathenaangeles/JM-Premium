@@ -1,0 +1,103 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  PROJECT_ID: jm-premium
+  REGION: asia-east1
+  SERVER_SERVICE: jm-premium-server
+  CLIENT_SERVICE: jm-premium-client
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Configure Docker to use gcloud as a credential helper
+      run: |
+        gcloud auth configure-docker
+
+    - name: Build and push server image
+      run: |
+        docker build -t gcr.io/$PROJECT_ID/$SERVER_SERVICE:$GITHUB_SHA -f ./server/Dockerfile.prod ./server
+        docker push gcr.io/$PROJECT_ID/$SERVER_SERVICE:$GITHUB_SHA
+
+    - name: Build client image with dynamic API URL
+      run: |
+        SERVER_URL="https://$SERVER_SERVICE-$(echo $PROJECT_ID | tr '_' '-')-$REGION.a.run.app"
+        echo "VITE_API_URL=$SERVER_URL" > ./client/.env.production
+        docker build -t gcr.io/$PROJECT_ID/$CLIENT_SERVICE:$GITHUB_SHA -f ./client/Dockerfile.prod ./client
+        docker push gcr.io/$PROJECT_ID/$CLIENT_SERVICE:$GITHUB_SHA
+
+    - name: Deploy server to Cloud Run
+      run: |
+        gcloud run deploy $SERVER_SERVICE \
+          --image gcr.io/$PROJECT_ID/$SERVER_SERVICE:$GITHUB_SHA \
+          --platform managed \
+          --region $REGION \
+          --allow-unauthenticated \
+          --port 8080 \
+          --memory 512Mi \
+          --cpu 1 \
+          --concurrency 80 \
+          --max-instances 10 \
+          --set-env-vars="FLASK_ENV=production" \
+          --set-env-vars="JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" \
+          --set-env-vars="DB_USER=${{ secrets.DB_USER }}" \
+          --set-env-vars="DB_PASS=${{ secrets.DB_PASS }}" \
+          --set-env-vars="DB_NAME=${{ secrets.DB_NAME }}" \
+          --set-env-vars="DB_CONNECTION_NAME=${{ secrets.DB_CONNECTION_NAME }}" \
+          --set-env-vars="JWT_COOKIE_SECURE=True" \
+          --set-env-vars="JWT_ACCESS_COOKIE_NAME=access_token" \
+          --set-env-vars="JWT_REFRESH_COOKIE_NAME=refresh_token" \
+          --set-env-vars="JWT_COOKIE_CSRF_PROTECT=True" \
+          --set-env-vars="XENDIT_API_KEY=${{ secrets.XENDIT_API_KEY }}" \
+          --set-env-vars="XENDIT_WEBHOOK_TOKEN=${{ secrets.XENDIT_WEBHOOK_TOKEN }}" \
+          --set-env-vars="NINJAVAN_CLIENT_ID=${{ secrets.NINJAVAN_CLIENT_ID }}" \
+          --set-env-vars="NINJAVAN_CLIENT_SECRET=${{ secrets.NINJAVAN_CLIENT_SECRET }}" \
+          --set-env-vars="NINJAVAN_WEBHOOK_SECRET=${{ secrets.NINJAVAN_WEBHOOK_SECRET }}" \
+          --add-cloudsql-instances ${{ secrets.DB_CONNECTION_NAME }}
+
+    - name: Get server URL and update client
+      run: |
+        SERVER_URL=$(gcloud run services describe $SERVER_SERVICE --region $REGION --format 'value(status.url)')
+        echo "SERVER_URL=$SERVER_URL" >> $GITHUB_ENV
+
+    - name: Deploy client to Cloud Run  
+      run: |
+        gcloud run deploy $CLIENT_SERVICE \
+          --image gcr.io/$PROJECT_ID/$CLIENT_SERVICE:$GITHUB_SHA \
+          --platform managed \
+          --region $REGION \
+          --allow-unauthenticated \
+          --port 80 \
+          --memory 256Mi \
+          --cpu 1 \
+          --concurrency 100 \
+          --max-instances 5
+
+    - name: Update server CORS settings
+      run: |
+        CLIENT_URL=$(gcloud run services describe $CLIENT_SERVICE --region $REGION --format 'value(status.url)')
+        gcloud run services update $SERVER_SERVICE \
+          --region $REGION \
+          --update-env-vars="FRONTEND_URL=$CLIENT_URL"

@@ -59,7 +59,7 @@ const HeroSection = () => {
     >
       <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
         <Grid container spacing={6} alignItems="center">
-          <Grid size={{ xs: 12, md: 7 }}>
+          <Grid size={{ xs: 12, md: 8 }}>
             <Fade in timeout={1000}>
               <Box>
                 <Typography 
@@ -77,7 +77,7 @@ const HeroSection = () => {
                 <Typography 
                   variant="h1" 
                   sx={{ 
-                    fontSize: { xs: '2.5rem', md: '3.5rem', lg: '4.5rem' },
+                    fontSize: { xs: '1.5rem', md: '2.5rem', lg: '3.5rem' },
                     fontWeight: 400,
                     lineHeight: 1.1,
                     mb: 3,
@@ -85,9 +85,9 @@ const HeroSection = () => {
                     maxWidth: '90%'
                   }}
                 >
-                  True Beauty is
+                  Rooted in Ancient Wisdom
                   <Box component="span" sx={{ color: 'primary.main', display: 'block' }}>
-                    Harmony Within
+                    Perfected by Science
                   </Box>
                 </Typography>
                 <Typography 
