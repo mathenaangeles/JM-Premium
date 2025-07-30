@@ -78,7 +78,7 @@ jobs:
       run: |
         SERVER_URL=$(gcloud run services describe $SERVER_SERVICE --region $REGION --format 'value(status.url)')
         echo "SERVER_URL=$SERVER_URL" >> $GITHUB_ENV
-
+    
     - name: Deploy client to Cloud Run  
       run: |
         gcloud run deploy $CLIENT_SERVICE \
@@ -90,8 +90,10 @@ jobs:
           --memory 256Mi \
           --cpu 1 \
           --concurrency 100 \
-          --max-instances 5
-
+          --max-instances 5 \
+          --timeout 300 \
+          --service-account github-actions@$PROJECT_ID.iam.gserviceaccount.com
+  
     - name: Update server CORS settings
       run: |
         CLIENT_URL=$(gcloud run services describe $CLIENT_SERVICE --region $REGION --format 'value(status.url)')
