@@ -334,7 +334,7 @@ const FeaturedProductsSection = ({ onAddToCartSuccess }) => {
           </Typography>
         </Box>
         <Grid container spacing={4}>
-          {products.map((product, index) => (
+          {(products || []).map((product, index) => (
             <Grid key={product.id} size = {{ xs: 12, sm: 6, md: 4 }}>
               <Fade in timeout={800 + index * 200}>
                 <Box>
