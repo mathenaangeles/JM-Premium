@@ -15,8 +15,8 @@ class Configuration(object):
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_TOKEN_LOCATION = ["cookies"]
     JWT_COOKIE_SECURE = os.getenv('JWT_COOKIE_SECURE')
-    JWT_ACCESS_COOKIE_NAME = 'access_token_cookie'
-    JWT_REFRESH_COOKIE_NAME = 'refresh_token_cookie'
+    JWT_ACCESS_COOKIE_NAME = os.getenv('JWT_ACCESS_COOKIE_NAME')
+    JWT_REFRESH_COOKIE_NAME = os.getenv('JWT_REFRESH_COOKIE_NAME')
     JWT_COOKIE_CSRF_PROTECT = os.getenv('JWT_COOKIE_CSRF_PROTECT')
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
     XENDIT_API_KEY = os.getenv("XENDIT_API_KEY")

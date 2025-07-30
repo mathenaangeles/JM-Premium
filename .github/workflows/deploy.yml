@@ -12,7 +12,7 @@ env:
   REPOSITORY: jm-premium
   SERVER_SERVICE: jm-premium-server
   CLIENT_SERVICE: jm-premium-client
-  
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -64,19 +64,14 @@ jobs:
           --max-instances 10 \
           --set-env-vars="FLASK_ENV=production" \
           --set-env-vars="JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" \
-          --set-env-vars="DB_USER=${{ secrets.DB_USER }}" \
-          --set-env-vars="DB_PASS=${{ secrets.DB_PASS }}" \
-          --set-env-vars="DB_NAME=${{ secrets.DB_NAME }}" \
-          --set-env-vars="DB_CONNECTION_NAME=${{ secrets.DB_CONNECTION_NAME }}" \
+          --set-env-vars="GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}" \
+          --set-env-vars="SQLALCHEMY_DATABASE_URI=${{ secrets.SQLALCHEMY_DATABASE_URI }}" \
           --set-env-vars="JWT_COOKIE_SECURE=True" \
           --set-env-vars="JWT_ACCESS_COOKIE_NAME=access_token" \
           --set-env-vars="JWT_REFRESH_COOKIE_NAME=refresh_token" \
           --set-env-vars="JWT_COOKIE_CSRF_PROTECT=True" \
           --set-env-vars="XENDIT_API_KEY=${{ secrets.XENDIT_API_KEY }}" \
           --set-env-vars="XENDIT_WEBHOOK_TOKEN=${{ secrets.XENDIT_WEBHOOK_TOKEN }}" \
-          --set-env-vars="NINJAVAN_CLIENT_ID=${{ secrets.NINJAVAN_CLIENT_ID }}" \
-          --set-env-vars="NINJAVAN_CLIENT_SECRET=${{ secrets.NINJAVAN_CLIENT_SECRET }}" \
-          --set-env-vars="NINJAVAN_WEBHOOK_SECRET=${{ secrets.NINJAVAN_WEBHOOK_SECRET }}" \
           --add-cloudsql-instances ${{ secrets.DB_CONNECTION_NAME }}
 
     - name: Get server URL and update client
