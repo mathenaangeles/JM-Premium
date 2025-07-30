@@ -9,9 +9,10 @@ on:
 env:
   PROJECT_ID: jm-premium
   REGION: asia-east1
+  REPOSITORY: jm-premium
   SERVER_SERVICE: jm-premium-server
   CLIENT_SERVICE: jm-premium-client
-
+  
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -32,26 +33,27 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Configure Docker to use gcloud as a credential helper
+    - name: Configure Docker for Artifact Registry
       run: |
-        gcloud auth configure-docker
+        gcloud auth configure-docker $REGION-docker.pkg.dev
 
     - name: Build and push server image
       run: |
-        docker build -t gcr.io/$PROJECT_ID/$SERVER_SERVICE:$GITHUB_SHA -f ./server/Dockerfile.prod ./server
-        docker push gcr.io/$PROJECT_ID/$SERVER_SERVICE:$GITHUB_SHA
+        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVER_SERVICE:$GITHUB_SHA -f ./server/Dockerfile.prod ./server
+        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVER_SERVICE:$GITHUB_SHA
 
     - name: Build client image with dynamic API URL
       run: |
+        # Get the current server URL or use a placeholder
         SERVER_URL="https://$SERVER_SERVICE-$(echo $PROJECT_ID | tr '_' '-')-$REGION.a.run.app"
         echo "VITE_API_URL=$SERVER_URL" > ./client/.env.production
-        docker build -t gcr.io/$PROJECT_ID/$CLIENT_SERVICE:$GITHUB_SHA -f ./client/Dockerfile.prod ./client
-        docker push gcr.io/$PROJECT_ID/$CLIENT_SERVICE:$GITHUB_SHA
+        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA -f ./client/Dockerfile.prod ./client
+        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA
 
     - name: Deploy server to Cloud Run
       run: |
         gcloud run deploy $SERVER_SERVICE \
-          --image gcr.io/$PROJECT_ID/$SERVER_SERVICE:$GITHUB_SHA \
+          --image $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVER_SERVICE:$GITHUB_SHA \
           --platform managed \
           --region $REGION \
           --allow-unauthenticated \
@@ -85,7 +87,7 @@ jobs:
     - name: Deploy client to Cloud Run  
       run: |
         gcloud run deploy $CLIENT_SERVICE \
-          --image gcr.io/$PROJECT_ID/$CLIENT_SERVICE:$GITHUB_SHA \
+          --image $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA \
           --platform managed \
           --region $REGION \
           --allow-unauthenticated \
