@@ -54,7 +54,7 @@ jobs:
           --cpu 1 \
           --concurrency 80 \
           --max-instances 10 \
-          --set-env-vars="FLASK_ENV=production,PORT=8080" \
+          --set-env-vars="FLASK_ENV=production" \
           --set-env-vars="JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" \
           --set-env-vars="GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}" \
           --set-env-vars="SQLALCHEMY_DATABASE_URI=${{ secrets.SQLALCHEMY_DATABASE_URI }}" \
