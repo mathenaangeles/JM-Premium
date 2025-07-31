@@ -42,15 +42,6 @@ jobs:
         docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVER_SERVICE:$GITHUB_SHA -f ./server/Dockerfile.prod ./server
         docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVER_SERVICE:$GITHUB_SHA
 
-    - name: Get server URL and build client
-      run: |
-        # Get the actual server URL from the deployed service
-        SERVER_URL=$(gcloud run services describe $SERVER_SERVICE --region $REGION --format 'value(status.url)')
-        echo "Server URL: $SERVER_URL"
-        echo "VITE_API_URL=$SERVER_URL" > ./client/.env.production
-        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA -f ./client/Dockerfile.prod ./client
-        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA
-
     - name: Deploy server to Cloud Run
       run: |
         gcloud run deploy $SERVER_SERVICE \
@@ -63,7 +54,7 @@ jobs:
           --cpu 1 \
           --concurrency 80 \
           --max-instances 10 \
-          --set-env-vars="FLASK_ENV=production"  \
+          --set-env-vars="FLASK_ENV=production,PORT=8080" \
           --set-env-vars="JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" \
           --set-env-vars="GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}" \
           --set-env-vars="SQLALCHEMY_DATABASE_URI=${{ secrets.SQLALCHEMY_DATABASE_URI }}" \
@@ -75,11 +66,14 @@ jobs:
           --set-env-vars="XENDIT_WEBHOOK_TOKEN=${{ secrets.XENDIT_WEBHOOK_TOKEN }}" \
           --add-cloudsql-instances ${{ secrets.DB_CONNECTION_NAME }}
 
-    - name: Get server URL and update client
+    - name: Build client with server URL
       run: |
         SERVER_URL=$(gcloud run services describe $SERVER_SERVICE --region $REGION --format 'value(status.url)')
-        echo "SERVER_URL=$SERVER_URL" >> $GITHUB_ENV
-    
+        echo "Server URL: $SERVER_URL"
+        echo "VITE_API_URL=$SERVER_URL" > ./client/.env.production
+        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA -f ./client/Dockerfile.prod ./client
+        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA
+
     - name: Deploy client to Cloud Run  
       run: |
         gcloud run deploy $CLIENT_SERVICE \
@@ -97,7 +91,6 @@ jobs:
           --execution-environment gen2 \
           --service-account github-actions@$PROJECT_ID.iam.gserviceaccount.com
 
-  
     - name: Update server CORS settings
       run: |
         CLIENT_URL=$(gcloud run services describe $CLIENT_SERVICE --region $REGION --format 'value(status.url)')
