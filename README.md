@@ -18,11 +18,25 @@ This is a generic eCommerce template with a **React** client, a **Flask** server
 3. Navigate to the `server` directory and run `pip install -r requirements.txt`.
 4. Create a `.env` file in the `server` directory. Add the following:
 ```
-SECRET_KEY = '6l@<gm4zL2#@'
-SQLALCHEMY_DATABASE_URI = 'sqlite:///app.db'
-SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_ECHO = False
-FLASK_DEBUG = True
+SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://postgres:z|4*h/icM5c3.=x3@104.199.170.198/jm_premium_database'
+SQLALCHEMY_TRACK_MODIFICATIONS = 0
+SQLALCHEMY_ECHO = 0
+FLASK_DEBUG = 1
+FLASK_ENV = 'development'
+JWT_SECRET_KEY = '6l@<gm4zL2#@'
+JWT_COOKIE_SECURE = 0
+JWT_ACCESS_COOKIE_NAME = 'access_token_cookie'
+JWT_REFRESH_COOKIE_NAME = 'refresh_token_cookie'
+JWT_COOKIE_CSRF_PROTECT = 1  
+GCS_BUCKET_NAME = 'jm-premium'
+XENDIT_API_KEY = 'xnd_development_oYeRrHeXo9gsmwTK9c7cYF2qkYlk8u1NdsKaWQeHDWCPYjFdcYzcqexfba9V7Ue'
+XENDIT_BASE_URL= 'https://api.xendit.co'
+XENDIT_WEBHOOK_TOKEN = 'zKinZAqGberRZ4TR4CUadfst5Iv2UBcJiJNH9mrCrB88PPBF'
+NINJAVAN_BASE_URL= 'https://api-sandbox.ninjavan.co/ph'
+NINJAVAN_CLIENT_ID=''
+NINJAVAN_CLIENT_SECRET=''
+NINJAVAN_WEBHOOK_SECRET=''
+DB_CONNECTION_NAME='jm-premium:asia-east1:jm-premium-db'
 ```
 5. In the `server` directory, run `flask run`.
 6. Navigate to the `client` directory and run `npm install`.

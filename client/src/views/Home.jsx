@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Snackbar, Alert, Box, Container, Typography, Button, Grid, Card, CardMedia, CardContent, CardActions, Rating, Divider, IconButton, Paper, Chip, TextField, InputAdornment, Stack, Fade, Grow } from '@mui/material';
 import { ArrowForward as ArrowForwardIcon, FavoriteBorder as FavoriteBorderIcon, ShoppingCart as ShoppingCartIcon, SpaOutlined as WellnessIcon, Landscape as NaturalIcon, Science as ScienceIcon, LocalShipping as LocalShippingIcon, Security as SecurityIcon, AssignmentReturn as AssignmentReturnIcon, Email as EmailIcon, Star as StarIcon } from '@mui/icons-material';
 
+import hero from '../assets/hero.png'; 
 import ProductCard from './product/ProductCard';
 import { getProducts } from '../slices/productSlice';
 
@@ -44,22 +45,11 @@ const HeroSection = () => {
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '60%',
-          height: '100%',
-          background: `url('/api/placeholder/800/900') center/cover`,
-          opacity: 0.1,
-          zIndex: 0
-        }
       }}
     >
       <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
         <Grid container spacing={6} alignItems="center">
-          <Grid size={{ xs: 12, md: 8 }}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Fade in timeout={1000}>
               <Box>
                 <Typography 
@@ -77,7 +67,7 @@ const HeroSection = () => {
                 <Typography 
                   variant="h1" 
                   sx={{ 
-                    fontSize: { xs: '1.5rem', md: '2.5rem', lg: '3.5rem' },
+                    fontSize: { xs: '2.5rem', lg: '3.5rem' },
                     fontWeight: 400,
                     lineHeight: 1.1,
                     mb: 3,
@@ -128,37 +118,21 @@ const HeroSection = () => {
               </Box>
             </Fade>
           </Grid>
-          
-          <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Grid size={{ xs: 12, md: 5 }} sx={{ display: { xs: 'none', md: 'flex' }, justifyContent: 'center', alignItems: 'center' }}>
             <Grow in timeout={1200}>
-              <Box 
-                sx={{
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: '10%',
-                    left: '10%',
-                    width: '80%',
-                    height: '80%',
-                    background: 'linear-gradient(45deg, transparent 30%, rgba(151, 167, 99, 0.1) 100%)',
-                    borderRadius: '50%',
-                    zIndex: 0
-                  }
-                }}
-              >
-                <Box 
+              <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Box
                   component="img"
-                  src="/api/placeholder/500/600"
+                  src={hero}
                   alt="JM Premium Beauty"
                   sx={{
                     width: '100%',
+                    maxWidth: 350,
                     height: 'auto',
                     objectFit: 'cover',
                     borderRadius: '20px',
                     position: 'relative',
                     zIndex: 1,
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
                   }}
                 />
               </Box>
@@ -465,110 +439,110 @@ const TestimonialSection = () => {
   );
 };
 
-const NewsletterSection = () => {
-  return (
-    <Box 
-      sx={{ 
-        py: 8,
-        background: `linear-gradient(135deg, 
-          ${props => props.theme?.palette?.primary?.main || '#97A763'} 0%, 
-          ${props => props.theme?.palette?.secondary?.main || '#607049'} 100%)`,
-        // color: 'common.white',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `url('/api/placeholder/1200/600')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          opacity: 0.1,
-          zIndex: 0
-        }
-      }}
-    >
-      <Container maxWidth="md" sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-        <Typography 
-          variant="h2" 
-          sx={{ 
-            fontSize: { xs: '2rem', md: '2.5rem' },
-            fontWeight: 400,
-            mb: 3
-          }}
-        >
-          Join Our Beauty Community
-        </Typography>
-        <Typography 
-          variant="body1" 
-          sx={{ 
-            mb: 4, 
-            fontSize: '1.1rem',
-            opacity: 0.9,
-            lineHeight: 1.7
-          }}
-        >
-          Be the first to discover new launches, receive credible health and beauty tips, 
-          and enjoy special offers exclusive to our community.
-        </Typography>
-        <Box
-          component="form"
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 2,
-            maxWidth: '600px',
-            mx: 'auto',
-            width: '100%',
-            flexWrap: 'nowrap',
-          }}
-        >
-          <TextField
-            placeholder="Enter your email address"
-            variant="outlined"
-            color="primary"
-            fullWidth
-            slots={{
-              inputAdornedStart: InputAdornment,
-            }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon sx={{ color: 'primary.main' }} />
-                  </InputAdornment>
-                ),
-                sx: {
-                  px: 1.5,
-                  borderRadius: 25,
-                  height: '56px',
-                }
-              },
+// const NewsletterSection = () => {
+//   return (
+//     <Box 
+//       sx={{ 
+//         py: 8,
+//         background: `linear-gradient(135deg, 
+//           ${props => props.theme?.palette?.primary?.main || '#97A763'} 0%, 
+//           ${props => props.theme?.palette?.secondary?.main || '#607049'} 100%)`,
+//         // color: 'common.white',
+//         position: 'relative',
+//         '&::before': {
+//           content: '""',
+//           position: 'absolute',
+//           top: 0,
+//           left: 0,
+//           right: 0,
+//           bottom: 0,
+//           backgroundImage: `url('/api/placeholder/1200/600')`,
+//           backgroundSize: 'cover',
+//           backgroundPosition: 'center',
+//           opacity: 0.1,
+//           zIndex: 0
+//         }
+//       }}
+//     >
+//       <Container maxWidth="md" sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+//         <Typography 
+//           variant="h2" 
+//           sx={{ 
+//             fontSize: { xs: '2rem', md: '2.5rem' },
+//             fontWeight: 400,
+//             mb: 3
+//           }}
+//         >
+//           Join Our Beauty Community
+//         </Typography>
+//         <Typography 
+//           variant="body1" 
+//           sx={{ 
+//             mb: 4, 
+//             fontSize: '1.1rem',
+//             opacity: 0.9,
+//             lineHeight: 1.7
+//           }}
+//         >
+//           Be the first to discover new launches, receive credible health and beauty tips, 
+//           and enjoy special offers exclusive to our community.
+//         </Typography>
+//         <Box
+//           component="form"
+//           sx={{
+//             display: 'flex',
+//             flexDirection: 'row',
+//             alignItems: 'center',
+//             gap: 2,
+//             maxWidth: '600px',
+//             mx: 'auto',
+//             width: '100%',
+//             flexWrap: 'nowrap',
+//           }}
+//         >
+//           <TextField
+//             placeholder="Enter your email address"
+//             variant="outlined"
+//             color="primary"
+//             fullWidth
+//             slots={{
+//               inputAdornedStart: InputAdornment,
+//             }}
+//             slotProps={{
+//               input: {
+//                 startAdornment: (
+//                   <InputAdornment position="start">
+//                     <EmailIcon sx={{ color: 'primary.main' }} />
+//                   </InputAdornment>
+//                 ),
+//                 sx: {
+//                   px: 1.5,
+//                   borderRadius: 25,
+//                   height: '56px',
+//                 }
+//               },
              
-            }}
-          />
-          <Button
-            variant="contained"
-            size="large"
-            color="primary"
-            sx={{
-              whiteSpace: 'nowrap',
-              height: '56px',
-              borderRadius: 25,
-              flexShrink: 0,
-              px: 4,
-            }}
-          >
-            Subscribe
-          </Button>
-        </Box>
-      </Container>
-    </Box>
-  );
-};
+//             }}
+//           />
+//           <Button
+//             variant="contained"
+//             size="large"
+//             color="primary"
+//             sx={{
+//               whiteSpace: 'nowrap',
+//               height: '56px',
+//               borderRadius: 25,
+//               flexShrink: 0,
+//               px: 4,
+//             }}
+//           >
+//             Subscribe
+//           </Button>
+//         </Box>
+//       </Container>
+//     </Box>
+//   );
+// };
 
 const Home = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -583,7 +557,7 @@ const Home = () => {
       <BrandValuesSection />
       <FeaturedProductsSection onAddToCartSuccess={handleAddToCartSuccess} />
       <TestimonialSection />
-      <NewsletterSection />
+      {/* <NewsletterSection /> */}
        <Snackbar
           open={snackbarOpen}
           autoHideDuration={5000}
