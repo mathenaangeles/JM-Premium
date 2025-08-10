@@ -66,7 +66,8 @@ class XenditClient:
         self.timeout = 30
         self.headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {self._encode_api_key()}'
+            'Authorization': f'Basic {self._encode_api_key()}',
+            'api-version': '2024-11-11'
         }
 
     def _encode_api_key(self) -> str:

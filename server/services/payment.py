@@ -14,33 +14,34 @@ class PaymentService:
     def _get_client(self):
         if self._xendit_client is None:
             self._xendit_client = XenditClient(
-                secret_key = current_app.config.get("XENDIT_SECRET_KEY"),
+                secret_key = current_app.config.get("XENDIT_API_KEY"),
             )
         return self._xendit_client
 
     def _get_payment_method_config(self, payment_method: str, **kwargs) -> Tuple[str, Dict[str, Any]]:
         frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
         order_id = kwargs.get("order_id")
-        return_url = f"{frontend_url}/order/{order_id}"
+        return_url = f"{frontend_url}/orders/{order_id}"
 
         payment_method = payment_method.strip().upper()
 
         if payment_method == PaymentMethod.CREDIT_CARD.value:
             channel_code = "CARDS"
             channel_properties = {
-                "card_number": kwargs.get("card_number"),
-                "expiry_year": kwargs.get("expiry_year"),
-                "expiry_month": kwargs.get("expiry_month"),
-                "cvn": kwargs.get("cvn"),
-                "cardholder_name": kwargs.get("cardholder_name"),
-                "cardholder_email": kwargs.get("cardholder_email"),
                 "success_return_url": return_url,
                 "failure_return_url": return_url,
-                "skip_three_ds": kwargs.get("skip_three_ds", False),
-                "card_on_file_type": kwargs.get("card_on_file_type", "MERCHANT_UNSCHEDULED")
+                "skip_three_ds": bool(kwargs.get("skip_three_ds") or False),
+                "card_details": {
+                    "card_number": kwargs.get("card_number"),
+                    "expiry_year": kwargs.get("expiry_year"),
+                    "expiry_month": kwargs.get("expiry_month"),
+                    "cvn": kwargs.get("cvn"),
+                    "cardholder_first_name": kwargs.get("cardholder_first_name"),
+                    "cardholder_last_name": kwargs.get("cardholder_last_name"),
+                    "cardholder_email": kwargs.get("cardholder_email")
+                }
             }
             return channel_code, channel_properties
-
         elif payment_method == PaymentMethod.EWALLET.value:
             ewallet_mapping = {
                 "gcash": "GCASH",
@@ -107,6 +108,7 @@ class PaymentService:
             }
             print(payment_request_data)
             xendit_response = client.create_payment_request(payment_request_data)
+            print(xendit_response)
             payment = Payment(
                 user_id=user_id,
                 amount=amount,

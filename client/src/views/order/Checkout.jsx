@@ -12,7 +12,6 @@ import { setPaymentFromOrder } from '../../slices/paymentSlice';
 import { createOrder, clearOrderMessages } from '../../slices/orderSlice';
 
 import jcbLogo from '../../assets/jcb.png'
-import mayaLogo from '../../assets/maya.png'
 import visaLogo from '../../assets/visa.png'
 import gcashLogo from '../../assets/gcash.png'
 import mastercardLogo from '../../assets/mastercard.png'
@@ -207,13 +206,10 @@ const Checkout = () => {
     let payment_method = null;
     let ewallet_type = null;
     if (orderData.payment_method === 'gcash') {
-      payment_method = 'ewallet';
+      payment_method = 'EWALLET';
       ewallet_type = 'GCASH';
-    } else if (orderData.payment_method === 'paymaya') {
-      payment_method = 'ewallet';
-      ewallet_type = 'PAYMAYA';
     } else if (orderData.payment_method === 'card') {
-      payment_method = 'card';
+      payment_method = 'CREDIT_CARD';
     } else {
       console.error("Unsupported payment method selected");
       return;
@@ -249,7 +245,8 @@ const Checkout = () => {
       expiry_month: orderData.expiry_month || undefined,
       expiry_year: orderData.expiry_year || undefined,
       cvn: orderData.cvn || undefined,
-      cardholder_name: orderData.cardholder_name || undefined,
+      cardholder_first_name: orderData.cardholder_first_name || undefined,
+      cardholder_last_name: orderData.cardholder_last_name || undefined,
       cardholder_email: orderData.cardholder_email || undefined,
     };
     try {
@@ -736,26 +733,7 @@ const Checkout = () => {
                               </Box>
                           }
                         />
-                      </Paper>
-                      <Paper variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2 }}>
-                        <FormControlLabel
-                          value="paymaya"
-                          control={<Radio color="primary" />}
-                          label={
-                             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                <Box
-                                  component="img"
-                                  src={mayaLogo}
-                                  alt="PayMaya"
-                                  sx={{ width: 60, height: 'auto' }}
-                                />                          
-                                <Typography variant="body2" color="text.secondary">
-                                  Pay with your Maya wallet.
-                                </Typography>
-                              </Box>
-                          }
-                        />
-                      </Paper>                
+                      </Paper>              
                       <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                         <FormControlLabel
                           value="card"
@@ -853,16 +831,28 @@ const Checkout = () => {
                                   inputProps={{ maxLength: 4 }}
                                 />
                               </Grid>
-                              <Grid size={{ xs: 12 }}>
+                              <Grid size={{ xs: 12, md: 6 }}>
                                 <TextField
                                   fullWidth
-                                  label="Cardholder Name"
-                                  name="cardholder_name"
-                                  value={orderData.cardholder_name}
+                                  label="Cardholder First Name"
+                                  name="cardholder_first_name"
+                                  value={orderData.cardholder_first_name}
                                   onChange={handleInputChange}
-                                  error={!!validationErrors.cardholder_name}
-                                  helperText={validationErrors.cardholder_name}
-                                  placeholder="John Doe"
+                                  error={!!validationErrors.cardholder_first_name}
+                                  helperText={validationErrors.cardholder_first_name}
+                                  placeholder="Juan"
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 12, md: 6 }}>
+                                <TextField
+                                  fullWidth
+                                  label="Cardholder Last Name"
+                                  name="cardholder_last_name"
+                                  value={orderData.cardholder_last_name}
+                                  onChange={handleInputChange}
+                                  error={!!validationErrors.cardholder_last_name}
+                                  helperText={validationErrors.cardholder_last_name}
+                                  placeholder="Dela Cruz"
                                 />
                               </Grid>
                               <Grid size={{ xs: 12 }}>

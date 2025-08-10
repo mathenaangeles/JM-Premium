@@ -70,10 +70,10 @@ def create_payment_request():
             expiry_year=data.get('expiry_year'),
             expiry_month=data.get('expiry_month'),
             cvn=data.get('cvn'),
-            cardholder_name=data.get('cardholder_name'),
+            cardholder_first_name=data.get('cardholder_first_name'),
+            cardholder_last_name=data.get('cardholder_last_name'),
             cardholder_email=data.get('cardholder_email'),
             skip_three_ds=data.get('skip_three_ds'),
-            card_on_file_type=data.get('card_on_file_type'),
             ewallet_type=data.get('ewallet_type')
         )
         if not result.get("success"):

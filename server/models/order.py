@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import ForeignKey, String, Integer, Numeric
@@ -36,9 +37,10 @@ class Order(Base, TimestampMixin):
     payment: Mapped[Optional["Payment"]] = relationship()
     items: Mapped[List["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
 
+    
     def set_totals(self):
-        self.subtotal = sum(item.subtotal for item in self.items)
-        self.total = (self.subtotal + self.tax + self.shipping_cost - (self.discount or 0))
+        self.subtotal = sum((Decimal(item.subtotal) for item in self.items), Decimal("0.00"))
+        self.total = self.subtotal + Decimal(self.tax) + Decimal(self.shipping_cost) - Decimal(self.discount or 0)
         
     def __repr__(self) -> str:
         return f'<Order {self.id}>'

@@ -90,7 +90,9 @@ def create_order():
     try:
         result = order_service.create_order_from_cart(data, user_id, session_id)
         if not result or not result.get("success"):
-            return jsonify({'message': 'Order could not be created.'}), 500
+            return jsonify({
+                'message': result.get('error', 'Order could not be created.')
+            }), 500
         order = result.get("order")
         payment = result.get("payment")
         checkout_url = result.get("checkout_url")

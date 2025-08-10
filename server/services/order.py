@@ -34,39 +34,46 @@ class OrderService:
         orders = order_query.order_by(Order.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
         return orders, count, total_pages
     
-    def create_order_from_cart(self, data: Dict[str, Any], user_id: Optional[int]=None, session_id: Optional[int]=None) -> Dict[str, Any]:
+    def create_order_from_cart(self,data:Dict[str,Any],user_id:Optional[int]=None,session_id:Optional[int]=None)->Dict[str,Any]:
         try:
-            cart = self.cart_service.get_cart(user_id, session_id)
+            cart=self.cart_service.get_cart(user_id,session_id)
             if not cart or not cart.items:
-                raise ValueError("Cart is empty")
-            shipping_address_id = data.get('shipping_address_id')
-            billing_address_id = data.get('billing_address_id')
+                raise ValueError("Cart is empty.")
+            shipping_address_id=data.get('shipping_address_id')
+            billing_address_id=data.get('billing_address_id')
             if not shipping_address_id:
-                shipping_address = self.address_service.create_address({
-                    'type': 'shipping',
-                    'line_1': data.get('shipping_line_1'),
-                    'line_2': data.get('shipping_line_2'),
-                    'city': data.get('shipping_city'),
-                    'zip_code': data.get('shipping_zip_code'),
-                    'country': data.get('shipping_country'),
-                }, user_id=user_id)
+                shipping_address=self.address_service.create_address({
+                    'type':'shipping',
+                    'line_1':data.get('shipping_line_1'),
+                    'line_2':data.get('shipping_line_2'),
+                    'city':data.get('shipping_city'),
+                    'zip_code':data.get('shipping_zip_code'),
+                    'country':data.get('shipping_country'),
+                },user_id=user_id)
             else:
-                shipping_address = self.address_service.get_address_by_id(shipping_address_id)
+                shipping_address=self.address_service.get_address_by_id(shipping_address_id)
             if not billing_address_id:
-                billing_address = self.address_service.create_address({
-                    'type': 'billing',
-                    'line_1': data.get('billing_line_1'),
-                    'line_2': data.get('billing_line_2'),
-                    'city': data.get('billing_city'),
-                    'zip_code': data.get('billing_zip_code'),
-                    'country': data.get('billing_country'),
-                }, user_id=user_id)
+                billing_address=self.address_service.create_address({
+                    'type':'billing',
+                    'line_1':data.get('billing_line_1'),
+                    'line_2':data.get('billing_line_2'),
+                    'city':data.get('billing_city'),
+                    'zip_code':data.get('billing_zip_code'),
+                    'country':data.get('billing_country'),
+                },user_id=user_id)
             else:
-                billing_address = self.address_service.get_address_by_id(billing_address_id)
-            order = Order(
+                billing_address=self.address_service.get_address_by_id(billing_address_id)
+            for cart_item in cart.items:
+                product=db.session.query(Product).filter_by(id=cart_item.product_id).first()
+                variant=db.session.query(ProductVariant).filter_by(id=cart_item.variant_id).first() if cart_item.variant_id else None
+                if variant and variant.stock<cart_item.quantity:
+                    raise ValueError(f"Not Enough Stock for Variant {variant.id}")
+                elif not variant and product.total_stock<cart_item.quantity:
+                    raise ValueError(f"Not Enough Stock for Product {product.id}")
+            order=Order(
                 user_id=user_id,
                 session_id=session_id,
-                shipping_method=data.get('shipping_method', 'standard'),
+                shipping_method=data.get('shipping_method','standard'),
                 shipping_address_id=shipping_address.id,
                 billing_address_id=billing_address.id,
                 status='awaiting_payment',
@@ -74,7 +81,7 @@ class OrderService:
                 subtotal=0,
                 tax=data.get('tax'),
                 shipping_cost=data.get('shipping_cost'),
-                discount=data.get('discount', 0),
+                discount=data.get('discount',0),
                 email=data.get("email"),
                 first_name=data.get("first_name"),
                 last_name=data.get("last_name"),
@@ -84,12 +91,8 @@ class OrderService:
             db.session.add(order)
             db.session.flush()
             for cart_item in cart.items:
-                product = db.session.query(Product).filter_by(id=cart_item.product_id).with_for_update().first()
-                variant = db.session.query(ProductVariant).filter_by(id=cart_item.variant_id).with_for_update().first() if cart_item.variant_id else None
-                if variant and variant.stock < cart_item.quantity:
-                    raise ValueError(f"Not Enough Stock for Variant {variant.id}")
-                elif not variant and product.total_stock < cart_item.quantity:
-                    raise ValueError(f"Not Enough Stock for Product {product.id}")
+                product=db.session.query(Product).filter_by(id=cart_item.product_id).with_for_update().first()
+                variant=db.session.query(ProductVariant).filter_by(id=cart_item.variant_id).with_for_update().first() if cart_item.variant_id else None
                 db.session.add(OrderItem(
                     order_id=order.id,
                     product_id=cart_item.product_id,
@@ -97,13 +100,8 @@ class OrderService:
                     quantity=cart_item.quantity,
                     price=variant.price if variant else product.display_price
                 ))
-                if variant:
-                    variant.stock -= cart_item.quantity
-                else:
-                    product.stock -= cart_item.quantity
-            self.cart_service.clear_cart(user_id, session_id)
             order.set_totals()
-            payment_result = self.payment_service.create_payment_request(
+            payment_result=self.payment_service.create_payment_request(
                 amount=float(order.total),
                 currency="PHP",
                 user_id=user_id,
@@ -114,33 +112,40 @@ class OrderService:
                 expiry_month=data.get("expiry_month"),
                 expiry_year=data.get("expiry_year"),
                 cvn=data.get("cvn"),
-                cardholder_name=data.get("cardholder_name"),
+                cardholder_first_name=data.get("cardholder_first_name"),
+                cardholder_last_name=data.get("cardholder_last_name"),
                 cardholder_email=data.get("cardholder_email"),
                 skip_three_ds=data.get("skip_three_ds"),
             )
             if not payment_result.get("success"):
-                raise ValueError(payment_result.get("error", "Unknown Payment Failure"))
-            payment = payment_result["payment"]
-            order.payment_id = payment.id
-            order.status = 'processing'
+                db.session.rollback()
+                raise ValueError(payment_result.get("error","Unknown Payment Failure"))
+            payment=payment_result["payment"]
+            order.payment_id=payment.id
+            order.status='processing'
+            for cart_item in cart.items:
+                product=db.session.query(Product).filter_by(id=cart_item.product_id).with_for_update().first()
+                variant=db.session.query(ProductVariant).filter_by(id=cart_item.variant_id).with_for_update().first() if cart_item.variant_id else None
+                if variant:
+                    variant.stock-=cart_item.quantity
+                else:
+                    product.stock-=cart_item.quantity
+            self.cart_service.clear_cart(user_id,session_id)
             db.session.commit()
-            return {
-                "success": True,
-                "order": order,
-                "payment": payment,
-                "checkout_url": next(
-                    (action["url"] for action in payment_result.get("actions", []) if action.get("url_type") == "CHECKOUT"),
-                    None
-                )
+            return{
+                "success":True,
+                "order":order,
+                "payment":payment,
+                "checkout_url":next((action["value"] for action in payment_result.get("actions",[]) if action.get("type")=="REDIRECT_CUSTOMER"),None)
             }
         except Exception as e:
             print(e)
             db.session.rollback()
-            return {
-                "success": False,
-                "error": str(e)
+            return{
+                "success":False,
+                "error":str(e)
             }
-        
+     
     def update_order(self, order_id: int, payment_id: Optional[int]=None, status: Optional[str] = None, tracking_number: Optional[str] = None) -> Optional[Order]:
         order = self.get_order_by_id(order_id)
         if not order:
