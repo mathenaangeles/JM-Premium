@@ -164,43 +164,45 @@ const ProductDetail = () => {
       </Breadcrumbs>
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex' }}>
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 1, 
-            mr: 2,
-            width: '80px',
-          }}>
-            {productImages.map((image) => (
-              <Box
-                key={image.id}
-                onClick={() => handleImageClick(image.url)}
-                sx={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  backgroundColor: '#F5F5F5',
-                  border: selectedImage === image.url ? '2px solid' : '1px solid',
-                  borderColor: selectedImage === image.url ? 'primary.main' : 'grey.300',
-                  '&:hover': {
-                    borderColor: 'primary.light',
-                  }
-                }}
-              >
-                <img
-                  src={image.url}
-                  alt={`${product.name} thumbnail`}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover',
+          {productImages.length > 1 && (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: 1, 
+              mr: 2,
+              width: '80px',
+            }}>
+              {productImages.map((image) => (
+                <Box
+                  key={image.id}
+                  onClick={() => handleImageClick(image.url)}
+                  sx={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    backgroundColor: '#F5F5F5',
+                    border: selectedImage === image.url ? '2px solid' : '1px solid',
+                    borderColor: selectedImage === image.url ? 'primary.main' : 'grey.300',
+                    '&:hover': {
+                      borderColor: 'primary.light',
+                    }
                   }}
-                />
-              </Box>
-            ))}
-          </Box>
+                >
+                  <img
+                    src={image.url}
+                    alt={`${product.name} thumbnail`}
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover',
+                    }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          )}
           <Box sx={{ 
             flexGrow: 1,
             height: { xs: 350, sm: 550 }, 
@@ -299,7 +301,7 @@ const ProductDetail = () => {
             )}
           </Box>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{xs: 12, md: 6}}>
           <Typography 
             variant="h4" 
             gutterBottom
@@ -388,7 +390,12 @@ const ProductDetail = () => {
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ mb: 3 }}
+            sx={{ 
+              mb: 3,
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word',
+              maxWidth: '100%',
+            }}
             dangerouslySetInnerHTML={{
               __html: DOMPurify.sanitize(product.description || 'No description available'),
             }}
@@ -675,6 +682,12 @@ const ProductDetail = () => {
                 <AccordionDetails>
                   <Typography
                     variant="body1"
+                     sx={{ 
+                      mb: 3,
+                      whiteSpace: 'pre-wrap',
+                      wordWrap: 'break-word',
+                      maxWidth: '100%',
+                    }}
                     dangerouslySetInnerHTML={{
                       __html: DOMPurify.sanitize(content),
                     }}

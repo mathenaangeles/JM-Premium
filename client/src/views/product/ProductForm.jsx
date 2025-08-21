@@ -135,7 +135,7 @@ const ProductForm = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : 
         (['base_price', 'sale_price', 'weight', 'width', 'height', 'length', 'stock'].includes(name) 
-        ? parseFloat(value) || 0 
+        ? (value === '' ? '' : parseFloat(value) || 0) 
         : value)
     }));
   };
@@ -145,7 +145,7 @@ const ProductForm = () => {
     setVariantData({
       ...variantData,
       [name]: ['base_price', 'sale_price', 'stock'].includes(name) 
-              ? parseFloat(value) || 0
+              ? (value === '' ? '' : parseFloat(value) || 0)
               : value
     });
   };
@@ -245,12 +245,24 @@ const ProductForm = () => {
     const formattedData = {};
     Object.entries(productData).forEach(([key, value]) => {
       if (value !== '' && value !== null) {
-        formattedData[key] = value;
+        if (['base_price', 'sale_price', 'weight', 'width', 'height', 'length', 'stock'].includes(key)) {
+          formattedData[key] = value === '' ? 0 : value;
+        } else {
+          formattedData[key] = value;
+        }
       }
     });
     if (!productId && variants.length > 0) {
       // eslint-disable-next-line no-unused-vars
-      formattedData.variants = variants.map(({ temp_id, ...variant }) => variant);
+       formattedData.variants = variants.map(({ temp_id, ...variant }) => {
+          const processedVariant = { ...variant };
+          ['base_price', 'sale_price', 'stock'].forEach(field => {
+            if (processedVariant[field] === '') {
+              processedVariant[field] = 0;
+            }
+          });
+          return processedVariant;
+        });
     }
     if (productId) {
       dispatch(updateProduct({ productId, productData: formattedData }));
