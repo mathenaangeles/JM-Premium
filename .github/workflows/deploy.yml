@@ -59,8 +59,10 @@ jobs:
           --set-env-vars="GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}" \
           --set-env-vars="SQLALCHEMY_DATABASE_URI=${{ secrets.SQLALCHEMY_DATABASE_URI }}" \
           --set-env-vars="JWT_COOKIE_SECURE=True" \
-          --set-env-vars="JWT_ACCESS_COOKIE_NAME=access_token" \
-          --set-env-vars="JWT_REFRESH_COOKIE_NAME=refresh_token" \
+          --set-env-vars="JWT_ACCESS_COOKIE_NAME=access_token_cookie" \
+          --set-env-vars="JWT_REFRESH_COOKIE_NAME=refresh_token_cookie" \
+          --set-env-vars="JWT_COOKIE_SAMESITE=None" \
+          --set-env-vars="JWT_TOKEN_LOCATION=cookies" \
           --set-env-vars="JWT_COOKIE_CSRF_PROTECT=True" \
           --set-env-vars="XENDIT_API_KEY=${{ secrets.XENDIT_API_KEY }}" \
           --set-env-vars="XENDIT_WEBHOOK_TOKEN=${{ secrets.XENDIT_WEBHOOK_TOKEN }}" \
