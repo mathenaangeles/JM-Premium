@@ -6,18 +6,18 @@ const Axios = axios.create({
 });
 
 const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
+  return document.cookie
+    .split('; ')
+    .find(row => row.startsWith(name + '='))
+    ?.split('=')[1];
 };
-  
+
 Axios.interceptors.request.use((config) => {
-    const csrfToken = getCookie('csrf_access_token');
-    if (csrfToken && ['post', 'put', 'delete', 'patch'].includes(config.method)) {
-        config.headers['X-CSRF-TOKEN'] = csrfToken;
-    }
-    return config;
+  const csrfToken = getCookie('csrf_access_token');
+  if (csrfToken && ['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase())) {
+    config.headers['X-CSRF-TOKEN'] = csrfToken;
+  }
+  return config;
 });
 
-  
 export default Axios;
