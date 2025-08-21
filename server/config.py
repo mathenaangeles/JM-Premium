@@ -21,7 +21,12 @@ class Configuration(object):
     JWT_COOKIE_SECURE = str_to_bool(os.getenv('JWT_COOKIE_SECURE', "true"))
     JWT_ACCESS_COOKIE_NAME = os.getenv('JWT_ACCESS_COOKIE_NAME', "access_token_cookie")
     JWT_REFRESH_COOKIE_NAME = os.getenv('JWT_REFRESH_COOKIE_NAME', "refresh_token_cookie")
+    JWT_COOKIE_SAMESITE = os.getenv('JWT_COOKIE_SAMESITE', "None")
+    JWT_COOKIE_DOMAIN = os.getenv('JWT_COOKIE_DOMAIN', None)
     JWT_COOKIE_CSRF_PROTECT = str_to_bool(os.getenv('JWT_COOKIE_CSRF_PROTECT', "true"))
+    JWT_CSRF_IN_COOKIES = str_to_bool(os.getenv('JWT_CSRF_IN_COOKIES', "true"))
+    JWT_CSRF_CHECK_FORM = str_to_bool(os.getenv('JWT_CSRF_CHECK_FORM', "false"))
+    JWT_CSRF_COOKIE_HTTPONLY = str_to_bool(os.getenv('JWT_CSRF_COOKIE_HTTPONLY', "false"))
 
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
