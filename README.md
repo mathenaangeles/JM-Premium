@@ -43,6 +43,7 @@ DB_CONNECTION_NAME='jm-premium:asia-east1:jm-premium-db'
 7. In the `client` directory, run `npm start`.
 
 ### PostgreSQL 
+- **User**: `postgres`
 - **Instance ID**: `jm-premium-db`
 - **Password**: `z|4*h/icM5c3.=x3`
 - **Region**: `asia-east1` (Taiwan)

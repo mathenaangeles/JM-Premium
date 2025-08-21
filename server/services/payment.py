@@ -22,9 +22,7 @@ class PaymentService:
         frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
         order_id = kwargs.get("order_id")
         return_url = f"{frontend_url}/orders/{order_id}"
-
         payment_method = payment_method.strip().upper()
-
         if payment_method == PaymentMethod.CREDIT_CARD.value:
             channel_code = "CARDS"
             channel_properties = {
