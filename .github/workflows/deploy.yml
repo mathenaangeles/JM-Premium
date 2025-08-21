@@ -65,7 +65,7 @@ jobs:
           --set-env-vars="JWT_TOKEN_LOCATION=cookies" \
           --set-env-vars="JWT_COOKIE_CSRF_PROTECT=true" \
           --set-env-vars="JWT_COOKIE_DOMAIN=.jmpremium.shop" \
-          --set-env-vars="JWT_CSRF_COOKIE_HTTPONLY=false" \ 
+          --set-env-vars="JWT_CSRF_COOKIE_HTTPONLY=false" \
           --set-env-vars="XENDIT_API_KEY=${{ secrets.XENDIT_API_KEY }}" \
           --set-env-vars="XENDIT_WEBHOOK_TOKEN=${{ secrets.XENDIT_WEBHOOK_TOKEN }}" \
           --add-cloudsql-instances ${{ secrets.DB_CONNECTION_NAME }}
