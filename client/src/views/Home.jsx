@@ -376,7 +376,7 @@ const TestimonialSection = () => {
         </Box>
         <Grid container spacing={4}>
           {testimonials.map((testimonial, index) => (
-            <Grid size={{ xs: 12, md: 4 }} key={testimonial.id} xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }} key={testimonial.id}>
               <Fade in timeout={1000 + index * 200}>
                 <Paper 
                   elevation={0}

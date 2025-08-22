@@ -142,6 +142,16 @@ const userSlice = createSlice({
       state.success = null;
       state.error = null;
     },
+    clearAuth: (state) => {
+      state.user = null;
+      state.users = [];
+      state.count = 0;
+      state.totalPages = 0;
+      state.currentPage = 1;
+      state.loading = false;
+      state.success = null;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -302,5 +312,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { clearMessages } = userSlice.actions;
+export const { clearMessages, clearAuth } = userSlice.actions;
 export default userSlice.reducer;

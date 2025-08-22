@@ -1,7 +1,7 @@
 import DOMPurify from 'dompurify';
 import { useParams, Link } from 'react-router-dom';
-import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Accordion, AccordionSummary, AccordionDetails, LinearProgress, Grid, Typography, Box, Button, Breadcrumbs, IconButton, Rating, Chip, TextField, Card, CardContent } from '@mui/material';
 import { AddShoppingCartOutlined as AddShoppingCartOutlinedIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon, Add as AddIcon, Remove as RemoveIcon, Star as StarIcon, ExpandLess as ExpandLessIcon, ExpandMore as ExpandMoreIcon, NavigateNext as NavigateNextIcon, CheckCircle as CheckCircleIcon, Loop as LoopIcon, VerifiedUser as VerifiedUserIcon, LocalShipping as LocalShippingIcon, Share as ShareIcon, Favorite as FavoriteIcon } from '@mui/icons-material';
 
@@ -25,14 +25,56 @@ const ProductDetail = () => {
   const [expandedSection, setExpandedSection] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
-  
+
+    const updateDocumentHead = useCallback(() => {
+    if (!product) return;
+    
+    const currentPrice = selectedVariant 
+      ? (selectedVariant.sale_price || selectedVariant.price || selectedVariant.base_price)
+      : (product.sale_price || product.base_price);
+    
+    const title = product?.meta_title || 
+      `${product?.name} - ₱${parseFloat(currentPrice || 0).toFixed(2)} | Your Store Name`;
+    const description = product?.meta_description || 
+      `${product?.description ? DOMPurify.sanitize(product.description, { ALLOWED_TAGS: [] }).substring(0, 155) : ''} Price: ₱${parseFloat(currentPrice || 0).toFixed(2)}. ${product?.average_rating ? `⭐ ${product.average_rating}/5 stars` : ''} Free shipping available.`.substring(0, 160);
+    
+    document.title = title;
+    
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = 'description';
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.content = description;
+    
+    const ogTags = [
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: description },
+      { property: 'og:image', content: selectedImage || (product.images?.[0]?.url) },
+      { property: 'og:type', content: 'product' },
+      { property: 'og:price:amount', content: currentPrice },
+      { property: 'og:price:currency', content: 'PHP' }
+    ];
+    ogTags.forEach(({ property, content }) => {
+      if (!content) return;
+      let ogTag = document.querySelector(`meta[property="${property}"]`);
+      if (!ogTag) {
+        ogTag = document.createElement('meta');
+        ogTag.setAttribute('property', property);
+        document.head.appendChild(ogTag);
+      }
+      ogTag.content = content;
+    });
+  }, [product, selectedVariant, selectedImage]);
+
   useEffect(() => {
     if (productSlug) {
       dispatch(getProductBySlug(productSlug));
       window.scrollTo(0, 0);
     }
   }, [dispatch, productSlug]);
-  
+
   useEffect(() => {
     if (product && product.id) {
       dispatch(getReviews({
@@ -52,6 +94,16 @@ const ProductDetail = () => {
       setSelectedImage(product.images[0].url);
     }
   }, [product]);
+
+    useEffect(() => {
+    updateDocumentHead();
+  }, [updateDocumentHead]);
+
+  useEffect(() => {
+    return () => {
+      document.title = 'JM Premium';
+    };
+  }, []);
 
   const handleVariantSelect = (variant) => {
     setSelectedVariant(variant);
@@ -423,7 +475,7 @@ const ProductDetail = () => {
                     ? variant.images[0].url 
                     : null;
                   return (
-                    <Grid item key={variant.id} xs="auto">
+                    <Grid item key={variant.id} size={{ xs:"auto" }}>
                       <Box
                         onClick={() => isInStock && handleVariantSelect(variant)}
                         sx={{

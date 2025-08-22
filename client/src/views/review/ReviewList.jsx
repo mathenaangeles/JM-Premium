@@ -157,11 +157,13 @@ const ReviewList = () => {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} sx={{ p: 0, pb: 2 }}>
-                  <LinearProgress />
-                </TableCell>
-              </TableRow>
+              <TableBody>
+                <TableRow>
+                  <TableCell colSpan={8} sx={{ p: 0, pb: 2 }}>
+                    <LinearProgress />
+                  </TableCell>
+                </TableRow>
+              </TableBody>
             ) : reviews?.length > 0 ? (
               reviews.map((review) => (
                 <TableRow key={review.id} hover>

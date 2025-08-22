@@ -23,7 +23,7 @@ const RichTextEditor = ({ value, onChange }) => {
             <option value="1">Heading</option>
             <option value="2">Subheading</option>
             <option value="3">Subtitle</option>
-            <option value="" selected>Normal</option>
+            <option value="">Normal</option>
           </select>
         </span>
         <span className="ql-formats">

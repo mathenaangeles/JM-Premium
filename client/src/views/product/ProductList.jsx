@@ -177,11 +177,13 @@ const ProductList = () => {
             </TableRow>
           </TableHead>
           {loading ? (
-            <TableRow>
-              <TableCell colSpan={6} sx={{ p: 0, pb: 2 }}>
-                <LinearProgress />
-              </TableCell>
-            </TableRow>
+            <TableBody>
+              <TableRow>
+                <TableCell colSpan={6} sx={{ p: 0, pb: 2 }}>
+                  <LinearProgress />
+                </TableCell>
+              </TableRow>
+            </TableBody>
           ) : (
           <TableBody>
             {products?.length > 0 ? (
