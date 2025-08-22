@@ -31,9 +31,29 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/key.json
       - PYTHONUNBUFFERED=1
+      - SQLALCHEMY_DATABASE_URI=postgresql://rootuser:rootpass@db:5432/jmpremium_dev
+    depends_on:
+      - db
+    networks:
+      - jm-premium-network
+
+  db:
+    image: postgres:15
+    container_name: local-postgres
+    environment:
+      POSTGRES_USER: rootuser
+      POSTGRES_PASSWORD: rootpass
+      POSTGRES_DB: jmpremium_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - jm-premium-network
 
 networks:
   jm-premium-network:
     driver: bridge
+
+volumes:
+  postgres_data:

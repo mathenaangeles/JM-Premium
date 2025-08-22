@@ -21,14 +21,11 @@ Axios.interceptors.request.use((config) => {
 
 Axios.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('persist:root');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
+  (error) => {
+    return Promise.reject(
+      error.response?.status?.toString() || error.message
+    );
   }
 );
+
 export default Axios;

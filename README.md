@@ -54,6 +54,11 @@ DB_CONNECTION_NAME='jm-premium:asia-east1:jm-premium-db'
 - To apply the migrations to the database, run `flask db upgrade`.
 - To undo the last migration, run `flask db downgrade`.
 - To edit `app.db` use the sqlite3 CLI by running `sqlite3 server/instance/app.db`.
+##### Postgres via Docker
+1. Run a local Postgres container with `docker run --name local-postgres -e POSTGRES_USER=rootuser -e POSTGRES_PASSWORD=rootpass -e POSTGRES_DB=jmpremium_dev -p 5432:5432 -d postgres:15`.
+2. Load the dump file by running `docker cp dev.sql local-postgres:/dev.sql`.
+3. Run `docker exec -it local-postgres bash -c "psql -U rootuser -d jmpremium_dev -f /dev.sql"`.
+4. To drop and recreate the database, run `docker exec -it local-postgres psql -U rootuser -d postgres -c "DROP DATABASE IF EXISTS jmpremium_dev;"` then `docker exec -it local-postgres psql -U rootuser -c "CREATE DATABASE jmpremium_dev;"`.
 
 ### Deployment
 A GitHub Actions workflow is triggered upon pushing to `main`.

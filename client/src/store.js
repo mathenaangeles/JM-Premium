@@ -10,6 +10,7 @@ import addressReducer from './slices/addressSlice';
 import productReducer from './slices/productSlice';
 import paymentReducer from './slices/paymentSlice';
 import categoryReducer from './slices/categorySlice';
+import authMiddleware from './middleware/authMiddleware';
 
 
 const persistConfig = {
@@ -36,7 +37,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    }), 
+    }).concat(authMiddleware), 
   devTools: import.meta.env.MODE !== 'production',
 });
 
