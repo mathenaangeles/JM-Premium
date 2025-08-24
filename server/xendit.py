@@ -1,10 +1,9 @@
 import base64
 import requests
 from enum import Enum
-from typing import Dict, Optional
 from flask import current_app
+from typing import Dict, Optional
 from dataclasses import dataclass
-
 
 class PaymentMethod(Enum):
     BANK_TRANSFER = "BANK_TRANSFER"
@@ -13,13 +12,11 @@ class PaymentMethod(Enum):
     RETAIL_OUTLET = "RETAIL_OUTLET"
     QR_CODE = "QR_CODE"
 
-
 class EWalletType(Enum):
     GCASH = "GCASH"
     PAYMAYA = "PAYMAYA"
     GRABPAY = "GRABPAY"
     SHOPEEPAY = "SHOPEEPAY"
-
 
 class PaymentStatus(Enum):
     PENDING = "pending"
@@ -27,7 +24,7 @@ class PaymentStatus(Enum):
     PAID = "paid"
     FAILED = "failed"
     EXPIRED = "expired"
-
+    CANCELLED = "cancelled"
 
 @dataclass
 class XenditConfig:
@@ -94,6 +91,12 @@ class XenditClient:
             return response.json()
         except requests.exceptions.RequestException as e:
             raise XenditError(f"Request Failed: {str(e)}")
+        
+    def create_payment_session(self, session_data: Dict) -> Dict:
+        return self._make_request('POST', '/sessions', session_data)
+
+    def get_payment_session(self, payment_session_id: str) -> Dict:
+        return self._make_request('GET', f'/sessions/{payment_session_id}')
 
     def create_payment_request(self, payment_data: Dict) -> Dict:
         return self._make_request('POST', '/v3/payment_requests', payment_data)

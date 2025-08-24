@@ -73,9 +73,8 @@ jobs:
 
     - name: Build client with server URL
       run: |
-        SERVER_URL=$(gcloud run services describe $SERVER_SERVICE --region $REGION --format 'value(status.url)')
-        echo "Server URL: $SERVER_URL"
         echo "VITE_API_URL=https://api.jmpremium.shop" > ./client/.env.production
+        echo "VITE_XENDIT_PUBLIC_KEY=xnd_public_production_yg594jU2u2NIvlO6GjNqiGtcsjqC3PvF0uFsYjhjRdPLOzzk_IeiAwnK0JIlRPWW" >> ./client/.env.production
         docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA -f ./client/Dockerfile.prod ./client
         docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$CLIENT_SERVICE:$GITHUB_SHA
 

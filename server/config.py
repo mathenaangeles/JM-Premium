@@ -18,10 +18,10 @@ class Configuration(object):
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_TOKEN_LOCATION = ["cookies"]
-    JWT_COOKIE_SECURE = str_to_bool(os.getenv('JWT_COOKIE_SECURE', "true"))
+    JWT_COOKIE_SECURE = str_to_bool(os.getenv('JWT_COOKIE_SECURE', "false"))
     JWT_ACCESS_COOKIE_NAME = os.getenv('JWT_ACCESS_COOKIE_NAME', "access_token_cookie")
     JWT_REFRESH_COOKIE_NAME = os.getenv('JWT_REFRESH_COOKIE_NAME', "refresh_token_cookie")
-    JWT_COOKIE_SAMESITE = os.getenv('JWT_COOKIE_SAMESITE', "None")
+    JWT_COOKIE_SAMESITE = os.getenv('JWT_COOKIE_SAMESITE', "Lax")
     JWT_COOKIE_DOMAIN = os.getenv('JWT_COOKIE_DOMAIN', None)
     JWT_COOKIE_CSRF_PROTECT = str_to_bool(os.getenv('JWT_COOKIE_CSRF_PROTECT', "true"))
     JWT_CSRF_IN_COOKIES = str_to_bool(os.getenv('JWT_CSRF_IN_COOKIES', "true"))

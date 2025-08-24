@@ -10,7 +10,6 @@ category_service = CategoryService()
 def get_categories():
     try:
         tree_format = request.args.get('tree', 'false').lower() == 'true'
-        print(tree_format)
         if tree_format:
             categories = category_service.get_category_tree()
         else:

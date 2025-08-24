@@ -88,7 +88,7 @@ def create_payment_request():
     except Exception as e:
         return jsonify({'message': f'Payment Request Creation Failed: {str(e)}'}), 500
 
-@payment_blueprint.route('/webhook', methods=['POST'])
+@payment_blueprint.route('/request/webhook', methods=['POST'])
 def payment_request_webhook():
     webhook_data = request.get_json()
     headers = dict(request.headers)
@@ -153,3 +153,19 @@ def get_user_payments():
         }), 200
     except Exception as e:
         return jsonify({'message': f'Payments Fetch Failed: {str(e)}'}), 500
+    
+@payment_blueprint.route('/webhook', methods=['POST'])
+def payment_webhook():
+    webhook_data = request.get_json()
+    headers = dict(request.headers)
+    if not webhook_data:
+        return jsonify({'message': 'Invalid Webhook Data'}), 400
+    try:
+        result = payment_service.handle_payment_webhook(webhook_data, headers)
+        status_code = result.pop('status_code', 200) if 'status_code' in result else 200
+        return jsonify(result), status_code
+    except Exception as e:
+        return jsonify({
+            'message': f'Webhook Processing Failed: {str(e)}'
+        }), 500
+

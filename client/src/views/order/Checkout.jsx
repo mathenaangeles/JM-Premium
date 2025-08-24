@@ -66,6 +66,14 @@ const Checkout = () => {
     payment_method: 'ewallet',
     ewallet_type: 'gcash',
     same_as_shipping: true,
+    card_number: '',
+    expiry_month: '',
+    expiry_year: '',
+    cvn: '',
+    cardholder_first_name: '',
+    cardholder_last_name: '',
+    cardholder_email: '',
+    cardholder_phone_number: ''
   });
   const [validationErrors, setValidationErrors] = useState({});
   const [showBillingAddressList, setShowBillingAddressList] = useState(false);
@@ -168,6 +176,31 @@ const Checkout = () => {
       if (!orderData.country_code) errors.country_code = 'Country code is required';
       if (!orderData.phone_number) errors.phone_number = 'Phone number is required';
     }
+
+     if (orderData.payment_method === 'card') {
+      if (!orderData.card_number) errors.card_number = 'Card number is required';
+      if (!orderData.expiry_month) errors.expiry_month = 'Expiry month is required';
+      if (!orderData.expiry_year) errors.expiry_year = 'Expiry year is required';
+      if (!orderData.cvn) errors.cvn = 'CVN is required';
+      if (!orderData.cardholder_first_name && !orderData.first_name && !user?.first_name) {
+        errors.cardholder_first_name = 'Cardholder first name is required';
+      }
+      if (!orderData.cardholder_last_name && !orderData.last_name && !user?.last_name) {
+        errors.cardholder_last_name = 'Cardholder last name is required';
+      }
+      if (!orderData.cardholder_email && !orderData.email && !user?.email) {
+        errors.cardholder_email = 'Cardholder email is required';
+      }
+      const cardholderPhone = orderData.cardholder_phone_number;
+      if (!cardholderPhone) {
+        errors.cardholder_phone_number = 'Cardholder phone number is required (e.g., +639123456789)';
+      } else {
+        const phonePattern = /^\+[0-9]\d{1,14}$/;
+        if (!phonePattern.test(cardholderPhone)) {
+          errors.cardholder_phone_number = 'Phone number must start with + followed by country code and 2-15 digits (e.g., +639123456789)';
+        }
+      }
+    }
     
     if (!orderData.shipping_address_id) {
       if (!orderData.shipping_line_1) errors.shipping_line_1 = 'Street address for shipping is required';
@@ -175,7 +208,6 @@ const Checkout = () => {
       if (!orderData.shipping_zip_code) errors.shipping_zip_code = 'Postal code for shipping is required';
       if (!orderData.shipping_country) errors.shipping_country = 'Country for shipping is required';
     }
-    
     if (!orderData.same_as_shipping && !orderData.billing_address_id) {
       if (!orderData.billing_line_1) errors.billing_line_1 = 'Street address for billing is required';
       if (!orderData.billing_city) errors.billing_city = 'City for billing is required';
@@ -197,6 +229,53 @@ const Checkout = () => {
   const calculateTotal = () => {
     return cart.subtotal + calculateTax() + calculateShipping();
   };
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.xendit.co/cards-session.min.js';
+    script.async = true;
+    script.onload = () => {
+      const publicKey = import.meta.env.VITE_XENDIT_PUBLIC_KEY;
+      if (!publicKey) {
+        console.error("Xendit public key not set!");
+        return;
+      }
+      window.Xendit.setPublishableKey(publicKey);
+    };
+    document.head.appendChild(script);
+    return () => {
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
+  const processCardPayment = async (paymentSessionId) => {
+    return new Promise((resolve, reject) => {
+      if (!window.Xendit || !window.Xendit.payment) {
+        reject(new Error('Xendit payment session not loaded.'));
+        return;
+      }
+      const cardData = {
+        card_number: orderData.card_number.replace(/\s/g, ''),
+        expiry_month: orderData.expiry_month,
+        expiry_year: orderData.expiry_year,
+        cvn: orderData.cvn,
+        cardholder_first_name: orderData.cardholder_first_name || orderData.first_name,
+        cardholder_last_name: orderData.cardholder_last_name || orderData.last_name,
+        cardholder_email: orderData.cardholder_email || orderData.email,
+        cardholder_phone_number: orderData.cardholder_phone_number || orderData.phone_number,
+        payment_session_id: paymentSessionId
+      };
+      window.Xendit.payment.collectCardData(cardData, (err, response) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -211,10 +290,9 @@ const Checkout = () => {
     } else if (orderData.payment_method === 'card') {
       payment_method = 'CREDIT_CARD';
     } else {
-      console.error("Unsupported payment method selected");
+      console.error("Unsupported payment method was selected.");
       return;
     }
-
     const formattedData = {
       shipping_address_id: orderData.shipping_address_id || null,
       billing_address_id: orderData.same_as_shipping 
@@ -241,30 +319,47 @@ const Checkout = () => {
       amount: calculateTotal(),
       payment_method,
       ewallet_type,
-      card_number: orderData.card_number || undefined,
-      expiry_month: orderData.expiry_month || undefined,
-      expiry_year: orderData.expiry_year || undefined,
-      cvn: orderData.cvn || undefined,
-      cardholder_first_name: orderData.cardholder_first_name || undefined,
-      cardholder_last_name: orderData.cardholder_last_name || undefined,
-      cardholder_email: orderData.cardholder_email || undefined,
+      card_number: orderData.card_number ||  '',
+      expiry_month: orderData.expiry_month ||  '',
+      expiry_year: orderData.expiry_year || '',
+      cvn: orderData.cvn || '',
+      cardholder_first_name:  orderData.cardholder_first_name || '',
+      cardholder_last_name: orderData.cardholder_last_name || '',
+      cardholder_email: orderData.cardholder_email || '',
+      cardholder_phone_number: orderData.cardholder_phone_number || '',
     };
     try {
       const orderResult = await dispatch(createOrder(formattedData));
       if (orderResult.error) {
         return;
       }
-      const { order, payment, checkout_url } = orderResult.payload;
-      if (payment) {
-        dispatch(setPaymentFromOrder({ payment, checkout_url }));
-      }
-      if (!user && formattedData.email) {
-        localStorage.setItem('guestEmail', formattedData.email);
-      }
-      if (checkout_url) {
-        window.location.href = checkout_url;
-      } else if (order?.id) {
-        navigate(`/orders/${order.id}`);
+      const { order, payment, checkout_url, payment_session_id } = orderResult.payload;
+      if (payment_method === 'CREDIT_CARD' && payment_session_id) {
+        try {
+          const cardResponse = await processCardPayment(payment_session_id);
+          if (cardResponse.action_url) {
+            window.location.href = cardResponse.action_url;
+          } else if (cardResponse.status === 'SUCCEEDED') {
+            navigate(`/orders/${order.id}`);
+          } else {
+            console.log('Payment session still active, waiting for completion.');
+          }
+        } catch (err) {
+          console.error("Card processing failed:", err);
+          navigate(`/orders/${order.id}`);
+        }
+      } else {
+        if (payment) {
+          dispatch(setPaymentFromOrder({ payment, checkout_url }));
+        }
+        if (!user && formattedData.email) {
+          localStorage.setItem('guestEmail', formattedData.email);
+        }
+        if (checkout_url) {
+          window.location.href = checkout_url;
+        } else if (order?.id) {
+          navigate(`/orders/${order.id}`);
+        }
       }
     } catch (error) {
       console.error("Order submission failed:", error);
@@ -767,7 +862,7 @@ const Checkout = () => {
                           }
                         />
                         {orderData.payment_method === 'card' && (
-                          <Box sx={{ mt: 2, pl: 4 }}>
+                          <Box sx={{ mt: 4, pl: 4 }}>
                             <Grid container spacing={2}>
                               <Grid size={{ xs: 12 }}>
                                 <TextField
@@ -865,7 +960,20 @@ const Checkout = () => {
                                   onChange={handleInputChange}
                                   error={!!validationErrors.cardholder_email}
                                   helperText={validationErrors.cardholder_email}
-                                  placeholder="john@example.com"
+                                  placeholder="juan@example.com"
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 12}}>
+                                 <TextField
+                                  fullWidth
+                                  label="Cardholder Phone Number"
+                                  name="cardholder_phone_number"
+                                  value={orderData.cardholder_phone_number}
+                                  onChange={handleInputChange}
+                                  error={!!validationErrors.cardholder_phone_number}
+                                  helperText={validationErrors.cardholder_phone_number}
+                                  variant="outlined"
+                                  placeholder="+639171231234"
                                 />
                               </Grid>
                             </Grid>

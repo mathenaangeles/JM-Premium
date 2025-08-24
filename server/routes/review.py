@@ -34,7 +34,6 @@ def get_reviews():
             'rating_counts': rating_counts,
         }), 200
     except Exception as e:
-        print(e)
         return jsonify({'message': f'Reviews Fetch Failed: {str(e)}'}), 500
     
 @review_blueprint.route('/<int:review_id>', methods=['GET'])

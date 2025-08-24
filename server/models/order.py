@@ -37,7 +37,6 @@ class Order(Base, TimestampMixin):
     payment: Mapped[Optional["Payment"]] = relationship()
     items: Mapped[List["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
 
-    
     def set_totals(self):
         self.subtotal = sum((Decimal(item.subtotal) for item in self.items), Decimal("0.00"))
         self.total = self.subtotal + Decimal(self.tax) + Decimal(self.shipping_cost) - Decimal(self.discount or 0)

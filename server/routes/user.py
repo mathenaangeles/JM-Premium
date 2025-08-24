@@ -54,7 +54,7 @@ def login():
     return response, 200
 
 @user_blueprint.route('/refresh', methods=['POST'])
-@auth_required
+@jwt_required(refresh=True) 
 def refresh():
     user_id = int(get_jwt_identity())
     user = user_service.get_user_by_id(user_id)

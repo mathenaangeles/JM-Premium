@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Dialog, DialogTitle, DialogContent, Box, Typography, Chip, Divider, Grid, Paper, Alert, IconButton, LinearProgress } from '@mui/material';
-import { Close as CloseIcon, Payment as PaymentIcon, Person as PersonIcon, CalendarToday as CalendarIcon, AttachMoney as MoneyIcon } from '@mui/icons-material';
+import { Accordion, AccordionSummary, AccordionDetails, Dialog, DialogTitle, DialogContent, Box, Typography, Chip, Divider, Grid, Paper, Alert, IconButton, LinearProgress } from '@mui/material';
+import { AccountBalance as AccountBalanceIcon, ExpandMore as ExpandMoreIcon, Close as CloseIcon, Payment as PaymentIcon, Person as PersonIcon, CalendarToday as CalendarIcon, AttachMoney as MoneyIcon } from '@mui/icons-material';
 
 import { getPayment } from '../../slices/paymentSlice';
 
@@ -17,11 +17,11 @@ const PaymentDetail = ({ open, onClose, paymentId }) => {
 
   const getStatusStyles = (status) => {
     switch (status?.toLowerCase()) {
-      case 'fulfilled':
+      case 'paid':
         return { backgroundColor: 'primary.light', color: 'secondary.main' };
       case 'pending':
         return { backgroundColor: 'grey.100', color: 'common.grey' };
-      case 'failed':
+      case 'failed' || 'expired' || 'cancelled':
         return { backgroundColor: 'error.main', color: 'white' };
       default:
         return { backgroundColor: 'grey.100', color: 'common.grey' };
@@ -213,6 +213,56 @@ const PaymentDetail = ({ open, onClose, paymentId }) => {
                     </Typography>
                   </Box>
                 )}
+              </Grid>
+            </Grid>
+            <Grid container spacing={3} sx={{ mb: 4, mt: 2  }}>
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <AccountBalanceIcon color="primary" />
+                  <Typography variant="h6" color="primary" fontWeight={600}>
+                    Xendit Information
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography variant="body2"  color="secondary.main" fontWeight={600} gutterBottom>
+                  Xendit ID
+                </Typography>
+                <Typography variant="body1">
+                  {payment.xendit_id}
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography variant="body2"  color="secondary.main" fontWeight={600} gutterBottom>
+                  Reference ID
+                </Typography>
+                <Typography variant="body1">
+                  {payment.reference_id}
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="body2"  color="secondary.main" fontWeight={600}>Session Data</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
+                      {JSON.stringify(payment.session_data, null, 2)}
+                    </pre>
+                  </AccordionDetails>
+                </Accordion>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="body2"  color="secondary.main" fontWeight={600}>Payment Details</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
+                      {JSON.stringify(payment.payment_details, null, 2)}
+                    </pre>
+                  </AccordionDetails>
+                </Accordion>
               </Grid>
             </Grid>
             <Grid container spacing={3}>

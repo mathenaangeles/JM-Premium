@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Dict, Optional, Any, Tuple, List
 
 from app import db
+from models.order import Order
 from models.payment import Payment
 from xendit import XenditClient, XenditError, PaymentStatus, PaymentMethod, EWalletType
 
@@ -24,19 +25,17 @@ class PaymentService:
         return_url = f"{frontend_url}/orders/{order_id}"
         payment_method = payment_method.strip().upper()
         if payment_method == PaymentMethod.CREDIT_CARD.value:
+            token_id = kwargs.get("token_id")
+            payment_method_id = kwargs.get("payment_method_id")
+            if not token_id and not payment_method_id:
+                raise ValueError("Missing token_id or payment_method_id for credit card payment.")
             channel_code = "CARDS"
             channel_properties = {
                 "success_return_url": return_url,
                 "failure_return_url": return_url,
-                "skip_three_ds": bool(kwargs.get("skip_three_ds") or False),
-                "card_details": {
-                    "card_number": kwargs.get("card_number"),
-                    "expiry_year": kwargs.get("expiry_year"),
-                    "expiry_month": kwargs.get("expiry_month"),
-                    "cvn": kwargs.get("cvn"),
-                    "cardholder_first_name": kwargs.get("cardholder_first_name"),
-                    "cardholder_last_name": kwargs.get("cardholder_last_name"),
-                    "cardholder_email": kwargs.get("cardholder_email")
+                "card": {
+                    "token_id": token_id,
+                    "is_multiple_use": False
                 }
             }
             return channel_code, channel_properties
@@ -47,11 +46,9 @@ class PaymentService:
                 "grabpay": "GRABPAY",
                 "shopeepay": "SHOPEEPAY"
             }
-
             ewallet_type = kwargs.get("ewallet_type", EWalletType.GCASH.value).strip().lower()
             if ewallet_type not in ewallet_mapping:
                 raise ValueError(f"Unsupported e-wallet type: {ewallet_type}")
-
             channel_code = ewallet_mapping[ewallet_type]
             channel_properties = {
                 "success_return_url": return_url,
@@ -60,7 +57,6 @@ class PaymentService:
             return channel_code, channel_properties
 
         raise ValueError(f"Unsupported payment method: {payment_method}")
-
     
     def get_payment_by_id(self, payment_id: int) -> Optional[Payment]:
         return db.session.get(Payment, payment_id)
@@ -75,6 +71,12 @@ class PaymentService:
         total_pages = (count + per_page - 1) // per_page
         payments = payment_query.order_by(Payment.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
         return payments, count, total_pages
+    
+    def create_payment(self, amount: float, currency: str = "PHP", payment_method: str = "CARDS", user_id: Optional[int] = None, **kwargs) -> Dict[str, Any]:
+        if payment_method.upper() == "CREDIT_CARD":
+            return self.create_payment_session(amount, currency, user_id, **kwargs)
+        else:
+            return self.create_payment_request(amount, currency, payment_method, user_id, **kwargs)
 
     def create_payment_request(
         self,
@@ -104,9 +106,7 @@ class PaymentService:
                     "order_id": kwargs.get("order_id")
                 }
             }
-            print(payment_request_data)
             xendit_response = client.create_payment_request(payment_request_data)
-            print(xendit_response)
             payment = Payment(
                 user_id=user_id,
                 amount=amount,
@@ -138,36 +138,159 @@ class PaymentService:
                 "success": False,
                 "error": f"Payment Processing Failed: {str(e)}"
             }
-
-    def handle_payment_request_webhook(self, webhook_data: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
+    
+    def create_payment_session(
+        self,
+        amount: float,
+        currency: str = "PHP",
+        user_id: Optional[int] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
         try:
-            expected_token = self._get_client().config.webhook_token
-            received_token = headers.get('x-callback-token')
+            client = self._get_client()
+            order_id = kwargs.get("order_id")
+            frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000")
+            return_url = f"{frontend_url}/orders/{order_id}"
+            reference_id = f"session_{user_id or 'guest'}_{uuid.uuid4().hex[:8]}_{int(datetime.now().timestamp())}"
+            session_data = {
+                "reference_id": reference_id,
+                "session_type": "PAY",
+                "mode": "CARDS_SESSION_JS",
+                "amount": int(amount),
+                "currency": currency,
+                "country": "PH",
+                "customer": {
+                    "reference_id": f"{user_id or 'guest'}_{uuid.uuid4().hex[:8]}",
+                    "type": "INDIVIDUAL",
+                    "email": kwargs.get("cardholder_email", ""),
+                    "mobile_number": kwargs.get("cardholder_phone_number", "+63"),
+                    "individual_detail": {
+                        "given_names": kwargs.get("cardholder_first_name", "Guest"),
+                        "surname": kwargs.get("cardholder_last_name", "User")
+                    }
+                },
+                "cards_session_js": {
+                    "success_return_url": 'https://4bf4b6a9f0ea.ngrok-free.app',
+                    "failure_return_url": 'https://4bf4b6a9f0ea.ngrok-free.app',
+                }
+            }
+            xendit_response = client.create_payment_session(session_data)
+            payment = Payment(
+                user_id=user_id,
+                amount=amount,
+                currency=currency,
+                status=PaymentStatus.PENDING.value,
+                payment_method="CREDIT_CARD",
+                payment_date=None,
+                reference_id=reference_id,
+                session_data=xendit_response,
+                xendit_id=xendit_response.get('payment_id'), 
+            )
+            db.session.add(payment)
+            db.session.commit()
+            return {
+                "success": True,
+                "payment": payment,
+                "session_response": xendit_response,
+                "payment_session_id": xendit_response.get('payment_session_id')
+            }
+        except XenditError as e:
+            db.session.rollback()
+            return {
+                "success": False,
+                "error": f"Xendit API Error: {str(e)}"
+            }
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "success": False,
+                "error": f"Payment Session Creation Failed: {str(e)}"
+            }
+        
+    def handle_payment_webhook(self, webhook_data: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
+        try:
+            expected_token = current_app.config.get("XENDIT_WEBHOOK_TOKEN")
+            received_token = headers.get('x-callback-token') or headers.get("X-Callback-Token")
             if received_token != expected_token:
-                return {"success": False, "error": "Invalid Webhook Token", "status_code": 403}
+                return {"success": False, "error": "Invalid Webhook Token"}, 403
             event_type = webhook_data.get('event')
             data = webhook_data.get('data', {})
-            reference_id = data.get('reference_id')
-            payment_request_id = data.get('id')
-            if not reference_id or not payment_request_id:
-                return {"success": False, "error": "Missing payment reference or ID", "status_code": 400}
-            payment = db.session.query(Payment).filter_by(reference_id=reference_id, xendit_id=payment_request_id).first()
-            if not payment:
-                return {"success": False, "error": "Payment not found", "status_code": 404}
-            status = data.get('status')
-            payment.status = self._map_xendit_status_to_internal(status)
-            if status == "SUCCEEDED":
-                payment.payment_date = datetime.now(timezone.utc)
-            if "payments" in data:
-                payment.payment_details = data["payments"][0]
-            if "actions" in data:
-                payment.required_actions = data["actions"]
-            db.session.commit()
-            return {"success": True, "event_type": event_type, "status_code": 200}
+            print("WEBHOOK DATA:", webhook_data)
+            if event_type.startswith("payment_session."):
+                return self._handle_payment_session_webhook(data, event_type)
+            elif event_type.startswith("payment."):
+                return self._handle_payment_object_webhook(data, event_type)
+            elif 'reference_id' in data and 'id' in data:
+                return self._handle_payment_request_webhook(data, event_type)
+            else:
+                return {"success": False, "error": "Unknown Webhook Format", "status_code": 400}
         except Exception as e:
             db.session.rollback()
             return {"success": False, "error": str(e), "status_code": 500}
 
+    def _handle_payment_session_webhook(self, data: Dict[str, Any], event_type: str) -> Dict[str, Any]:
+        reference_id = data.get('reference_id')
+        if not reference_id:
+            return {"success": False, "error": "Missing reference_id in session webhook."}, 400
+        payment = db.session.query(Payment).filter_by(reference_id=reference_id).first()
+        if not payment:
+            return {"success": False, "error": "Payment not found for session webhook."}, 404
+        payment.session_data = data
+        session_payment_id = data.get('payment_id')
+        if session_payment_id and not payment.xendit_id:
+            payment.xendit_id = session_payment_id
+        db.session.commit()
+        return {"success": True, "event_type": event_type, "status_code": 200}
+
+    def _handle_payment_object_webhook(self, data: Dict[str, Any], event_type: str) -> Dict[str, Any]:
+        payment_id = data.get('payment_id')
+        reference_id = data.get('reference_id')
+        payment_request_id = data.get('payment_request_id')
+        if not payment_request_id:
+            return {"success": False, "error": "Missing payment_request_id.", "status_code": 400}
+        payment = None
+        print("PAYMENT DATA:", data)
+        if payment_id:
+            payment = db.session.query(Payment).filter_by(xendit_id=payment_id).first()
+        if not payment and reference_id:
+            payment = db.session.query(Payment).filter_by(reference_id=reference_id).first()
+        if not payment and reference_id:
+            base_reference = reference_id.rsplit('_', 1)[0] if '_' in reference_id else reference_id
+            payment = db.session.query(Payment).filter(
+                Payment.reference_id.like(f"{base_reference}%")
+            ).first()
+        if not payment:
+            return {"success": False, "error": "Payment not found for session webhook.", "status_code": 404}
+        status = data.get('status')
+        payment.status = self._map_xendit_status_to_internal(status)
+        payment.payment_request_id = payment_request_id
+        payment.payment_details = data.get('payment_details')
+        if status == "SUCCEEDED":
+            payment.payment_date = datetime.now(timezone.utc)
+            order = db.session.query(Order).filter_by(payment_id=payment.id).first()
+            if order:
+                order.status = 'processing'
+        db.session.commit()
+        return {"success": True, "event_type": event_type, "status_code": 200}
+
+    def _handle_payment_request_webhook(self, data: Dict[str, Any], event_type: str) -> Dict[str, Any]:
+        reference_id = data.get('reference_id')
+        payment_request_id = data.get('id')
+        if not reference_id or not payment_request_id:
+            return {"success": False, "error": "Missing payment reference or ID.", "status_code": 400}
+        payment = db.session.query(Payment).filter_by(
+            reference_id=reference_id, 
+            xendit_id=payment_request_id
+        ).first()
+        if not payment:
+            return {"success": False, "error": "Payment not found for request webhook.", "status_code": 404}
+        status = data.get('status')
+        payment.status = self._map_xendit_status_to_internal(status)
+        if status == "SUCCEEDED":
+            payment.payment_date = datetime.now(timezone.utc)
+        db.session.commit()
+        return {"success": True, "event_type": event_type, "status_code": 200}
+        
     def check_payment_status(self, payment_id: int) -> Dict[str, Any]:
         try:
             payment = self.get_payment_by_id(payment_id)
@@ -201,11 +324,8 @@ class PaymentService:
             "SUCCEEDED": PaymentStatus.PAID.value,
             "FAILED": PaymentStatus.FAILED.value,
             "EXPIRED": PaymentStatus.EXPIRED.value,
-            "CANCELLED": PaymentStatus.FAILED.value
+            "CANCELLED": PaymentStatus.CANCELLED.value
         }.get(xendit_status, PaymentStatus.PENDING.value)
-
-    def get_payment_by_id(self, payment_id: int) -> Optional[Payment]:
-        return db.session.get(Payment, payment_id)
 
     def serialize_payment(self, payment: Payment) -> Dict[str, Any]:
         return payment.to_dict()

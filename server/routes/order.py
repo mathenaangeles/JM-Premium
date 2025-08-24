@@ -96,6 +96,7 @@ def create_order():
         order = result.get("order")
         payment = result.get("payment")
         checkout_url = result.get("checkout_url")
+        payment_session_id = result.get("payment_session_id")
         response = {
             'message': 'Order was created successfully.',
             'order': order_service.serialize_order(order),
@@ -104,6 +105,8 @@ def create_order():
             response['payment'] = payment_service.serialize_payment(payment)
         if checkout_url:
             response['checkout_url'] = checkout_url
+        if payment_session_id:
+            response['payment_session_id'] = payment_session_id
         return jsonify(response), 201
     except Exception as e:
         return jsonify({'message': f'Order Creation Failed: {str(e)}'}), 500

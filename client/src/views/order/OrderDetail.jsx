@@ -191,7 +191,9 @@ const OrderDetails = () => {
                     </Grid>
                     <Grid size={{ xs: 6 }}>
                       <Typography variant="body2" color="secondary.main" fontWeight={600}>Order Status</Typography>
-                      <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>{order.status}</Typography>
+                      <Typography variant="body1">
+                        {order.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                      </Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
                       <Typography variant="body2" color="secondary.main" fontWeight={600}>Shipping Method</Typography>
@@ -354,7 +356,7 @@ const OrderDetails = () => {
                             onChange={(e) => setEditStatus(e.target.value)}
                             label="Status"
                           >
-                            <MenuItem value="pending">Awaiting Payment</MenuItem>
+                            <MenuItem value="awaiting_payment">Awaiting Payment</MenuItem>
                             <MenuItem value="processing">Processing</MenuItem>
                             <MenuItem value="shipped">Shipped</MenuItem>
                             <MenuItem value="delivered">Delivered</MenuItem>

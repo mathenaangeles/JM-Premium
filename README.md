@@ -18,7 +18,8 @@ This is a generic eCommerce template with a **React** client, a **Flask** server
 3. Navigate to the `server` directory and run `pip install -r requirements.txt`.
 4. Create a `.env` file in the `server` directory. Add the following:
 ```
-SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://postgres:z|4*h/icM5c3.=x3@104.199.170.198/jm_premium_database'
+SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://postgres:z|4*h/icM5c3.=x3@104.199.170.198/jm_premium_database' # PROD DB
+SQLALCHEMY_DATABASE_URI= 'postgresql://rootuser:rootpass@localhost:5432/jmpremium_dev' # DEV DB
 SQLALCHEMY_TRACK_MODIFICATIONS = 0
 SQLALCHEMY_ECHO = 0
 FLASK_DEBUG = 1
@@ -53,12 +54,11 @@ DB_CONNECTION_NAME='jm-premium:asia-east1:jm-premium-db'
 - Every time you modify your SQLAlchemy models, generate a migration file by running `flask db migrate -m " <INSERT DESCRIPTION OF CHANGES HERE>"`.
 - To apply the migrations to the database, run `flask db upgrade`.
 - To undo the last migration, run `flask db downgrade`.
-- To edit `app.db` use the sqlite3 CLI by running `sqlite3 server/instance/app.db`.
 ##### Postgres via Docker
 1. Run a local Postgres container with `docker run --name local-postgres -e POSTGRES_USER=rootuser -e POSTGRES_PASSWORD=rootpass -e POSTGRES_DB=jmpremium_dev -p 5432:5432 -d postgres:15`.
 2. Load the dump file by running `docker cp dev.sql local-postgres:/dev.sql`.
 3. Run `docker exec -it local-postgres bash -c "psql -U rootuser -d jmpremium_dev -f /dev.sql"`.
-4. To drop and recreate the database, run `docker exec -it local-postgres psql -U rootuser -d postgres -c "DROP DATABASE IF EXISTS jmpremium_dev;"` then `docker exec -it local-postgres psql -U rootuser -c "CREATE DATABASE jmpremium_dev;"`.
+4. To drop and recreate the database, run `docker exec -it local-postgres psql -U rootuser -d postgres -c "DROP DATABASE IF EXISTS jmpremium_dev;"` then `docker exec -it local-postgres psql -U rootuser -d postgres -c "CREATE DATABASE jmpremium_dev;"`. 
 
 ### Deployment
 A GitHub Actions workflow is triggered upon pushing to `main`.

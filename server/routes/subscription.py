@@ -15,7 +15,6 @@ def get_subscriptions():
             'subscriptions': [subscription_service.serialize_subscription(subscription) for subscription in subscriptions],
         }), 200
     except Exception as e:
-        print(e)
         return jsonify({'message': f'Subscriptions Fetch Failed: {str(e)}'}), 500
     
 @subscription_blueprint.route('/<string:email>', methods=['GET'])

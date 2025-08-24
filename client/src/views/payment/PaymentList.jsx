@@ -54,11 +54,11 @@ const PaymentList = () => {
 
   const getStatusStyles = (status) => {
     switch (status?.toLowerCase()) {
-      case 'fulfilled':
+      case 'paid':
         return { backgroundColor: 'primary.light', color: 'secondary.main' };
       case 'pending':
         return { backgroundColor: 'grey.100', color: 'common.grey' };
-      case 'failed':
+      case 'failed' || 'expired' || 'cancelled':
         return { backgroundColor: 'error.main', color: 'white' };
       default:
         return { backgroundColor: 'grey.100', color: 'common.grey' };

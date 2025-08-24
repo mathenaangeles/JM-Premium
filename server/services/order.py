@@ -101,28 +101,27 @@ class OrderService:
                     price=variant.price if variant else product.display_price
                 ))
             order.set_totals()
-            payment_result=self.payment_service.create_payment_request(
+            payment_result=self.payment_service.create_payment(
                 amount=float(order.total),
                 currency="PHP",
                 user_id=user_id,
                 order_id=order.id,
                 payment_method=data.get("payment_method"),
                 ewallet_type=data.get("ewallet_type"),
-                card_number=data.get("card_number"),
-                expiry_month=data.get("expiry_month"),
-                expiry_year=data.get("expiry_year"),
-                cvn=data.get("cvn"),
+                token_id=data.get("token_id"),
+                payment_method_id=data.get("payment_method_id", None),
+                cardholder_email=data.get("cardholder_email"),
                 cardholder_first_name=data.get("cardholder_first_name"),
                 cardholder_last_name=data.get("cardholder_last_name"),
-                cardholder_email=data.get("cardholder_email"),
-                skip_three_ds=data.get("skip_three_ds"),
+                cardholder_phone_number=data.get("cardholder_phone_number"),
             )
             if not payment_result.get("success"):
                 db.session.rollback()
                 raise ValueError(payment_result.get("error","Unknown Payment Failure"))
             payment=payment_result["payment"]
             order.payment_id=payment.id
-            order.status='processing'
+            if payment.status == "paid":
+                order.status="processing"
             for cart_item in cart.items:
                 product=db.session.query(Product).filter_by(id=cart_item.product_id).with_for_update().first()
                 variant=db.session.query(ProductVariant).filter_by(id=cart_item.variant_id).with_for_update().first() if cart_item.variant_id else None
@@ -136,10 +135,10 @@ class OrderService:
                 "success":True,
                 "order":order,
                 "payment":payment,
-                "checkout_url":next((action["value"] for action in payment_result.get("actions",[]) if action.get("type")=="REDIRECT_CUSTOMER"),None)
+                "checkout_url":next((action["value"] for action in payment_result.get("actions",[]) if action.get("type")=="REDIRECT_CUSTOMER"), None),
+                "payment_session_id":payment_result.get("payment_session_id", None)
             }
         except Exception as e:
-            print(e)
             db.session.rollback()
             return{
                 "success":False,
@@ -158,7 +157,7 @@ class OrderService:
         return order
     
     def cancel_order(self, order: Order) -> Optional[Order]:
-        if not order or order.status not in ['pending']:
+        if not order or order.status not in ['awaiting_payment', 'processing']:
             return None
         for order_item in order.items:
             product = db.session.query(Product).filter_by(id=order_item.product_id).with_for_update().one()
