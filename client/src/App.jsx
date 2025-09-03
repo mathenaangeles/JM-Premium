@@ -9,8 +9,11 @@ import Profile from './views/user/Profile';
 import Register from './views/user/Register';
 import UserList from './views/user/UserList';
 import Checkout from './views/order/Checkout';
+import RefundPolicy from './views/RefundPolicy';
 import OrderList from './views/order/OrderList';
+import PrivacyPolicy from './views/PrivacyPolicy';
 import ReviewList from './views/review/ReviewList';
+import TermsOfService from './views/TermsOfService';
 import OrderDetails from './views/order/OrderDetail';
 import ProductForm from './views/product/ProductForm';
 import ProductList from './views/product/ProductList';
@@ -57,6 +60,11 @@ function App() {
           <Route path="/manage/payments/:paymentId" element={<AdminRoute><PaymentDetail /></AdminRoute>} />
           <Route path="/manage/products/form/:productId?" element={<AdminRoute><ProductForm /></AdminRoute>} />
           <Route path="/manage/categories/form/:categoryId?" element={<AdminRoute><CategoryForm /></AdminRoute>} />
+
+          <Route path="/refund-and-returns-policy" element={<RefundPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+
           
           <Route path="*" element={<NotFound/>}/>
       </Routes>
