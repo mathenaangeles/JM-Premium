@@ -55,12 +55,12 @@ class OrderService:
             if not billing_address_id:
                 billing_address=self.address_service.create_address({
                     'type':'billing',
-                    'line_1':data.get('billing_line_1'),
-                    'line_2':data.get('billing_line_2'),
-                    'city':data.get('billing_city'),
-                    'zip_code':data.get('billing_zip_code'),
-                    'country':data.get('billing_country'),
-                },user_id=user_id)
+                    'line_1':data.get('billing_line_1') or data.get('shipping_line_1'),
+                    'line_2':data.get('billing_line_2') or data.get('shipping_line_2'),
+                    'city':data.get('billing_city') or data.get('shipping_city'),
+                    'zip_code':data.get('billing_zip_code') or data.get('shipping_zip_code'),
+                    'country':data.get('billing_country') or data.get('shipping_country'),
+                }, user_id=user_id)
             else:
                 billing_address=self.address_service.get_address_by_id(billing_address_id)
             for cart_item in cart.items:
