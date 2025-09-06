@@ -209,7 +209,7 @@ const OrderDetails = () => {
                         : order?.payment?.payment_method || 'Unknown'}
                       </Typography>
                     </Grid>
-                    {user.is_admin && (
+                    {user?.is_admin && (
                       <>
                       <Grid size={{ xs: 6 }}>
                         <Typography variant="body2" color="secondary.main" fontWeight={600}>Payment ID</Typography>
