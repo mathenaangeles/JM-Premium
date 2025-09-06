@@ -73,7 +73,7 @@ class OrderService:
             order=Order(
                 user_id=user_id,
                 session_id=session_id,
-                shipping_method=data.get('shipping_method','standard'),
+                shipping_method=data.get('shipping_method', 'local'),
                 shipping_address_id=shipping_address.id,
                 billing_address_id=billing_address.id,
                 status='awaiting_payment',

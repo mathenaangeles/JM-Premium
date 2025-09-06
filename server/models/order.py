@@ -23,7 +23,7 @@ class Order(Base, TimestampMixin):
     phone_number: Mapped[Optional[str]] = mapped_column(String(20))
 
     status: Mapped[str] = mapped_column(String(20), default='pending', nullable=False)
-    shipping_method: Mapped[str] = mapped_column(String(20), default='standard', nullable=False)
+    shipping_method: Mapped[str] = mapped_column(String(20), default='local', nullable=False)
     total: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)
     subtotal: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)
     tax: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)

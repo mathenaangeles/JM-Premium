@@ -62,7 +62,7 @@ const Checkout = () => {
     billing_city: '',
     billing_zip_code: '',
     billing_country: '',
-    shipping_method: 'standard',
+    shipping_method: 'local',
     payment_method: 'ewallet',
     ewallet_type: 'gcash',
     same_as_shipping: true,
@@ -219,11 +219,11 @@ const Checkout = () => {
   };
   
   const calculateTax = () => {
-    return cart.subtotal * 0.03;
+    return cart.subtotal * 0.12;
   };
   
   const calculateShipping = () => {
-    return orderData.shipping_method === 'express' ? 20.00 : 10.00; // TO DO: Change for production.
+    return orderData.shipping_method === 'express' ? 0.00 : 0.00; // TO DO: Change when shipping has been implemented.
   };
   
   const calculateTotal = () => {
@@ -643,13 +643,13 @@ const Checkout = () => {
                     >
                       <Paper variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2 }}>
                         <FormControlLabel
-                          value="standard"
+                          value="local"
                           control={<Radio color="primary" />}
                           label={
                             <Box>
-                              <Typography variant="body1" sx={{ fontWeight: 500 }}>Standard Shipping</Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 600, color: "secondary.main" }}>Local Shipping – FREE</Typography>
                               <Typography variant="body2" color="text.secondary">
-                                ₱10.00 - Delivery in 5 - 7 business days
+                                Available nationwide. No minimum order required.
                               </Typography>
                             </Box>
                           }
@@ -657,13 +657,13 @@ const Checkout = () => {
                       </Paper>
                       <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                         <FormControlLabel
-                          value="express"
+                          value="international"
                           control={<Radio color="primary" />}
                           label={
                             <Box>
-                              <Typography variant="body1" sx={{ fontWeight: 500 }}>Express Shipping</Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 600, color: "secondary.main" }}>International Shipping</Typography>
                               <Typography variant="body2" color="text.secondary">
-                                ₱20.00 - Delivery in 2 - 3 business days
+                                Rates vary by country and will be calculated upon order confirmation.
                               </Typography>
                             </Box>
                           }

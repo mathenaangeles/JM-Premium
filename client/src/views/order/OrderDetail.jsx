@@ -197,7 +197,7 @@ const OrderDetails = () => {
                     </Grid>
                     <Grid size={{ xs: 6 }}>
                       <Typography variant="body2" color="secondary.main" fontWeight={600}>Shipping Method</Typography>
-                      <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>{order.shipping_method || 'Standard'}</Typography>
+                      <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>{order.shipping_method || 'Unknown'}</Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
                       <Typography variant="body2" color="secondary.main" fontWeight={600}>Payment Method</Typography>

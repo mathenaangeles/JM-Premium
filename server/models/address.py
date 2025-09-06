@@ -8,7 +8,7 @@ class Address(Base, TimestampMixin):
     __tablename__ = "addresses"
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=True)
 
     type: Mapped[str] = mapped_column(String(255), default='shipping', nullable=False)
     line_1: Mapped[str] = mapped_column(String(255), nullable=False)
