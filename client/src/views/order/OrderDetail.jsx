@@ -201,8 +201,26 @@ const OrderDetails = () => {
                     </Grid>
                     <Grid size={{ xs: 6 }}>
                       <Typography variant="body2" color="secondary.main" fontWeight={600}>Payment Method</Typography>
-                      <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>{order.payment_method || 'Credit Card'}</Typography>
+                      <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
+                        {order?.payment?.payment_method === 'EWALLET'
+                        ? 'E-Wallet'
+                        : order?.payment?.payment_method === 'CREDIT_CARD'
+                        ? 'Credit Card'
+                        : order?.payment?.payment_method || 'Unknown'}
+                      </Typography>
                     </Grid>
+                    {user.is_admin && (
+                      <>
+                      <Grid size={{ xs: 6 }}>
+                        <Typography variant="body2" color="secondary.main" fontWeight={600}>Payment ID</Typography>
+                        <Typography variant="body1">{order.payment.id || 'N/A'}</Typography>
+                      </Grid>
+                      <Grid size={{ xs: 6 }}>
+                        <Typography variant="body2" color="secondary.main" fontWeight={600}>Payment Reference ID</Typography>
+                        <Typography variant="body1">{order.payment.reference_id || 'N/A'}</Typography>
+                      </Grid>
+                      </>
+                    )}
                   </Grid>
                 </CardContent>
               </Card>

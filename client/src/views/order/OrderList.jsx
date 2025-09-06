@@ -154,7 +154,7 @@ const OrderList = () => {
                 </TableCell>
                 {isAdmin && (
                   <TableCell>
-                    {order.user.email}
+                    {order.user?.email || order.email || 'N/A'}
                   </TableCell>
                 )}
               </TableRow>

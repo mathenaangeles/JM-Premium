@@ -115,7 +115,8 @@ class PaymentService:
                 payment_method=payment_method,
                 payment_date=None,
                 reference_id=reference_id,
-                xendit_id=xendit_response.get('id')
+                xendit_id=xendit_response.get('payment_id'),
+                payment_request_id=xendit_response.get('id'),
             )
             db.session.add(payment)
             db.session.commit()
@@ -246,25 +247,23 @@ class PaymentService:
         payment_id = data.get('payment_id')
         reference_id = data.get('reference_id')
         payment_request_id = data.get('payment_request_id')
-        if not payment_request_id:
-            return {"success": False, "error": "Missing payment_request_id.", "status_code": 400}
         payment = None
-        print("PAYMENT DATA:", data)
         if payment_id:
             payment = db.session.query(Payment).filter_by(xendit_id=payment_id).first()
+        if not payment and payment_request_id:
+            payment = db.session.query(Payment).filter_by(payment_request_id=payment_request_id).first()
         if not payment and reference_id:
             payment = db.session.query(Payment).filter_by(reference_id=reference_id).first()
-        if not payment and reference_id:
-            base_reference = reference_id.rsplit('_', 1)[0] if '_' in reference_id else reference_id
-            payment = db.session.query(Payment).filter(
-                Payment.reference_id.like(f"{base_reference}%")
-            ).first()
         if not payment:
             return {"success": False, "error": "Payment not found for session webhook.", "status_code": 404}
         status = data.get('status')
         payment.status = self._map_xendit_status_to_internal(status)
         payment.payment_request_id = payment_request_id
         payment.payment_details = data.get('payment_details')
+        if payment_id and not payment.xendit_id:
+            payment.xendit_id = payment_id
+        if payment_request_id and not payment.payment_request_id:
+            payment.payment_request_id = payment_request_id
         if status == "SUCCEEDED":
             payment.payment_date = datetime.now(timezone.utc)
             order = db.session.query(Order).filter_by(payment_id=payment.id).first()
@@ -280,7 +279,7 @@ class PaymentService:
             return {"success": False, "error": "Missing payment reference or ID.", "status_code": 400}
         payment = db.session.query(Payment).filter_by(
             reference_id=reference_id, 
-            xendit_id=payment_request_id
+            payment_request_id=payment_request_id
         ).first()
         if not payment:
             return {"success": False, "error": "Payment not found for request webhook.", "status_code": 404}
@@ -298,7 +297,12 @@ class PaymentService:
                 return {"success": False, "error": "Payment not found"}
             if not payment.xendit_id:
                 return {"success": False, "error": "Missing Xendit payment ID"}
-            response = self._get_client().get_payment_request(payment.xendit_id)
+            if payment.payment_request_id:
+                response = self._get_client().get_payment_request(payment.payment_request_id)
+            elif payment.xendit_id:
+                response = self._get_client().get_payment(payment.xendit_id)
+            else:
+                return {"success": False, "error": "Missing Xendit payment IDs."}
             status = response.get('status')
             internal_status = self._map_xendit_status_to_internal(status)
             if payment.status != internal_status:
