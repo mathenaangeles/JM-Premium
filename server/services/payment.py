@@ -171,8 +171,8 @@ class PaymentService:
                     }
                 },
                 "cards_session_js": {
-                    "success_return_url": 'https://4bf4b6a9f0ea.ngrok-free.app',
-                    "failure_return_url": 'https://4bf4b6a9f0ea.ngrok-free.app',
+                    "success_return_url": return_url,
+                    "failure_return_url": return_url,
                 }
             }
             xendit_response = client.create_payment_session(session_data)
