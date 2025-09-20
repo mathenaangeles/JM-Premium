@@ -1,5 +1,4 @@
 import axios from 'axios';
-import logout from './slices/userSlice';
 
 const Axios = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -35,7 +34,12 @@ Axios.interceptors.response.use(
         });
         return Axios(original);
       } catch (e) {
-        store.dispatch(logout());
+        store.dispatch(clearAuth());
+        persistor.purge();
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(e);
       }
     }
     return Promise.reject(error);

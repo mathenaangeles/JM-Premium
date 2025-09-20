@@ -119,12 +119,12 @@ def cancel_order(order_id):
     try:
         order = order_service.get_order_by_id(order_id)
         if not order:
-            return jsonify({'message': 'Order could not be found'}), 404
+            return jsonify({'message': 'Order could not be found.'}), 404
         if order.user_id != user_id and not user.is_admin:
             return jsonify({'message': 'Unauthorized Access'}), 403
         order = order_service.cancel_order(order)
         if not order:
-            return jsonify({'message': f'Order could not be cancelled.'}), 500
+            return jsonify({'message': f'Order cannot be cancelled since it has already been processed.'}), 409
         if user.is_admin:
             pass # TO DO: Notify buyers when admin cancels their order.
         return jsonify({

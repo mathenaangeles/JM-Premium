@@ -149,9 +149,15 @@ class OrderService:
         order = self.get_order_by_id(order_id)
         if not order:
             return None
-        if status == "cancelled" and order.status not in ["cancelled"]:
-            return self.cancel_order(order)
-        else:
+        if status:
+            if status == "cancelled" and order.status not in ["cancelled"]:
+                for order_item in order.items:
+                    product = db.session.query(Product).filter_by(id=order_item.product_id).with_for_update().first()
+                    variant = db.session.query(ProductVariant).filter_by(id=order_item.variant_id).with_for_update().first() if order_item.variant_id else None
+                    if variant:
+                        variant.stock += order_item.quantity
+                    elif product:
+                        product.stock += order_item.quantity
             order.status = status
         if tracking_number:
             order.tracking_number = tracking_number
@@ -159,7 +165,7 @@ class OrderService:
         return order
     
     def cancel_order(self, order: Order) -> Optional[Order]:
-        if not order or order.status not in ['cancelled', 'awaiting_payment']:
+        if not order or order.status not in ['awaiting_payment']:
             return None
         for order_item in order.items:
             product = db.session.query(Product).filter_by(id=order_item.product_id).with_for_update().first()
