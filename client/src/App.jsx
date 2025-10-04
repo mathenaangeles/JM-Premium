@@ -1,6 +1,7 @@
+import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { LinearProgress } from '@mui/material';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 
 import Home from './views/Home';
 import Shop from './views/Shop';
@@ -33,6 +34,17 @@ function App() {
   const loading = useSelector((state) =>
     state.user.loading
   );
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_path: location.pathname + location.search,
+        page_title: document.title,
+      });
+    }
+  }, [location]);
 
   return (
     <div className="App">
