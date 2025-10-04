@@ -25,7 +25,15 @@ Axios.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
-    if (error?.response?.status === 401 && !original?._retry) {
+    if (error?.response?.status === 401) {
+      if (original?._retry) {
+        store.dispatch(clearAuth());
+        persistor.purge();
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
       original._retry = true;
       try {
         const csrfRefresh = getCookie("csrf_refresh_token");
