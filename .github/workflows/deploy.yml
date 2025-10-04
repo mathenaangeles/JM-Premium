@@ -61,7 +61,7 @@ jobs:
           --set-env-vars="JWT_ACCESS_COOKIE_NAME=access_token_cookie" \
           --set-env-vars="JWT_REFRESH_COOKIE_NAME=refresh_token_cookie" \
           --set-env-vars="JWT_COOKIE_SAMESITE=None" \
-          --set-env-vars="JWT_COOKIE_DOMAIN=.jmpremium.shop" \
+          --set-env-vars="JWT_COOKIE_DOMAIN=api.jmpremium.shop" \
           --set-env-vars="JWT_COOKIE_SECURE=true" \
           --set-env-vars="JWT_COOKIE_CSRF_PROTECT=true" \
           --set-env-vars="JWT_CSRF_IN_COOKIES=true" \
