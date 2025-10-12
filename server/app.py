@@ -18,6 +18,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
+    from routes.seo import seo_blueprint
     from routes.cart import cart_blueprint
     from routes.user import user_blueprint
     from routes.order import order_blueprint
@@ -27,6 +28,7 @@ def create_app():
     from routes.payment import payment_blueprint
     from routes.category import category_blueprint
 
+    app.register_blueprint(seo_blueprint)
     app.register_blueprint(cart_blueprint)
     app.register_blueprint(user_blueprint)
     app.register_blueprint(order_blueprint)
