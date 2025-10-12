@@ -25,7 +25,6 @@ class ProductService:
             product_query = product_query.filter(
                 or_(
                     Product.name.ilike(search_term),
-                    Product.description.ilike(search_term)
                 )
             )
         if sort == 'price_low':

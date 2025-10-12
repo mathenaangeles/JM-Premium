@@ -29,12 +29,12 @@ import Navbar from './components/Navbar';
 import NotFound from './components/NotFound';
 import AdminRoute from './components/AdminRouter';
 import PrivateRoute from './components/PrivateRouter';
+import AnnouncementBar from './components/AnnouncementBar';
 
 function App() {
   const loading = useSelector((state) =>
     state.user.loading
   );
-
   const location = useLocation();
 
   useEffect(() => {
@@ -48,6 +48,9 @@ function App() {
 
   return (
     <div className="App">
+      <AnnouncementBar 
+        message="Free Shipping on all Philippine Domestic Orders"
+      />
       <Navbar/>
       {loading && <LinearProgress />}
       <Routes>

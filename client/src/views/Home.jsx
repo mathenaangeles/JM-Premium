@@ -4,15 +4,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Fade, Snackbar, Alert, Box, Container, Typography, Button, Grid, Stack, Paper, Avatar } from '@mui/material';
 import { Landscape as LandscapeIcon, ArrowForward as ArrowForwardIcon,LocalShipping as LocalShippingIcon, CheckCircle as CheckCircleIcon, AssignmentReturn as AssignmentReturnIcon, Spa as SpaIcon, Science as ScienceIcon, Nature as NatureIcon, Star as StarIcon, FormatQuote as FormatQuoteIcon } from '@mui/icons-material';
 
-import hero from '../assets/hero.png'; 
 import ProductCard from './product/ProductCard';
+import heroMobile from '../assets/hero-mobile.JPEG';
+import heroDesktop from '../assets/hero-desktop.png';
+
 import { getProducts } from '../slices/productSlice';
 
 const testimonials = [
   {
     id: 1,
     text: "This coffee has completely transformed my mornings. The blend of natural ingredients gives me energy that lasts all day without any crash.",
-    author: "Sarah Chen",
+    author: "Jennifer Lim",
     location: "Manila",
     rating: 5,
     initial: "S"
@@ -28,7 +30,7 @@ const testimonials = [
   {
     id: 3,
     text: "Finally found a coffee brand that delivers on both taste and benefits. I'm excited to have it every morning.",
-    author: "Jennifer Lim",
+    author: "Miguel Reyes",
     location: "Davao",
     rating: 5,
     initial: "J"
@@ -37,111 +39,111 @@ const testimonials = [
 
 const HeroSection = () => {
   return (
-    <Box sx={{ 
-      backgroundColor: 'common.white',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      <Container maxWidth="xl">
-        <Box sx={{ 
-          minHeight: { xs: 'calc(100vh - 80px)' },
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        minHeight: { xs: '120vh', md: '100vh' },
+        backgroundImage: {
+          xs: `url(${heroMobile})`,
+          md: `url(${heroDesktop})`,
+        },
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+        backgroundPosition: { xs: 'center bottom', md: 'right center' },
+        display: 'flex',
+        alignItems: { xs: 'flex-start', md: 'center' },
+        justifyContent: { xs: 'center', md: 'flex-start' },
+        pt: { xs: 4, sm: 6, md: 5 },
+        pb: { xs: 10, md: 0 },
+      }}
+    >
+      <Container
+        maxWidth="xl"
+        sx={{
+          px: { xs: 2, sm: 4, md: 10 },
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          py: { xs: 4, md: 4 }
-        }}>
-          <Grid container spacing={{ xs: 0, md: 6 }} sx={{ alignItems: 'center' }}>
-            <Grid size={{ xs: 12, md: 6 }} sx={{ 
-              order: { xs: 1, md: 1 },
-              px: { xs: 3, sm: 4, md: 0 },
-              pb: { xs: 4, md: 0 }
-            }}>
-              <Box>
-                <Typography 
-                  variant="overline" 
-                  sx={{ 
-                    color: 'primary.main',
-                    fontWeight: 700,
-                    letterSpacing: 2.5,
-                    mb: 2.5,
-                    display: 'block',
-                    fontSize: '0.75rem'
-                  }}
-                >
-                  PREMIUM WELLNESS COFFEE
-                </Typography>
-                
-                <Typography 
-                  variant="h1" 
-                  sx={{ 
-                    fontSize: { xs: '3rem', sm: '2.5rem', md: '3.3rem', lg: '4rem' },
-                    fontWeight: 400,
-                    lineHeight: 1.1,
-                    mb: 3,
-                    color: 'text.primary'
-                  }}
-                >
-                  Energize Your Day
-                  <br />
-                  <Box component="span" sx={{ color: 'primary.main' }}>
-                    Naturally
-                  </Box>
-                </Typography>
+          justifyContent: { xs: 'center', md: 'flex-start' },
+        }}
+      >
+        <Paper
+          elevation={2}
+          sx={{
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: '24px',
+            p: { xs: 3, sm: 4, md: 6 },
+            maxWidth: { xs: '90%', sm: '80%', md: '50%', lg: '40%' },
+            textAlign: { xs: 'center', md: 'left' },
+            mt: { xs: '6vh', sm: '8vh', md: '-10vh' },
+            boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+          }}
+        >
+          <Typography
+            variant="overline"
+            sx={{
+              color: 'primary.main',
+              fontWeight: 700,
+              letterSpacing: 2.5,
+              mb: 1.5,
+              display: 'block',
+            }}
+          >
+            PREMIUM WELLNESS COFFEE
+          </Typography>
 
-                <Typography 
-                  sx={{ 
-                    mb: 4,
-                    color: 'common.grey',
-                    lineHeight: 1.8,
-                    fontSize: '1.05rem'
-                  }}
-                >
-                  Coffee infused with tongkat ali and ginseng for sustained energy, enhanced focus, and natural vitality
-                </Typography>
-                <Button 
-                  variant="contained" 
-                  size="large" 
-                  component={RouterLink}
-                  to="/products/tongkat-ali-ginseng-coffee"
-                  endIcon={<ArrowForwardIcon />}
-                  sx={{ 
-                    px: 4.5, 
-                    py: 1.75,
-                    backgroundColor: 'common.black',
-                    fontSize: '1rem',
-                    '&:hover': {
-                      backgroundColor: '#2A2A2A'
-                    }
-                  }}
-                >
-                  Shop Now
-                </Button>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }} sx={{ 
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              position: 'relative',
-              order: { xs: 2, md: 2 }
-            }}>
-              <Box
-                component="img"
-                  src={hero}
-                  alt="JM Premium Beauty"
-                  sx={{
-                    width: '100%',
-                    maxWidth: 350,
-                    height: 'auto',
-                    objectFit: 'cover',
-                    borderRadius: '20px',
-                    position: 'relative',
-                    zIndex: 1,
-                  }}
-              />
-            </Grid>
-          </Grid>
-        </Box>
+          <Typography
+            variant="h1"
+            sx={{
+              fontFamily: 'DM Serif Display, serif',
+              fontSize: { xs: '2.2rem', sm: '2.5rem', md: '2.5rem' },
+              fontWeight: 600,
+              lineHeight: 1.1,
+              mb: 2,
+              color: 'common.black',
+            }}
+          >
+            Energize Your Day
+            <br />
+            <Box component="span" sx={{ color: 'primary.main' }}>
+              Naturally
+            </Box>
+          </Typography>
+
+          <Typography
+            sx={{
+              mb: 3,
+              lineHeight: 1.7,
+              fontSize: { xs: '1rem', sm: '1.05rem' },
+              color: 'rgba(0,0,0,0.75)',
+            }}
+          >
+            Tongkat ali and ginseng–infused coffee for lasting energy,
+            sharper focus, and natural vitality.
+          </Typography>
+
+          <Button
+            variant="contained"
+            size="large"
+            component={RouterLink}
+            to="/products/tongkat-ali-ginseng-coffee"
+            endIcon={<ArrowForwardIcon />}
+            sx={{
+              px: 4,
+              py: 1.5,
+              backgroundColor: 'common.black',
+              color: 'common.white',
+              fontSize: '1rem',
+              borderRadius: '999px',
+              textTransform: 'none',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: '#2A2A2A',
+              },
+            }}
+          >
+            Shop Now
+          </Button>
+        </Paper>
       </Container>
     </Box>
   );
@@ -652,9 +654,9 @@ const Home = () => {
         <Alert 
           onClose={() => setSnackbarOpen(false)} 
           severity="success"
-          sx={{ borderRadius: 2, fontWeight: 600 }}
+          sx={{ borderRadius: 2 }}
         >
-          Item successfully added to cart
+          Item successfully added to cart.
         </Alert>
       </Snackbar>
     </Box>
