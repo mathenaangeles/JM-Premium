@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { Helmet } from "react-helmet-async";
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useRef, useCallback } from 'react';
@@ -208,7 +209,28 @@ const ProductDetail = () => {
     Math.round(((compareAtPrice - currentPrice) / compareAtPrice) * 100) : 0;
   const productImages = product.images || [];
 
+  const title = product.meta_title || `${product.name} | JM Premium`;
+  const description =
+    product.meta_description ||
+    `${product.name} – rooted in ancient wisdom, perfected by science.`;
+
   return (
+    <>
+    <Helmet>
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta
+        property="og:image"
+        content={product.images?.[0]?.url || "/default.jpg"}
+      />
+      <meta
+        property="og:url"
+        content={`https://www.jmpremium.shop/products/${product.slug}`}
+      />
+      <meta property="og:type" content="product" />
+    </Helmet>
     <Box sx={{ px: 5, py: 3 }}>
       <Breadcrumbs
         separator={<NavigateNextIcon fontSize="small" />}
@@ -998,6 +1020,7 @@ const ProductDetail = () => {
         </Alert>
       </Snackbar>
     </Box>
+    </>
   );
 };
 
