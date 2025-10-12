@@ -477,6 +477,34 @@ const Navbar = () => {
               )}
             </Box>
           )}
+          {Boolean(menus.mobileCategories) && (
+            <ListItem
+              button
+              component={Link}
+              to="/shop"
+              onClick={toggleMobileDrawer}
+              sx={{
+                color: 'inherit',
+                textDecoration: 'none',
+                pl: 5,
+                mt: 1,
+                backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                ...listItemHoverStyle,
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <StoreIcon color="secondary" />
+              </ListItemIcon>
+              <ListItemText
+                primary={
+                  <Typography variant="body2" color="secondary" fontWeight="bold">
+                    Shop All Categories
+                  </Typography>
+                }
+                sx={{ my: 0 }}
+              />
+            </ListItem>
+          )}
           {user ? (
             <>
               <Divider sx={{ my: 2 }} />
@@ -646,7 +674,7 @@ const Navbar = () => {
                 <Box
                   component="img"
                   src="/jm-black-logo.png"
-                  alt="JM Premium Logo"
+                  alt="logo"
                   sx={{
                     height: { xs: 25, md: 40 },
                     mr: 1,
@@ -709,7 +737,7 @@ const Navbar = () => {
                 <Box
                   component="img"
                   src="/jm-black-logo.png"
-                  alt="JM Premium Logo"
+                  alt="logo"
                   sx={{
                     height: { xs: 25, md: 40 },
                     mr: 1.5,
