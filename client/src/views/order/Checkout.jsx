@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { LinearProgress, MenuItem, Fade, Modal, styled, Box, Button, Card, CardContent, Checkbox, CircularProgress, Divider, FormControl, FormControlLabel, Grid, InputAdornment, Paper, Radio, RadioGroup, Stack, TextField, Typography, Alert } from '@mui/material';
+import { Snackbar, LinearProgress, MenuItem, Fade, Modal, styled, Box, Button, Card, CardContent, Checkbox, CircularProgress, Divider, FormControl, FormControlLabel, Grid, InputAdornment, Paper, Radio, RadioGroup, Stack, TextField, Typography, Alert } from '@mui/material';
 import { LocalMall as LocalMallIcon, Phone as PhoneIcon, Email as EmailIcon, Person as PersonIcon, Storefront as StorefrontIcon, ShoppingBagOutlined as ShoppingBagOutlinedIcon, Payment as PaymentIcon, LocalShipping as LocalShippingIcon, Home as HomeIcon, LocationCity as LocationCityIcon, CreditCard as CreditCardIcon } from '@mui/icons-material';
 
 import { getCart } from '../../slices/cartSlice';
@@ -78,8 +78,20 @@ const Checkout = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [showBillingAddressList, setShowBillingAddressList] = useState(false);
   const [showShippingAddressList, setShowShippingAddressList] = useState(false);
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('error')
   
   const isGuestCheckout = !user;
+
+  useEffect(() => {
+    if (error) {
+      setSnackbarMessage(error);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  }, [error]);
   
   useEffect(() => {
     dispatch(getCart());
@@ -87,7 +99,7 @@ const Checkout = () => {
       dispatch(getUserAddresses());
     }
   }, [dispatch, user]);
-  
+
   useEffect(() => {
     if (addresses && addresses.length > 0) {
       const defaultAddress = addresses.find(address => address.is_default) || addresses[0];
@@ -400,11 +412,6 @@ const Checkout = () => {
   
   return (
     <Box sx={{  p: 4, minHeight: '100vh', backgroundColor: 'primary.main' }}>
-      {(error) && (
-        <Alert severity="error" onClose={() => dispatch(clearOrderMessages())} sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Card sx={{ borderRadius: 2, height: '100%' }}>
@@ -1053,6 +1060,29 @@ const Checkout = () => {
           </Card>
         </Grid>
     </Grid>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={() => {
+        setSnackbarOpen(false);
+        dispatch(clearOrderMessages());
+      }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+    >
+      <Alert 
+        onClose={() => {
+          setSnackbarOpen(false);
+          dispatch(clearOrderMessages());
+        }}
+        severity={snackbarSeverity}
+        variant="filled"
+        sx={{ 
+          minWidth: '300px',
+          boxShadow: 3
+        }}
+      >
+        {snackbarMessage}
+      </Alert>
+    </Snackbar>
   </Box>
   );
 };
