@@ -145,6 +145,17 @@ def manage_product_variant(product_id, variant_id):
             return jsonify({'message': f'Product Variant Deletion Failed: {str(e)}'}), 500
     return jsonify({'message': 'Invalid Request Method'}), 405
 
+@product_blueprint.route('/<int:product_id>/recommended', methods=['GET'])
+def get_recommended_products(product_id):
+    limit = request.args.get('limit', 4, type=int)
+    try:
+        recommended = product_service.get_recommended_products(product_id, limit)
+        return jsonify({
+            'products': [product_service.serialize_product(product) for product in recommended]
+        }), 200
+    except Exception as e:
+        return jsonify({'message': f'Recommended Products Fetch Failed: {str(e)}'}), 500
+
 @product_blueprint.route('/<int:product_id>/images', methods=['POST'])
 @admin_required
 def create_product_image(product_id):

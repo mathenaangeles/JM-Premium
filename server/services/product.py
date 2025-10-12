@@ -199,6 +199,30 @@ class ProductService:
 
     def serialize_product_variant(self, variant: ProductVariant) -> Dict[str, Any]:
         return variant.to_dict()
+
+    def get_recommended_products(self, product_id: int, limit: int = 4) -> List[Product]:
+        product = self.get_product_by_id(product_id)
+        print("MEOW", product, product_id)
+        if not product:
+            return []
+        try:
+            recommended = db.session.query(Product).filter(
+                Product.category_id == product.category_id,
+                Product.id != product_id,
+                Product.is_active == True
+            ).order_by(desc(Product.average_rating)).limit(limit).all()
+            if len(recommended) < limit:
+                additional = db.session.query(Product).filter(
+                    Product.id != product_id,
+                    Product.is_active == True,
+                    Product.id.notin_([p.id for p in recommended])
+                ).order_by(desc(Product.average_rating)).limit(limit - len(recommended)).all()
+                recommended.extend(additional)
+            print(recommended)
+            return recommended
+        except Exception as e:
+            print(e)
+            return []
     
     def get_product_image_by_id(self, image_id: int) -> Optional[ProductImage]:
         return db.session.get(ProductImage, image_id)

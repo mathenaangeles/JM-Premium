@@ -46,6 +46,7 @@ class Product(Base, TimestampMixin):
     
     @average_rating.expression
     def average_rating(cls):
+        from models.review import Review
         return (
             select(func.coalesce(func.avg(Review.rating), 0))
             .where(Review.product_id == cls.id)

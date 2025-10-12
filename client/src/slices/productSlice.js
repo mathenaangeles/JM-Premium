@@ -117,6 +117,18 @@ export const deleteProductVariant = createAsyncThunk(
   }
 );
 
+export const getRecommendedProducts = createAsyncThunk(
+  '/getRecommendedProducts',
+  async (productId, { rejectWithValue }) => {
+    try {
+      const { data } = await Axios.get(`/products/${productId}/recommended?limit=4`);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
 export const addProductImage = createAsyncThunk(
   '/addProductImage',
   async ({ productId, variantId, imageData }, { rejectWithValue }) => {
@@ -157,6 +169,8 @@ const productSlice = createSlice({
     error: null,
     variants: [],
     variant: null,
+    recommendations: [],
+    recommendationsLoading: false,
   },
   reducers: {
     clearProductMessages: (state) => {
@@ -329,6 +343,20 @@ const productSlice = createSlice({
       })
       .addCase(deleteProductVariant.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(getRecommendedProducts.pending, (state) => {
+        state.recommendationsLoading = true;
+        state.error = null;
+        state.success = null;
+      })
+      .addCase(getRecommendedProducts.fulfilled, (state, action) => {
+        state.recommendations = action.payload.products;
+        state.recommendationsLoading = false;
+      })
+      .addCase(getRecommendedProducts.rejected, (state, action) => {
+        state.recommendationsLoading = false;
         state.error = action.payload;
       })
       

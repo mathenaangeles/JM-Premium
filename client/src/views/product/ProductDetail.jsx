@@ -2,13 +2,14 @@ import DOMPurify from 'dompurify';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Accordion, AccordionSummary, AccordionDetails, LinearProgress, Grid, Typography, Box, Button, Breadcrumbs, IconButton, Rating, Chip, TextField, Card, CardContent } from '@mui/material';
+import { Snackbar, Alert, Accordion, AccordionSummary, AccordionDetails, LinearProgress, Grid, Typography, Box, Button, Breadcrumbs, IconButton, Rating, Chip, TextField, Card, CardContent } from '@mui/material';
 import { AddShoppingCartOutlined as AddShoppingCartOutlinedIcon, ImageNotSupportedOutlined as ImageNotSupportedOutlinedIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon, Add as AddIcon, Remove as RemoveIcon, Star as StarIcon, ExpandLess as ExpandLessIcon, ExpandMore as ExpandMoreIcon, NavigateNext as NavigateNextIcon, CheckCircle as CheckCircleIcon, Loop as LoopIcon, VerifiedUser as VerifiedUserIcon, LocalShipping as LocalShippingIcon, Share as ShareIcon, Favorite as FavoriteIcon } from '@mui/icons-material';
 
+import ProductCard from './ProductCard';
 import ReviewForm from '../review/ReviewForm';
 import { addToCart } from '../../slices/cartSlice';
 import { getReviews } from '../../slices/reviewSlice';
-import { getProductBySlug } from '../../slices/productSlice';
+import { getProductBySlug, getRecommendedProducts } from '../../slices/productSlice';
 
 const ProductDetail = () => {
   const { productSlug } = useParams();
@@ -16,7 +17,7 @@ const ProductDetail = () => {
 
   const { user } = useSelector((state) => state.user);
   const { reviews, count, ratingCounts } = useSelector((state) => state.review);
-  const { product, loading } = useSelector((state) => state.product);
+  const { product, loading, recommendations, recommendationsLoading  } = useSelector((state) => state.product);
   
   const reviewsRef = useRef(null);
   const [quantity, setQuantity] = useState(1);
@@ -25,6 +26,7 @@ const ProductDetail = () => {
   const [expandedSection, setExpandedSection] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const updateDocumentHead = useCallback(() => {
     if (!product) return;
@@ -84,6 +86,12 @@ const ProductDetail = () => {
   }, [dispatch, product]);
 
   useEffect(() => {
+    if (product && product.id) {
+      dispatch(getRecommendedProducts(product.id));
+    }
+  }, [dispatch, product?.id]);
+
+  useEffect(() => {
      if (product && product.variants && product.variants.length > 0) {
       const firstInStockVariant = product.variants.find(v => v.stock > 0);
       setSelectedVariant(firstInStockVariant || product.variants[0]);
@@ -95,7 +103,7 @@ const ProductDetail = () => {
     }
   }, [product]);
 
-    useEffect(() => {
+  useEffect(() => {
     updateDocumentHead();
   }, [updateDocumentHead]);
 
@@ -135,6 +143,7 @@ const ProductDetail = () => {
       variant_id: selectedVariant ? selectedVariant.id : null,
       quantity,
     }));
+    setSnackbarOpen(true);
   };
 
   const handleReviewSubmit = () => {
@@ -749,6 +758,35 @@ const ProductDetail = () => {
             )
         )}
       </Box>
+
+      {!recommendationsLoading && recommendations && recommendations.length > 0 && (
+        <Box sx={{ my: 6 }}>
+          <Box sx={{ display: 'inline-block', position: 'relative', mb: 4 }}>
+            <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
+              Frequently Bought Together
+            </Typography>
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: -6,
+                left: 0,
+                height: '3px',
+                width: '60px',
+                bgcolor: 'primary.main',
+                borderRadius: 2,
+              }}
+            />
+          </Box>
+          <Grid container spacing={3}>
+            {recommendations.map((recommendedProduct) => (
+              <Grid key={recommendedProduct.id} size={{ xs: 12, sm: 6, md: 3 }}>
+                <ProductCard product={recommendedProduct} onAddToCartSuccess={() => setSnackbarOpen(true)} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
       <Box ref={reviewsRef} sx={{ display: 'inline-block', position: 'relative', mb: 5 }}>
         <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
           Customer Reviews
@@ -945,6 +983,20 @@ const ProductDetail = () => {
           onReviewSubmit={handleReviewSubmit}
         />
       </Box>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbarOpen(false)} 
+          severity="success"
+          sx={{ borderRadius: 2 }}
+        >
+          Item successfully added to cart.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
